@@ -214,6 +214,12 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
 
+/* DRAG */
+.lead-pill[draggable]{cursor:grab}
+.lead-pill[draggable]:active{cursor:grabbing}
+.week-col.drag-over{background:rgba(240,192,64,.08)!important;border-color:rgba(240,192,64,.4)!important;transition:all .1s}
+.lead-pill.dragging{opacity:.3;transform:rotate(1deg)}
+
 /* EMPTY */
 .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
 .empty-icon{font-size:32px;margin-bottom:10px}
@@ -395,11 +401,13 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
         <div class="ai-block-header">
           <div class="ai-pulse"></div>
           <div class="ai-block-label">Contexto + recomendación</div>
-          <div style="margin-left:auto;display:flex;gap:6px">
-            <button class="copy-btn" onclick="copyElText('pf_ai_body')">📋</button>
-          </div>
         </div>
-        <div class="ai-block-body" id="pf_ai_body"></div>
+        <div class="ai-block-body" id="pf_ai_body" style="border-bottom:1px solid rgba(155,114,224,.15)"></div>
+        <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--purple);letter-spacing:1px">MENSAJE SUGERIDO</div>
+          <button class="copy-btn" onclick="copiarMensajeAI()" style="border-color:rgba(155,114,224,.4);color:var(--purple)">📋 Copiar mensaje</button>
+        </div>
+        <div class="ai-block-body" id="pf_ai_msg" style="padding-top:0;color:var(--text);background:rgba(155,114,224,.05)"></div>
       </div>
     </div>
 
@@ -537,6 +545,8 @@ let API_KEY = '';
 let SCRIPT_URL = '';
 let selectedCanal = 'wpp';
 let currentPerfilKey = null;
+let semanaOffset = 0; // 0 = semana actual, 1 = próxima, -1 = anterior
+let draggedLeadKey = null;
 
 // Store de leads en memoria (clave → objeto lead enriquecido)
 const store = {};
@@ -703,88 +713,185 @@ function renderAll() {
 
 function renderSemana(filtro='') {
   const wrapper = document.getElementById('semanaWrapper');
-  const hoyDate = new Date();
-  hoyDate.setHours(0,0,0,0);
+  const hoyDate = new Date(); hoyDate.setHours(0,0,0,0);
 
-  // Calcular lunes de la semana actual
-  const dayOfWeek = hoyDate.getDay(); // 0=Dom
+  // Calcular lunes de la semana con offset
+  const dow = hoyDate.getDay();
   const lunes = new Date(hoyDate);
-  lunes.setDate(hoyDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  lunes.setDate(hoyDate.getDate() - (dow === 0 ? 6 : dow - 1) + semanaOffset * 7);
+  lunes.setHours(0,0,0,0);
 
-  const dias = Array.from({length:7}, (_,i) => {
-    const d = new Date(lunes); d.setDate(lunes.getDate()+i);
-    return d;
+  // Solo Lun–Vie (5 días)
+  const DIAS = ['Lun','Mar','Mié','Jue','Vie'];
+  const dias = Array.from({length:5}, (_,i) => {
+    const d = new Date(lunes); d.setDate(lunes.getDate()+i); return d;
   });
+  const viernes = dias[4];
 
-  const DIAS_NOMBRES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  // Label de semana
+  const lunesLabel = lunes.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+  const viernesLabel = viernes.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+  const esEstaSemana = semanaOffset === 0;
 
-  // Agrupar leads por día
-  const leads = getAllLeads().filter(l => !filtro || matchFiltro(l, filtro));
-  const porDia = Array.from({length:7}, () => []);
+  // Agrupar leads
+  const leads = getAllLeads().filter(l => !filtro || matchFiltro(l,filtro));
+  const porDia = Array.from({length:5}, () => []);
   const sinFecha = [];
+  const fuera = []; // antes o después de esta semana
 
   leads.forEach(lead => {
     const pa = parseFechaStr(lead.proxAccion);
     if (!pa) { sinFecha.push(lead); return; }
     pa.setHours(0,0,0,0);
-    for (let i = 0; i < 7; i++) {
-      if (pa.getTime() === dias[i].getTime()) { porDia[i].push(lead); return; }
+    let colocado = false;
+    for (let i=0; i<5; i++) {
+      if (pa.getTime() === dias[i].getTime()) { porDia[i].push(lead); colocado=true; break; }
     }
-    // Vencido → columna lunes
-    if (pa < lunes) { porDia[0].push(lead); return; }
-    // Futuro → columna domingo
-    if (pa > dias[6]) { porDia[6].push(lead); return; }
+    if (!colocado) sinFecha.push(lead);
   });
 
-  let html = `<div class="week-header">`;
+  let h = '';
+
+  // Barra de navegación
+  h += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <button onclick="cambiarSemana(-1)" class="btn btn-ghost btn-sm" style="font-size:16px;padding:6px 12px">‹</button>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:${esEstaSemana?'var(--gold)':'var(--muted)'};flex:1;text-align:center;letter-spacing:.5px">
+      ${esEstaSemana ? '— SEMANA ACTUAL —' : semanaOffset > 0 ? '→ ' : '← '}
+      ${lunesLabel} – ${viernesLabel}
+      ${esEstaSemana ? '' : semanaOffset > 0 ? '(próxima)' : '(anterior)'}
+    </div>
+    <button onclick="cambiarSemana(1)" class="btn btn-ghost btn-sm" style="font-size:16px;padding:6px 12px">›</button>
+    ${!esEstaSemana ? `<button onclick="irSemanaActual()" class="btn btn-ghost btn-sm" style="font-size:10px;font-family:monospace">Hoy</button>` : ''}
+  </div>`;
+
+  // Headers
+  h += `<div style="display:grid;grid-template-columns:repeat(5,1fr) 160px;gap:8px;margin-bottom:4px">`;
   dias.forEach((d,i) => {
     const esHoy = d.getTime() === hoyDate.getTime();
     const dd = String(d.getDate()).padStart(2,'0');
     const mm = String(d.getMonth()+1).padStart(2,'0');
-    html += `<div class="week-day-label${esHoy?' today':''}">
-      ${DIAS_NOMBRES[i]}<br><span style="font-size:11px">${dd}/${mm}</span>
-    </div>`;
+    h += `<div class="week-day-label${esHoy?' today':''}">${DIAS[i]}<br><span style="font-size:11px">${dd}/${mm}</span></div>`;
   });
-  html += `</div><div class="week-grid">`;
+  h += `<div class="week-day-label" style="color:var(--muted2)">Sin fecha</div>`;
+  h += `</div>`;
 
+  // Grid
+  h += `<div style="display:grid;grid-template-columns:repeat(5,1fr) 160px;gap:8px;align-items:start">`;
+
+  // Columnas Lun–Vie
   dias.forEach((d,i) => {
     const esHoy = d.getTime() === hoyDate.getTime();
-    html += `<div class="week-col${esHoy?' today-col':''}">`;
+    const isoStr = d.toISOString().split('T')[0];
+    h += `<div class="week-col${esHoy?' today-col':''}" 
+      data-date="${isoStr}"
+      ondragover="onDragOver(event,this)" 
+      ondragleave="onDragLeave(this)"
+      ondrop="onDrop(event,'${isoStr}')">`;
     if (!porDia[i].length) {
-      html += `<div style="text-align:center;padding:12px 0;color:var(--muted2);font-size:10px">—</div>`;
+      h += `<div style="text-align:center;padding:16px 0;color:var(--muted2);font-size:10px;border:1px dashed var(--border);border-radius:6px;margin:2px">Libre</div>`;
     } else {
       porDia[i].forEach(lead => {
         const cls = semClass(lead.semaforo);
-        const canal = canalIcono(lead);
-        html += `<div class="lead-pill ${cls}" onclick="abrirPerfil('${lead._key}')">
+        h += `<div class="lead-pill ${cls}" 
+          draggable="true"
+          ondragstart="onDragStart(event,'${lead._key}')"
+          ondragend="onDragEnd(event)"
+          onclick="abrirPerfil('${lead._key}')">
           <div class="pill-empresa">${lead.empresa}</div>
           <div class="pill-contacto">${lead.contacto}</div>
-          <div class="pill-canal" style="color:${canalColor(lead)}">${canal}</div>
+          <div class="pill-canal" style="color:${canalColor(lead)}">${canalIcono(lead)}</div>
         </div>`;
       });
     }
-    html += `</div>`;
+    h += `</div>`;
   });
 
-  html += `</div>`;
-
-  if (sinFecha.length) {
-    html += `<div style="margin-top:16px">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px">
-        Sin fecha asignada <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">`;
+  // Columna "Sin fecha"
+  h += `<div class="week-col" style="border-color:var(--muted2);border-style:dashed"
+    ondragover="onDragOver(event,this)"
+    ondragleave="onDragLeave(this)"
+    ondrop="onDrop(event,'sin-fecha')">`;
+  if (!sinFecha.length) {
+    h += `<div style="text-align:center;padding:16px 0;color:var(--muted2);font-size:10px">—</div>`;
+  } else {
     sinFecha.forEach(lead => {
-      html += `<div class="lead-pill neutral" style="min-width:160px" onclick="abrirPerfil('${lead._key}')">
+      h += `<div class="lead-pill neutral" 
+        draggable="true"
+        ondragstart="onDragStart(event,'${lead._key}')"
+        ondragend="onDragEnd(event)"
+        onclick="abrirPerfil('${lead._key}')">
         <div class="pill-empresa">${lead.empresa}</div>
         <div class="pill-contacto">${lead.contacto}</div>
-        <div class="pill-canal" style="color:var(--muted2)">${canalIcono(lead)}</div>
+        <div class="pill-canal" style="color:var(--muted2)">Sin agenda</div>
       </div>`;
     });
-    html += `</div></div>`;
+  }
+  h += `</div>`;
+
+  h += `</div>`; // /grid
+  wrapper.innerHTML = h;
+}
+
+function cambiarSemana(dir) { semanaOffset += dir; renderSemana(document.querySelector('#panel-semana .search-bar input')?.value||''); }
+function irSemanaActual() { semanaOffset = 0; renderSemana(); }
+
+// ── DRAG & DROP ──────────────────────────
+function onDragStart(event, key) {
+  draggedLeadKey = key;
+  event.dataTransfer.effectAllowed = 'move';
+  event.target.style.opacity = '0.4';
+}
+
+function onDragEnd(event) {
+  event.target.style.opacity = '1';
+  draggedLeadKey = null;
+}
+
+function onDragOver(event, col) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  col.style.background = 'rgba(240,192,64,0.08)';
+  col.style.borderColor = 'rgba(240,192,64,0.4)';
+}
+
+function onDragLeave(col) {
+  col.style.background = '';
+  col.style.borderColor = '';
+}
+
+function onDrop(event, fechaISO) {
+  event.preventDefault();
+  const col = event.currentTarget;
+  col.style.background = ''; col.style.borderColor = '';
+
+  if (!draggedLeadKey) return;
+  const lead = getLead(draggedLeadKey);
+  if (!lead) return;
+
+  if (fechaISO === 'sin-fecha') {
+    store[draggedLeadKey].proxAccion = '';
+  } else {
+    store[draggedLeadKey].proxAccion = fechaISO;
+    // Actualizar semáforo automáticamente
+    const hoyD = new Date(); hoyD.setHours(0,0,0,0);
+    const dropD = new Date(fechaISO); dropD.setHours(0,0,0,0);
+    const diff = (dropD - hoyD) / 86400000;
+    store[draggedLeadKey].semaforo = diff < 0 ? '🔴 Vencido' : diff <= 2 ? '🟡 Hoy' : '🟢 Ok';
   }
 
-  wrapper.innerHTML = html;
+  // Sync Sheets si hay script
+  if (SCRIPT_URL && fechaISO !== 'sin-fecha') {
+    const [y,m,d] = fechaISO.split('-');
+    callScript('updateLead', {
+      empresa: lead.empresa,
+      proxAccion: `${d}/${m}/${y}`,
+      semaforo: store[draggedLeadKey].semaforo
+    }).catch(()=>{});
+  }
+
+  showNotify(`${lead.empresa} → ${fechaISO === 'sin-fecha' ? 'sin fecha' : new Date(fechaISO+'T12:00').toLocaleDateString('es-AR')}`, 'success');
+  renderSemana(document.querySelector('#panel-semana .search-bar input')?.value||'');
+  renderLeads();
 }
 
 function filtrarSemana(v) { renderSemana(v); }
@@ -1079,27 +1186,37 @@ async function generarSugerenciaAI(lead) {
     return d.toLocaleDateString('es-AR');
   })();
 
+  const canal = (lead.wpp && lead.wpp!=='nan') ? 'WhatsApp' : (lead.mail && lead.mail!=='nan') ? 'email' : 'LinkedIn';
+
   const prompt = ENFOCO_CTX + `
 
 LEAD: ${lead.empresa} / ${lead.contacto}
 ${lead.rubro ? `Rubro: ${lead.rubro}` : ''}
-${lead.wpp && lead.wpp!=='nan' ? `Tiene WhatsApp: ${lead.wpp}` : lead.mail && lead.mail!=='nan' ? `Tiene email: ${lead.mail}` : 'Solo LinkedIn'}
+${lead.wpp && lead.wpp!=='nan' ? `WhatsApp: ${lead.wpp}` : lead.mail && lead.mail!=='nan' ? `Email: ${lead.mail}` : 'Solo LinkedIn'}
 Estado: ${lead.estado||'—'}
 
 ÚLTIMAS INTERACCIONES:
 ${histText}
 
-Analizá el historial y respondé en este formato exacto (3 líneas máximo por sección):
-TEMA: [de qué vienen hablando, o qué propusimos]
-SUGERENCIA: [qué decirle ahora y por dónde]
-CUÁNDO: [${fechaSugerida} — o si hay mejor momento según contexto]`;
+Respondé en este formato EXACTO:
+TEMA: [de qué vienen hablando, o qué propusimos — 1 línea]
+SUGERENCIA: [qué hacer ahora y por qué canal — 1 línea]
+CUÁNDO: [${fechaSugerida}]
+MENSAJE:
+[el mensaje listo para copiar y enviar por ${canal}, máx 5 líneas, tono argentino directo]`;
 
   try {
     const r = await callClaude(prompt);
-    document.getElementById('pf_ai_body').textContent = r;
+    // Separar contexto del mensaje
+    const msgMatch = r.match(/MENSAJE:\s*([\s\S]+)/i);
+    const contexto = msgMatch ? r.substring(0, r.indexOf(msgMatch[0])).trim() : r;
+    const mensaje  = msgMatch ? msgMatch[1].trim() : '';
+    document.getElementById('pf_ai_body').textContent = contexto;
+    document.getElementById('pf_ai_msg').textContent  = mensaje;
     document.getElementById('pf_ai_block').style.display = 'block';
   } catch(e) {
-    document.getElementById('pf_ai_body').textContent = 'No se pudo generar sugerencia: ' + e.message;
+    document.getElementById('pf_ai_body').textContent = 'Error: ' + e.message;
+    document.getElementById('pf_ai_msg').textContent  = '';
     document.getElementById('pf_ai_block').style.display = 'block';
   } finally {
     document.getElementById('loaderAI').classList.remove('on');
@@ -1365,11 +1482,64 @@ function guardarNuevoLead() {
     document.getElementById(id).value = '');
 }
 
+function copiarMensajeAI() {
+  const msg = document.getElementById('pf_ai_msg').textContent.trim();
+  if (!msg) { showNotify('No hay mensaje para copiar', 'error'); return; }
+  navigator.clipboard.writeText(msg).then(() => {
+    showNotify('✓ Mensaje copiado', 'success');
+    // Auto-guardar en historial como mensaje generado por IA
+    const lead = getLead(currentPerfilKey);
+    if (lead) {
+      agregarEntradaHistorial(lead.empresa, {
+        tipo: (lead.wpp && lead.wpp!=='nan') ? 'wpp' : (lead.mail && lead.mail!=='nan') ? 'mail' : 'linkedin',
+        quien: 'Comercial',
+        contenido: '[IA] ' + msg
+      });
+      renderHistorialPerfil(getLead(currentPerfilKey));
+    }
+  });
+}
+
 // ════════════════════════════════════════════
 // CLAUDE API
 // ════════════════════════════════════════════
 async function callClaude(prompt) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  // Intentar llamada directa primero
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        messages: [{ role:'user', content: prompt }]
+      })
+    });
+    if (res.ok) {
+      const d = await res.json();
+      return d.content[0].text;
+    }
+    // Si falla por CORS o 4xx, intentar via proxy
+    const err = await res.json().catch(()=>({}));
+    if (res.status === 401) throw new Error('API Key inválida. Verificá en ⚙️ Configuración.');
+    throw new Error(err.error?.message || 'Error ' + res.status);
+  } catch(e) {
+    // Si es error de red (CORS), usar proxy
+    if (e.message.includes('fetch') || e.message.includes('network') || e.message.includes('Failed')) {
+      return await callClaudeProxy(prompt);
+    }
+    throw e;
+  }
+}
+
+async function callClaudeProxy(prompt) {
+  // Proxy CORS-free via corsproxy.io
+  const PROXY = 'https://corsproxy.io/?https://api.anthropic.com/v1/messages';
+  const res = await fetch(PROXY, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1377,14 +1547,14 @@ async function callClaude(prompt) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-opus-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1000,
       messages: [{ role:'user', content: prompt }]
     })
   });
   if (!res.ok) {
     const e = await res.json().catch(()=>({}));
-    throw new Error(e.error?.message || 'Error API ' + res.status);
+    throw new Error(e.error?.message || 'Error proxy ' + res.status);
   }
   const d = await res.json();
   return d.content[0].text;
