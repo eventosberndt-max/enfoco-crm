@@ -625,22 +625,32 @@ function init() {
 
 // ── LEER GOOGLE SHEETS ────────────────────────────────────
 async function loadSheetData() {
-  try {
-    // Leer hoja LEADS 2026 (gid=0 por defecto, buscar por nombre)
-    const leadsUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=💼 LEADS 2026`;
-    const vistageUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=🏆 VISTAGE 2026`;
+  // URLs públicas CSV (publicadas en la web desde Google Sheets)
+  const LEADS_CSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSROJCqfeSILX3MWmwvpS6dcUKqWqP580naRZu_CjpVijSUSqZfre59Id0TQyyfOQ/pub?output=csv&gid=1488122141';
+  const VISTAGE_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSROJCqfeSILX3MWmwvpS6dcUKqWqP580naRZu_CjpVijSUSqZfre59Id0TQyyfOQ/pub?output=csv&gid=530322819';
 
+  try {
     const [leadsResp, vistageResp] = await Promise.all([
-      fetch(leadsUrl), fetch(vistageUrl)
+      fetch(LEADS_CSV), fetch(VISTAGE_CSV)
     ]);
 
     if (leadsResp.ok) {
       const csv = await leadsResp.text();
-      sheetData.leads = parseCSV(csv).slice(1).filter(r => r[0] && r[0].trim() && r[0] !== 'Empresa');
+      const rows = parseCSV(csv);
+      // Saltar filas de título/headers hasta encontrar datos reales
+      sheetData.leads = rows.filter(r => {
+        const e = (r[0]||'').trim();
+        return e && e !== 'Empresa' && e !== '💼  LEADS 2026 — Prospectos con interés confirmado' && !e.startsWith('🔥') && !e.startsWith('💼');
+      });
     }
+
     if (vistageResp.ok) {
       const csv = await vistageResp.text();
-      sheetData.vistage = parseCSV(csv).slice(1).filter(r => r[2] && r[2].trim() && r[2].length < 60);
+      const rows = parseCSV(csv);
+      sheetData.vistage = rows.filter(r => {
+        const n = (r[2]||'').trim();
+        return n && n.length < 60 && n !== 'Nombre' && !n.startsWith('🏆');
+      });
     }
 
     renderHoy();
@@ -649,8 +659,8 @@ async function loadSheetData() {
     populateRespSelect();
     showNotify('Planilla actualizada ✓', 'success');
   } catch(e) {
-    // Fallback con datos hardcodeados de la planilla que ya vimos
     loadFallbackData();
+    showNotify('Modo offline — datos locales', 'error');
   }
 }
 
