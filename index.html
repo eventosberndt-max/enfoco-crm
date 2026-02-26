@@ -270,6 +270,10 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
       <button class="nav-item" onclick="showPanel('respuesta',this)">
         <span class="ni">↩️</span> Registrar Respuesta
       </button>
+      <div class="nav-sep"></div>
+      <button class="nav-item" onclick="showPanel('config',this)">
+        <span class="ni">⚙️</span> Configuración
+      </button>
     </nav>
     <div class="sidebar-footer">
       <div class="api-indicator">
@@ -479,6 +483,34 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
         </div>
       </div>
 
+      <!-- ══ PANEL: CONFIG ══ -->
+      <div class="panel" id="panel-config">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Configuración — Google Apps Script</div></div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+            <div style="background:var(--goldbg);border:1px solid rgba(240,192,64,.3);border-radius:8px;padding:14px;font-size:13px;color:var(--gold);line-height:1.7">
+              <strong>Para sincronizar con Google Sheets necesitás instalar el script.</strong><br>
+              Descargá el archivo <code>EnfocoScript_v2.gs</code>, seguí las instrucciones y pegá la URL acá.
+            </div>
+            <div class="field">
+              <label>URL del Apps Script (Web App)</label>
+              <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/..." />
+            </div>
+            <button class="btn btn-primary" onclick="saveScriptUrl()">Guardar URL</button>
+            <div id="scriptStatus" style="font-size:12px;color:var(--muted)"></div>
+            <hr style="border:none;border-top:1px solid var(--border)">
+            <div style="font-size:12px;color:var(--muted);line-height:1.8">
+              <strong style="color:var(--text)">Pasos para instalar el script:</strong><br>
+              1. Abrí tu Google Sheets → Extensiones → Apps Script<br>
+              2. Borrá todo y pegá el contenido del archivo .gs<br>
+              3. Guardá → Implementar → Nueva implementación<br>
+              4. Tipo: Aplicación web · Acceso: Cualquier persona<br>
+              5. Copiá la URL y pegala arriba
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 </div>
@@ -545,8 +577,8 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
         </select>
       </div>
       <div class="field">
-        <label>Contexto adicional (opcional)</label>
-        <textarea id="msg_contexto" rows="3" placeholder="Algo que encontraste en su LinkedIn, lo que te dijeron, una feria próxima..."></textarea>
+        <label>Conversación / contexto (pegá lo que hablaron)</label>
+        <textarea id="msg_contexto" rows="5" placeholder="Pegá acá la conversación de LinkedIn, WhatsApp o cualquier contexto relevante..."></textarea>
       </div>
       <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="generarMensaje()">✨ Generar mensaje</button>
       <div class="loader" id="loaderMsg"><div class="dots"><span></span><span></span><span></span></div> Generando...</div>
@@ -574,6 +606,71 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
   </div>
 </div>
 
+<!-- MODAL: PERFIL DEL LEAD -->
+<div class="modal-overlay" id="modalPerfil">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="perfilTitulo">Perfil</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px" id="perfilSubtitulo"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalPerfil')">×</button>
+    </div>
+    <div class="modal-body" style="gap:0;padding:0">
+
+      <!-- Info del lead -->
+      <div id="perfilInfo" style="padding:18px 24px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+
+      <!-- Editar fecha -->
+      <div style="padding:14px 24px;border-bottom:1px solid var(--border);background:var(--s2);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--muted)">Próxima acción:</span>
+        <input type="date" id="perfilFecha" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:monospace;font-size:12px;outline:none" />
+        <select id="perfilSemaforo" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:'Syne',sans-serif;font-size:12px;outline:none">
+          <option value="🔴 Vencido">🔴 Urgente</option>
+          <option value="🟡 Hoy">🟡 Esta semana</option>
+          <option value="🟢 Ok">🟢 Al día</option>
+        </select>
+        <select id="perfilEstado" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:'Syne',sans-serif;font-size:12px;outline:none">
+          <option value="1 - Nuevo">1 - Nuevo</option>
+          <option value="2 - Enviado">2 - Enviado</option>
+          <option value="6 - Proyecto En Tratativa">6 - En Tratativa</option>
+          <option value="3 - En Pausa">3 - En Pausa</option>
+          <option value="0 - Perdido">0 - Perdido</option>
+        </select>
+        <button class="btn btn-green btn-sm" onclick="guardarCambiosLead()">✓ Guardar</button>
+      </div>
+
+      <!-- Historial -->
+      <div style="padding:16px 24px;border-bottom:1px solid var(--border)">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Historial de conversaciones</div>
+        <div id="perfilHistorial" style="display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto"></div>
+      </div>
+
+      <!-- Agregar nota -->
+      <div style="padding:16px 24px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Agregar nota o conversación</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:8px">
+            <select id="notaTipo" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:7px;font-size:12px;outline:none">
+              <option value="conversacion">💬 Conversación</option>
+              <option value="mensaje_enviado">✉️ Mensaje enviado</option>
+              <option value="nota">📝 Nota interna</option>
+            </select>
+            <select id="notaCanal" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:7px;font-size:12px;outline:none">
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="Email">Email</option>
+              <option value="Reunión">Reunión</option>
+            </select>
+          </div>
+          <textarea id="notaContenido" rows="3" placeholder="Pegá la conversación, el mensaje enviado o escribí una nota..." style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;outline:none;resize:vertical"></textarea>
+          <button class="btn btn-primary btn-sm" onclick="guardarNota()" style="align-self:flex-end">+ Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- NOTIFY -->
 <div class="notify" id="notify"></div>
 
@@ -591,6 +688,11 @@ REGLAS DE MENSAJES: siempre mencionar Vistage G-308 en primer contacto. Máx 5 l
 let API_KEY = '';
 let sheetData = { leads: [], vistage: [] };
 let currentLead = null;
+// Store seguro para leads - evita problemas con caracteres especiales
+const leadStore = {};
+let leadStoreIdx = 0;
+function storeLead(obj){const k='l'+(leadStoreIdx++);leadStore[k]=obj;return k;}
+function getLead(k){return leadStore[k]||null;}
 let selectedCanal = 'wpp';
 let currentTab = 'tab-link';
 
@@ -620,6 +722,12 @@ function init() {
   const now = new Date();
   document.getElementById('todayDate').textContent =
     now.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
+  // Pre-cargar URL del script si existe
+  const savedUrl = localStorage.getItem('ef_script_url');
+  if (savedUrl) {
+    SCRIPT_URL = savedUrl;
+    document.getElementById('scriptUrl').value = savedUrl;
+  }
   loadSheetData();
 }
 
@@ -775,20 +883,21 @@ function leadCard(r, cls) {
   const canal = hasWpp ? '💬 WhatsApp' : hasMail ? '📧 Email' : '💼 LinkedIn';
   const canalColor = hasWpp ? 'var(--green)' : hasMail ? 'var(--gold)' : 'var(--blue)';
 
-  const leadJson = encodeURIComponent(JSON.stringify({empresa,contacto,wpp,mail,medio,estado,paso,fecha}));
+  const _key = storeLead({empresa,contacto,wpp,mail,medio,estado,paso,fecha});
 
-  return `<div class="lead-card ${cls}" onclick="openMensajeModal(decodeURIComponent('${leadJson}'))">
+  return `<div class="lead-card ${cls}" onclick="openMensajeModal('${_key}')">
     <div>
       <div class="lc-empresa">${empresa}</div>
       <div class="lc-contacto">${contacto} · <span style="color:var(--muted);font-size:11px">${medio}</span></div>
       ${paso ? `<div class="lc-paso">${paso}</div>` : ''}
       <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${canalColor}">${canal}</span>
-        ${fecha ? `<span class="prox-fecha">· ${fecha.split(' ')[0]}</span>` : ''}
+        ${fecha ? `<span class="prox-fecha" onclick="editarFecha('${_key}',event)" title="Click para editar fecha" style="cursor:pointer;text-decoration:underline dotted">· ${fecha.split(' ')[0]}</span>` : `<span class="prox-fecha" onclick="editarFecha('${_key}',event)" style="cursor:pointer;color:var(--muted2)">+ fecha</span>`}
       </div>
     </div>
     <div class="lc-actions">
       ${estadoChip(estado)}
+      <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px" onclick="event.stopPropagation();abrirPerfil('${_key}')">👤 Perfil</button>
     </div>
   </div>`;
 }
@@ -814,9 +923,7 @@ function renderLeads() {
     const mail = r[4]||'';
     const hasWpp = wpp && wpp !== 'nan';
     const hasMail = mail && mail !== 'nan';
-    const leadJson = encodeURIComponent(JSON.stringify({
-      empresa:r[0],contacto:r[1],wpp:r[3],mail:r[4],medio:r[5],estado:r[8],paso:r[11]||r[6],fecha:r[9]
-    }));
+    const _key = storeLead({empresa:r[0],contacto:r[1],wpp:r[3],mail:r[4],medio:r[5],estado:r[8],paso:r[11]||r[6],fecha:r[9]});
     return `<tr>
       <td>
         <div class="lead-empresa">${r[0]||''}</div>
@@ -834,7 +941,10 @@ function renderLeads() {
       <td><div class="paso-text">${r[11]||r[6]||'—'}</div>
         ${r[9] ? `<div class="prox-fecha">${(r[9]+'').split(' ')[0]}</div>` : ''}
       </td>
-      <td><button class="btn btn-ghost btn-sm" onclick="openMensajeModal(decodeURIComponent('${leadJson}'))">✉️ Mensaje</button></td>
+      <td style="display:flex;gap:6px;flex-direction:column">
+        <button class="btn btn-ghost btn-sm" onclick="openMensajeModal('${_key}')">✉️ Mensaje</button>
+        <button class="btn btn-ghost btn-sm" style="font-size:10px" onclick="abrirPerfil('${_key}')">👤 Perfil</button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -861,9 +971,10 @@ function renderVistage() {
 // ── POPULATE SELECTS ──────────────────────────────────────
 function populateRespSelect() {
   const sel = document.getElementById('respLead');
-  const opts = sheetData.leads.map(r =>
-    `<option value="${encodeURIComponent(JSON.stringify({empresa:r[0],contacto:r[1],wpp:r[3],mail:r[4],paso:r[11]||r[6]}))}">${r[0]} — ${r[1]}</option>`
-  ).join('');
+  const opts = sheetData.leads.map(r => {
+    const rk = storeLead({empresa:r[0],contacto:r[1],wpp:r[3],mail:r[4],paso:r[11]||r[6]});
+    return `<option value="${rk}">${r[0]} — ${r[1]}</option>`;
+  }).join('');
   sel.innerHTML = '<option value="">— Seleccioná el lead —</option>' + opts;
 }
 
@@ -905,8 +1016,9 @@ Sé directo y concreto. Sin intro larga.`;
 }
 
 // ── MODAL MENSAJE ─────────────────────────────────────────
-function openMensajeModal(leadJson) {
-  currentLead = JSON.parse(leadJson);
+function openMensajeModal(key) {
+  currentLead = getLead(key);
+  if(!currentLead){showNotify('Error cargando lead','error');return;}
   document.getElementById('modalMensajeTitulo').textContent =
     `Mensaje para ${currentLead.empresa}`;
   document.getElementById('msgResult').style.display = 'none';
@@ -1069,7 +1181,7 @@ async function procesarRespuesta() {
   const texto   = document.getElementById('respTexto').value.trim();
   if (!leadSel || !texto) { showNotify('Seleccioná el lead y pegá la respuesta', 'error'); return; }
 
-  const lead = JSON.parse(decodeURIComponent(leadSel));
+  const lead = getLead(leadSel) || {};
   const wpp  = document.getElementById('respWpp').value.trim() || lead.wpp;
   const mail = document.getElementById('respMail').value.trim() || lead.mail;
   const hasWpp  = wpp && wpp !== 'nan';
@@ -1171,7 +1283,7 @@ async function callClaude(prompt) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-opus-4-6',
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }]
     })
@@ -1185,6 +1297,22 @@ async function callClaude(prompt) {
 }
 
 // ── UI HELPERS ────────────────────────────────────────────
+function editarFecha(key, event) {
+  event.stopPropagation();
+  const lead = getLead(key);
+  if(!lead) return;
+  const nueva = prompt(`Próxima acción para ${lead.empresa}:\nIngresá la fecha (DD/MM/YYYY):`, lead.fecha ? lead.fecha.split(' ')[0] : '');
+  if(nueva) {
+    lead.fecha = nueva;
+    // Actualizar en sheetData también
+    const idx = sheetData.leads.findIndex(r => r[0] === lead.empresa && r[1] === lead.contacto);
+    if(idx >= 0) sheetData.leads[idx][9] = nueva;
+    renderHoy();
+    renderLeads();
+    showNotify(`Fecha actualizada: ${nueva}`, 'success');
+  }
+}
+
 function showPanel(name, btn) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -1234,6 +1362,243 @@ function showNotify(msg, type='success') {
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
 });
+
+// ── SCRIPT URL ───────────────────────────────────────────
+let SCRIPT_URL = localStorage.getItem('ef_script_url') || '';
+
+function saveScriptUrl() {
+  const url = document.getElementById('scriptUrl').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    showNotify('URL inválida — debe empezar con https://script.google.com', 'error');
+    return;
+  }
+  SCRIPT_URL = url;
+  localStorage.setItem('ef_script_url', url);
+  document.getElementById('scriptStatus').innerHTML = '<span style="color:var(--green)">✓ URL guardada. Probando conexión...</span>';
+  testScript();
+}
+
+async function testScript() {
+  try {
+    const r = await callScript('getLeads');
+    if (r.leads) {
+      document.getElementById('scriptStatus').innerHTML = `<span style="color:var(--green)">✓ Conectado — ${r.leads.length} leads en el Sheets</span>`;
+      sheetData.leads = r.leads.map(l => [l.empresa,l.contacto,l.cargo,l.wpp,l.mail,l.medio,l.rubro,'',l.estado,l.proxAccion,l.semaforo,l.proxPaso]);
+      renderHoy(); renderLeads(); populateRespSelect();
+    }
+  } catch(e) {
+    document.getElementById('scriptStatus').innerHTML = '<span style="color:var(--red)">✗ Error de conexión: ' + e.message + '</span>';
+  }
+}
+
+async function callScript(action, body={}) {
+  if (!SCRIPT_URL) throw new Error('URL del script no configurada. Ir a ⚙️ Configuración.');
+  const url = SCRIPT_URL + '?action=' + action;
+  const res = await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify({action, ...body}),
+    headers: {'Content-Type':'application/json'}
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+// ── PERFIL DEL LEAD ───────────────────────────────────────
+let currentPerfilLead = null;
+
+function abrirPerfil(key) {
+  const lead = getLead(key);
+  if (!lead) return;
+  currentPerfilLead = lead;
+
+  document.getElementById('perfilTitulo').textContent = lead.empresa;
+  document.getElementById('perfilSubtitulo').textContent = lead.contacto + (lead.cargo ? ' · ' + lead.cargo : '');
+
+  // Info básica
+  const info = document.getElementById('perfilInfo');
+  info.innerHTML = [
+    lead.wpp   ? `<div><span style="font-size:10px;color:var(--muted);font-family:monospace">WHATSAPP</span><div style="margin-top:3px;color:var(--green)">${lead.wpp}</div></div>` : '',
+    lead.mail  ? `<div><span style="font-size:10px;color:var(--muted);font-family:monospace">EMAIL</span><div style="margin-top:3px;color:var(--gold)">${lead.mail}</div></div>` : '',
+    lead.medio ? `<div><span style="font-size:10px;color:var(--muted);font-family:monospace">ORIGEN</span><div style="margin-top:3px">${lead.medio}</div></div>` : '',
+    lead.estado? `<div><span style="font-size:10px;color:var(--muted);font-family:monospace">ESTADO</span><div style="margin-top:3px">${estadoChip(lead.estado)}</div></div>` : '',
+  ].filter(Boolean).join('');
+
+  // Fecha actual
+  if (lead.fecha) {
+    const parts = lead.fecha.split(/[\/\- ]/);
+    try {
+      // Intentar parsear DD/MM/YYYY o YYYY-MM-DD
+      let d;
+      if (parts[0].length === 4) d = new Date(parts[0], parts[1]-1, parts[2]);
+      else d = new Date(parts[2], parts[1]-1, parts[0]);
+      if (!isNaN(d)) {
+        document.getElementById('perfilFecha').value = d.toISOString().split('T')[0];
+      }
+    } catch(e) {}
+  }
+
+  // Semáforo y estado actuales
+  const semSel = document.getElementById('perfilSemaforo');
+  const estSel = document.getElementById('perfilEstado');
+  if (lead.semaforo) semSel.value = lead.semaforo.includes('🔴') ? '🔴 Vencido' : lead.semaforo.includes('🟡') ? '🟡 Hoy' : '🟢 Ok';
+  if (lead.estado)   estSel.value = lead.estado;
+
+  // Cargar historial
+  cargarHistorial(lead.empresa);
+  openModal('modalPerfil');
+}
+
+async function cargarHistorial(empresa) {
+  const container = document.getElementById('perfilHistorial');
+  container.innerHTML = '<div style="color:var(--muted);font-size:12px">Cargando...</div>';
+
+  // Primero mostrar historial local
+  const localKey = 'hist_' + empresa.toLowerCase().replace(/\s/g,'_');
+  const local = JSON.parse(localStorage.getItem(localKey) || '[]');
+  renderHistorial(local);
+
+  // Si hay script configurado, intentar traer del Sheets
+  if (SCRIPT_URL) {
+    try {
+      const r = await callScript('getHistorial', {empresa});
+      if (r.historial && r.historial.length) {
+        renderHistorial([...r.historial, ...local]);
+      }
+    } catch(e) { /* usar solo local */ }
+  }
+}
+
+function renderHistorial(items) {
+  const container = document.getElementById('perfilHistorial');
+  if (!items.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">Sin historial aún. Registrá conversaciones acá.</div>';
+    return;
+  }
+  container.innerHTML = items.reverse().map(h => {
+    const iconos = {conversacion:'💬', mensaje_enviado:'✉️', nota:'📝'};
+    const colores = {conversacion:'var(--blue)', mensaje_enviado:'var(--green)', nota:'var(--gold)'};
+    const tipo = h.tipo || 'nota';
+    return `<div style="background:var(--s2);border:1px solid var(--border);border-left:3px solid ${colores[tipo]||'var(--muted)'};border-radius:8px;padding:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:11px;color:${colores[tipo]||'var(--muted)'};font-family:monospace">${iconos[tipo]||'📝'} ${tipo.replace('_',' ').toUpperCase()} · ${h.canal||''}</span>
+        <span style="font-size:10px;color:var(--muted);font-family:monospace">${h.fecha||''}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text);line-height:1.6;white-space:pre-wrap">${h.contenido||''}</div>
+    </div>`;
+  }).join('');
+}
+
+async function guardarNota() {
+  if (!currentPerfilLead) return;
+  const tipo     = document.getElementById('notaTipo').value;
+  const canal    = document.getElementById('notaCanal').value;
+  const contenido= document.getElementById('notaContenido').value.trim();
+  if (!contenido) { showNotify('Escribí algo antes de guardar', 'error'); return; }
+
+  const fecha = new Date().toLocaleString('es-AR');
+  const entrada = {tipo, canal, contenido, fecha};
+
+  // Guardar local siempre
+  const localKey = 'hist_' + currentPerfilLead.empresa.toLowerCase().replace(/\s/g,'_');
+  const local = JSON.parse(localStorage.getItem(localKey) || '[]');
+  local.push(entrada);
+  localStorage.setItem(localKey, JSON.stringify(local));
+
+  // Si hay script, guardar en Sheets también
+  if (SCRIPT_URL) {
+    try {
+      await callScript('saveHistorial', {
+        empresa: currentPerfilLead.empresa,
+        contacto: currentPerfilLead.contacto,
+        entrada
+      });
+    } catch(e) { /* guardado local igual */ }
+  }
+
+  document.getElementById('notaContenido').value = '';
+  cargarHistorial(currentPerfilLead.empresa);
+  showNotify('Guardado ✓', 'success');
+}
+
+async function guardarCambiosLead() {
+  if (!currentPerfilLead) return;
+  const fecha    = document.getElementById('perfilFecha').value;
+  const semaforo = document.getElementById('perfilSemaforo').value;
+  const estado   = document.getElementById('perfilEstado').value;
+
+  // Formatear fecha DD/MM/YYYY
+  let fechaFmt = fecha;
+  if (fecha) {
+    const [y,m,d] = fecha.split('-');
+    fechaFmt = `${d}/${m}/${y}`;
+  }
+
+  // Actualizar en memoria local
+  const idx = sheetData.leads.findIndex(r => r[0] === currentPerfilLead.empresa);
+  if (idx >= 0) {
+    if (fecha)    sheetData.leads[idx][9]  = fechaFmt;
+    if (semaforo) sheetData.leads[idx][10] = semaforo;
+    if (estado)   sheetData.leads[idx][8]  = estado;
+    currentPerfilLead.fecha    = fechaFmt;
+    currentPerfilLead.semaforo = semaforo;
+    currentPerfilLead.estado   = estado;
+  }
+
+  // Guardar en Sheets si hay script
+  if (SCRIPT_URL) {
+    try {
+      await callScript('updateLead', {
+        empresa:    currentPerfilLead.empresa,
+        proxAccion: fechaFmt,
+        semaforo,
+        estado
+      });
+    } catch(e) { showNotify('Local guardado, Sheets: ' + e.message, 'error'); return; }
+  }
+
+  renderHoy();
+  renderLeads();
+  closeModal('modalPerfil');
+  showNotify('✓ Actualizado', 'success');
+}
+
+// Guardar mensaje generado en historial automáticamente
+const _origGenerarMensaje = generarMensaje;
+async function generarMensaje() {
+  await _origGenerarMensaje();
+  // Auto-guardar si se generó exitosamente
+  setTimeout(() => {
+    const msg = document.getElementById('msgBody').textContent;
+    if (msg && currentLead) {
+      const canalNombre = selectedCanal === 'wpp' ? 'WhatsApp' : selectedCanal === 'li' ? 'LinkedIn' : 'Email';
+      const localKey = 'hist_' + currentLead.empresa.toLowerCase().replace(/\s/g,'_');
+      const local = JSON.parse(localStorage.getItem(localKey) || '[]');
+      local.push({
+        tipo: 'mensaje_enviado',
+        canal: canalNombre,
+        contenido: msg,
+        fecha: new Date().toLocaleString('es-AR')
+      });
+      localStorage.setItem(localKey, JSON.stringify(local));
+    }
+  }, 500);
+}
+
+function saveConfig() {
+  saveScriptUrl();
+}
+
+function saveScriptUrl() {
+  const url = document.getElementById('scriptUrl').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    showNotify('URL inválida', 'error'); return;
+  }
+  SCRIPT_URL = url;
+  localStorage.setItem('ef_script_url', url);
+  showNotify('✓ URL guardada', 'success');
+  document.getElementById('scriptStatus').innerHTML = '<span style="color:var(--green)">✓ Guardada</span>';
+}
 
 // ── START ─────────────────────────────────────────────────
 window.onload = checkSetup;
