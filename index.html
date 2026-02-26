@@ -7,157 +7,155 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0a0a0b;
-  --s1: #111113;
-  --s2: #18181b;
-  --s3: #222226;
-  --border: #2e2e34;
-  --gold: #f0c040;
-  --gold2: #c89a20;
-  --goldbg: #1a1500;
-  --green: #3dba7a;
-  --greenbg: #071812;
-  --red: #e05555;
-  --redbg: #1a0707;
-  --orange: #e88c30;
-  --orangebg: #1a0e00;
-  --blue: #4d8fd4;
-  --bluebg: #070f1a;
-  --text: #e8e4dc;
-  --muted: #6b6860;
-  --muted2: #4a4845;
+  --bg:#0a0a0b;--s1:#111113;--s2:#18181b;--s3:#222226;--border:#2e2e34;
+  --gold:#f0c040;--gold2:#c89a20;--goldbg:#1a1500;
+  --green:#3dba7a;--greenbg:#071812;
+  --red:#e05555;--redbg:#1a0707;
+  --orange:#e88c30;--orangebg:#1a0e00;
+  --blue:#4d8fd4;--bluebg:#070f1a;
+  --purple:#9b72e0;--purplebg:#0f0a1a;
+  --text:#e8e4dc;--muted:#6b6860;--muted2:#4a4845;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
-
-/* GRAIN */
 body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:999;opacity:.6}
 
 /* LAYOUT */
 .shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
 
 /* SIDEBAR */
-.sidebar{background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;position:sticky;top:0;height:100vh;overflow-y:auto}
-.logo-block{padding:28px 20px 24px;border-bottom:1px solid var(--border)}
-.logo-name{font-family:'Playfair Display',serif;font-size:18px;color:var(--gold);letter-spacing:-.3px}
+.sidebar{background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo-block{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+.logo-name{font-family:'Playfair Display',serif;font-size:18px;color:var(--gold)}
 .logo-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px}
-.nav{padding:16px 12px;flex:1;display:flex;flex-direction:column;gap:2px}
+.nav{padding:12px;flex:1;display:flex;flex-direction:column;gap:2px}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;text-align:left}
 .nav-item:hover{background:var(--s2);color:var(--text)}
 .nav-item.active{background:rgba(240,192,64,.1);color:var(--gold);border-left:2px solid var(--gold)}
-.nav-item .ni{font-size:15px;width:22px;text-align:center}
-.nav-sep{height:1px;background:var(--border);margin:10px 0}
-.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
-.api-indicator{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px}
-.api-dot{width:6px;height:6px;border-radius:50%;background:var(--red)}
+.nav-item .ni{font-size:14px;width:20px;text-align:center}
+.nav-sep{height:1px;background:var(--border);margin:8px 0}
+.sidebar-footer{padding:14px 20px;border-top:1px solid var(--border)}
+.api-dot{width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block;margin-right:6px}
 .api-dot.ok{background:var(--green)}
+.api-status-text{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)}
 
 /* MAIN */
 .main{display:flex;flex-direction:column;min-height:100vh}
-.topbar{padding:20px 32px;border-bottom:1px solid var(--border);background:var(--s1);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
-.page-title{font-family:'Playfair Display',serif;font-size:22px;color:var(--text)}
+.topbar{padding:18px 28px;border-bottom:1px solid var(--border);background:var(--s1);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.page-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--text)}
 .page-title em{color:var(--gold);font-style:italic}
-.topbar-actions{display:flex;gap:8px;align-items:center}
-.content{padding:28px 32px;flex:1}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.content{padding:24px 28px;flex:1}
 
 /* PANELS */
-.panel{display:none;flex-direction:column;gap:20px;animation:fadeIn .2s ease}
+.panel{display:none;flex-direction:column;gap:18px;animation:fadeIn .18s ease}
 .panel.active{display:flex}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
-/* CARDS */
-.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--s2)}
-.card-title{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
-.card-title::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold)}
-.card-body{padding:18px}
+/* SEARCH */
+.search-bar{position:relative;margin-bottom:4px}
+.search-bar input{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:10px 14px 10px 36px;border-radius:9px;font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border-color .15s}
+.search-bar input:focus{border-color:var(--gold)}
+.search-bar::before{content:'⌕';position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none}
 
-/* BOTONES */
-.btn{padding:9px 18px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:none;display:inline-flex;align-items:center;gap:7px}
-.btn-primary{background:var(--gold);color:#0a0a0b}
-.btn-primary:hover{background:#f8d060;transform:translateY(-1px)}
-.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
-.btn-ghost:hover{border-color:var(--muted);color:var(--text)}
-.btn-sm{padding:6px 12px;font-size:12px}
-.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
-.btn-green{background:var(--green);color:#0a0a0b}
-.btn-green:hover{background:#55d490}
+/* WEEKLY GRID */
+.week-header{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:4px}
+.week-day-label{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:6px 0}
+.week-day-label.today{color:var(--gold)}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:start}
+.week-col{background:var(--s1);border:1px solid var(--border);border-radius:10px;min-height:80px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.week-col.today-col{border-color:rgba(240,192,64,.35);background:rgba(240,192,64,.03)}
+.week-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);text-align:center;margin-bottom:4px}
+.week-date.today{color:var(--gold);font-weight:600}
 
-/* INPUTS */
-.field{display:flex;flex-direction:column;gap:5px}
-.field label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.5px}
-.field input,.field textarea,.field select{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border-color .15s;resize:vertical}
-.field input::placeholder,.field textarea::placeholder{color:var(--muted2)}
-.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--gold)}
-.field select option{background:var(--s2)}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.full{grid-column:1/-1}
+/* LEAD PILLS (weekly) */
+.lead-pill{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:7px 9px;cursor:pointer;transition:all .15s;border-left:3px solid var(--muted2)}
+.lead-pill:hover{border-color:var(--gold);background:var(--s3)}
+.lead-pill.urgent{border-left-color:var(--red)}
+.lead-pill.today-p{border-left-color:var(--orange)}
+.lead-pill.ok{border-left-color:var(--green)}
+.pill-empresa{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill-contacto{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill-canal{font-size:9px;font-family:'IBM Plex Mono',monospace;margin-top:3px}
 
-/* SEMAFORO CHIPS */
-.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace}
+/* LEAD CARDS (leads panel) */
+.leads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.lead-card{background:var(--s1);border:1px solid var(--border);border-radius:11px;padding:16px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.lead-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.lead-card.urgent::before{background:var(--red)}
+.lead-card.today-c::before{background:var(--orange)}
+.lead-card.ok::before{background:var(--green)}
+.lead-card.neutral::before{background:var(--muted2)}
+.lead-card:hover{border-color:rgba(240,192,64,.4);transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.lc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.lc-empresa{font-weight:700;font-size:14px;line-height:1.2}
+.lc-contacto{font-size:12px;color:var(--muted);margin-top:2px}
+.lc-cargo{font-size:11px;color:var(--muted2);margin-top:1px}
+.lc-contacts{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}
+.lc-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 7px;border-radius:5px}
+.badge-wpp{background:rgba(61,186,122,.15);color:var(--green);border:1px solid rgba(61,186,122,.2)}
+.badge-mail{background:rgba(240,192,64,.12);color:var(--gold);border:1px solid rgba(240,192,64,.2)}
+.badge-li{background:rgba(77,143,212,.12);color:var(--blue);border:1px solid rgba(77,143,212,.2)}
+.lc-paso{font-size:11px;color:var(--muted);line-height:1.5;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lc-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.lc-fecha{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2)}
+.hist-count{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--purple);background:var(--purplebg);border:1px solid rgba(155,114,224,.2);padding:2px 7px;border-radius:10px}
+
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
 .chip-red{background:var(--redbg);color:var(--red);border:1px solid rgba(224,85,85,.3)}
 .chip-orange{background:var(--orangebg);color:var(--orange);border:1px solid rgba(232,140,48,.3)}
 .chip-green{background:var(--greenbg);color:var(--green);border:1px solid rgba(61,186,122,.3)}
 .chip-blue{background:var(--bluebg);color:var(--blue);border:1px solid rgba(77,143,212,.3)}
 .chip-gold{background:var(--goldbg);color:var(--gold);border:1px solid rgba(240,192,64,.3)}
+.chip-purple{background:var(--purplebg);color:var(--purple);border:1px solid rgba(155,114,224,.3)}
 .chip-muted{background:var(--s3);color:var(--muted);border:1px solid var(--border)}
 
-/* ESTADOS */
-.estado-chip{padding:3px 9px;border-radius:4px;font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:500}
-.e-nuevo{background:rgba(77,143,212,.15);color:var(--blue)}
-.e-enviado{background:rgba(240,192,64,.15);color:var(--gold)}
-.e-tratativa{background:rgba(61,186,122,.15);color:var(--green)}
-.e-pausa{background:var(--s3);color:var(--muted)}
+/* BTNS */
+.btn{padding:9px 16px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--gold);color:#0a0a0b}
+.btn-primary:hover{background:#f8d060;transform:translateY(-1px)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--muted);color:var(--text)}
+.btn-green{background:var(--green);color:#0a0a0b}
+.btn-green:hover{background:#55d490}
+.btn-purple{background:var(--purple);color:#fff}
+.btn-purple:hover{background:#b090f0}
+.btn-sm{padding:5px 11px;font-size:11px}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important}
 
-/* TABLA LEADS */
-.leads-table{width:100%;border-collapse:collapse}
-.leads-table th{background:var(--s2);padding:10px 14px;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
-.leads-table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top}
-.leads-table tr:last-child td{border-bottom:none}
-.leads-table tr:hover td{background:rgba(255,255,255,.02)}
-.lead-empresa{font-weight:700;color:var(--text);margin-bottom:3px;font-size:13px}
-.lead-contacto{color:var(--muted);font-size:12px}
-.lead-contacto span{color:var(--text)}
-.contact-icons{display:flex;gap:6px;margin-top:6px}
-.contact-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:transform .1s}
-.contact-icon:hover{transform:scale(1.1)}
-.ci-wpp{background:rgba(61,186,122,.2);border:1px solid rgba(61,186,122,.3)}
-.ci-mail{background:rgba(240,192,64,.15);border:1px solid rgba(240,192,64,.3)}
-.ci-li{background:rgba(77,143,212,.15);border:1px solid rgba(77,143,212,.3)}
-.paso-text{font-size:12px;color:var(--muted);max-width:260px;line-height:1.5}
-.prox-fecha{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px}
+/* INPUTS */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.4px}
+.field input,.field textarea,.field select{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border-color .15s;resize:vertical}
+.field input::placeholder,.field textarea::placeholder{color:var(--muted2)}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--gold)}
+.field select option{background:var(--s2)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.full{grid-column:1/-1}
 
-/* HOY PANEL */
-.hoy-header{display:flex;align-items:center;gap:12px;margin-bottom:4px}
-.hoy-date{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)}
-.hoy-count{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--goldbg);color:var(--gold);padding:3px 10px;border-radius:20px;border:1px solid rgba(240,192,64,.3)}
-.urgency-section{margin-bottom:20px}
-.urgency-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:8px 0 10px;display:flex;align-items:center;gap:8px}
-.urgency-label::after{content:'';flex:1;height:1px;background:var(--border)}
-.lead-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;cursor:pointer;transition:border-color .15s}
-.lead-card:hover{border-color:var(--gold)}
-.lead-card.urgent{border-left:3px solid var(--red)}
-.lead-card.today{border-left:3px solid var(--orange)}
-.lead-card.ok{border-left:3px solid var(--muted2)}
-.lc-empresa{font-weight:700;font-size:14px;margin-bottom:3px}
-.lc-contacto{font-size:12px;color:var(--muted);margin-bottom:8px}
-.lc-paso{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:8px}
-.lc-medio{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)}
-.lc-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+/* AI BLOCK */
+.ai-block{background:var(--s2);border:1px solid rgba(155,114,224,.3);border-radius:10px;overflow:hidden}
+.ai-block-header{padding:10px 14px;background:var(--purplebg);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(155,114,224,.2)}
+.ai-block-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--purple);letter-spacing:1px}
+.ai-pulse{width:6px;height:6px;border-radius:50%;background:var(--purple);animation:pulse 1.4s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+.ai-block-body{padding:14px;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap}
 
-/* AI RESULT */
-.ai-result{background:var(--s2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:16px}
-.ai-result-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--greenbg)}
-.ai-result-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--green);letter-spacing:1px;display:flex;align-items:center;gap:8px}
-.ai-pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.4s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.ai-body{padding:16px;font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text)}
-.copy-btn{background:var(--s3);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'IBM Plex Mono',monospace;transition:all .15s}
-.copy-btn:hover{border-color:var(--gold);color:var(--gold)}
+/* HISTORIAL */
+.hist-item{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;position:relative}
+.hist-item.comercial{border-left:3px solid var(--blue)}
+.hist-item.cliente{border-left:3px solid var(--green)}
+.hist-item.nota{border-left:3px solid var(--gold)}
+.hist-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.hist-tipo{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.8px;text-transform:uppercase}
+.hist-fecha{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted)}
+.hist-contenido{font-size:12px;line-height:1.6;white-space:pre-wrap;color:var(--text)}
+.hist-quien{font-size:10px;font-weight:700;margin-bottom:3px}
 
 /* LOADER */
-.loader{display:none;align-items:center;gap:10px;padding:16px;color:var(--muted);font-size:13px}
+.loader{display:none;align-items:center;gap:10px;padding:14px;color:var(--muted);font-size:12px}
 .loader.on{display:flex}
 .dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--gold);animation:bounce 1.1s infinite;margin:0 2px}
 .dots span:nth-child(2){animation-delay:.2s}
@@ -165,59 +163,67 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 @keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.3}40%{transform:translateY(-6px);opacity:1}}
 
 /* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
 .modal-overlay.open{display:flex}
-.modal{background:var(--s1);border:1px solid var(--border);border-radius:14px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto}
-.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.modal-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--text)}
-.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:14px;width:100%;max-width:700px;margin:auto}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;background:var(--s2);border-radius:14px 14px 0 0}
+.modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:0 4px;flex-shrink:0}
 .modal-close:hover{color:var(--text)}
-.modal-body{padding:24px;display:flex;flex-direction:column;gap:14px}
-.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
 
-/* TABS dentro de modal */
-.tab-row{display:flex;gap:4px;background:var(--s2);padding:4px;border-radius:8px}
-.tab-btn{flex:1;padding:8px;border:none;background:none;color:var(--muted);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border-radius:6px;transition:all .15s}
-.tab-btn.active{background:var(--s3);color:var(--text)}
-.tab-content{display:none}
-.tab-content.active{display:flex;flex-direction:column;gap:12px}
+/* PERFIL MODAL específico */
+.perfil-section{padding:16px 22px;border-bottom:1px solid var(--border)}
+.perfil-section:last-child{border-bottom:none}
+.section-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px}
+
+/* COPY BTN */
+.copy-btn{background:var(--s3);border:1px solid var(--border);color:var(--muted);padding:4px 9px;border-radius:6px;cursor:pointer;font-size:10px;font-family:'IBM Plex Mono',monospace;transition:all .15s}
+.copy-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* CANAL SELECTOR */
+.canal-row{display:flex;gap:6px;flex-wrap:wrap}
+.canal-opt{padding:6px 13px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--muted);font-size:11px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;transition:all .15s}
+.canal-opt:hover{color:var(--text)}
+.canal-opt.active.wpp{border-color:var(--green);color:var(--green);background:var(--greenbg)}
+.canal-opt.active.mail{border-color:var(--gold);color:var(--gold);background:var(--goldbg)}
+.canal-opt.active.li{border-color:var(--blue);color:var(--blue);background:var(--bluebg)}
 
 /* SETUP */
 .setup-overlay{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
-.setup-box{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:40px;max-width:440px;width:100%;text-align:center}
-.setup-title{font-family:'Playfair Display',serif;font-size:28px;color:var(--gold);margin-bottom:8px}
-.setup-sub{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:28px}
-.setup-steps{text-align:left;display:flex;flex-direction:column;gap:14px;margin-bottom:28px}
-.setup-step{display:flex;gap:12px;align-items:flex-start}
-.step-num{width:24px;height:24px;border-radius:50%;background:var(--goldbg);border:1px solid rgba(240,192,64,.3);color:var(--gold);font-size:11px;font-family:'IBM Plex Mono',monospace;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.step-text{font-size:13px;color:var(--muted);line-height:1.5;padding-top:3px}
-.step-text strong{color:var(--text)}
-.setup-input{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;width:100%;outline:none;margin-bottom:10px}
+.setup-box{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:36px;max-width:420px;width:100%;text-align:center}
+.setup-title{font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);margin-bottom:6px}
+.setup-sub{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:24px}
+.setup-input{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;width:100%;outline:none;margin-bottom:10px;transition:border-color .15s}
 .setup-input:focus{border-color:var(--gold)}
 
 /* NOTIFY */
-.notify{position:fixed;bottom:24px;right:24px;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;z-index:300;transform:translateY(100px);opacity:0;transition:all .3s}
+.notify{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:11px 16px;font-size:12px;z-index:300;transform:translateY(80px);opacity:0;transition:all .25s;max-width:300px}
 .notify.show{transform:translateY(0);opacity:1}
 .notify.success{border-color:rgba(61,186,122,.4);color:var(--green)}
 .notify.error{border-color:rgba(224,85,85,.4);color:var(--red)}
 
-/* SCROLLBAR */
+/* VISTAGE TABLE */
+.vtable{width:100%;border-collapse:collapse}
+.vtable th{background:var(--s2);padding:9px 14px;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.vtable td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle}
+.vtable tr:last-child td{border-bottom:none}
+.vtable tr{cursor:pointer;transition:background .1s}
+.vtable tr:hover td{background:rgba(255,255,255,.025)}
+
+/* SCROLL */
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
 
 /* EMPTY */
-.empty{text-align:center;padding:48px 20px;color:var(--muted)}
-.empty-icon{font-size:36px;margin-bottom:12px}
-.empty-msg{font-size:14px}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-icon{font-size:32px;margin-bottom:10px}
 
-.refresh-btn{font-family:'IBM Plex Mono',monospace;font-size:10px}
-.canal-selector{display:flex;gap:6px}
-.canal-opt{padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--muted);font-size:12px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;transition:all .15s}
-.canal-opt:hover{border-color:var(--muted);color:var(--text)}
-.canal-opt.active.wpp{border-color:var(--green);color:var(--green);background:var(--greenbg)}
-.canal-opt.active.mail{border-color:var(--gold);color:var(--gold);background:var(--goldbg)}
-.canal-opt.active.li{border-color:var(--blue);color:var(--blue);background:var(--bluebg)}
+/* CARD HEADER */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--s2)}
+.card-title{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold)}
+.card-body{padding:18px}
 </style>
 </head>
 <body>
@@ -226,303 +232,267 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 <div class="setup-overlay" id="setupOverlay">
   <div class="setup-box">
     <div class="setup-title">Enfoco CRM</div>
-    <div class="setup-sub">Configuración inicial — solo una vez</div>
-    <div class="setup-steps">
-      <div class="setup-step">
-        <div class="step-num">1</div>
-        <div class="step-text">Ingresá tu <strong>API Key de Anthropic</strong> (conseguila en console.anthropic.com — empieza con sk-ant-)</div>
-      </div>
-      <div class="setup-step">
-        <div class="step-num">2</div>
-        <div class="step-text">Tu <strong>Google Sheet ya está configurado</strong> — la app lo lee automáticamente</div>
-      </div>
-    </div>
+    <div class="setup-sub">Ingresá tu API Key de Anthropic para comenzar.<br>La podés obtener en console.anthropic.com</div>
     <input class="setup-input" type="password" id="setupKey" placeholder="sk-ant-api03-..." />
-    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveSetup()">
-      Comenzar →
-    </button>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="saveSetup()">Comenzar →</button>
   </div>
 </div>
 
-<!-- MAIN SHELL -->
+<!-- APP SHELL -->
 <div class="shell" id="mainShell" style="display:none">
-
-  <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="logo-block">
       <div class="logo-name">Enfoco Films</div>
-      <div class="logo-tag">Asistente Comercial</div>
+      <div class="logo-tag">CRM Comercial</div>
     </div>
     <nav class="nav">
-      <button class="nav-item active" onclick="showPanel('hoy',this)">
-        <span class="ni">🎯</span> Plan del Día
-      </button>
-      <button class="nav-item" onclick="showPanel('leads',this)">
-        <span class="ni">💼</span> Leads 2026
-      </button>
-      <button class="nav-item" onclick="showPanel('vistage',this)">
-        <span class="ni">🏆</span> Vistage 2026
-      </button>
+      <button class="nav-item active" onclick="showPanel('semana',this)"><span class="ni">📅</span> Plan Semanal</button>
+      <button class="nav-item" onclick="showPanel('leads',this)"><span class="ni">💼</span> Leads 2026</button>
+      <button class="nav-item" onclick="showPanel('vistage',this)"><span class="ni">🏆</span> Vistage 2026</button>
       <div class="nav-sep"></div>
-      <button class="nav-item" onclick="showPanel('nuevo_vistage',this)">
-        <span class="ni">➕</span> Cargar Vistage
-      </button>
-      <button class="nav-item" onclick="showPanel('respuesta',this)">
-        <span class="ni">↩️</span> Registrar Respuesta
-      </button>
-      <div class="nav-sep"></div>
-      <button class="nav-item" onclick="showPanel('config',this)">
-        <span class="ni">⚙️</span> Configuración
-      </button>
+      <button class="nav-item" onclick="showPanel('cargar',this)"><span class="ni">➕</span> Cargar Vistage</button>
+      <button class="nav-item" onclick="showPanel('config',this)"><span class="ni">⚙️</span> Configuración</button>
     </nav>
     <div class="sidebar-footer">
-      <div class="api-indicator">
-        <div class="api-dot ok" id="apiDot"></div>
-        <span id="apiStatus">API conectada</span>
-      </div>
+      <span class="api-dot ok" id="apiDot"></span>
+      <span class="api-status-text" id="apiStatus">API conectada</span>
     </div>
   </aside>
 
-  <!-- MAIN -->
   <main class="main">
     <div class="topbar">
-      <div class="page-title" id="pageTitle">Plan del <em>Día</em></div>
-      <div class="topbar-actions">
-        <button class="btn btn-ghost btn-sm refresh-btn" onclick="loadSheetData()">⟳ Actualizar</button>
+      <div class="page-title" id="pageTitle">Plan <em>Semanal</em></div>
+      <div class="topbar-right">
+        <button class="btn btn-ghost btn-sm" style="font-size:11px;font-family:'IBM Plex Mono',monospace" onclick="loadSheetData()">⟳ Sync</button>
       </div>
     </div>
 
     <div class="content">
 
-      <!-- ══ PANEL: HOY ══ -->
-      <div class="panel active" id="panel-hoy">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div class="hoy-header">
-            <div class="hoy-date" id="todayDate"></div>
-            <div class="hoy-count" id="urgentCount">cargando...</div>
-          </div>
-          <button class="btn btn-primary btn-sm" onclick="generarPlanDia()">✨ Generar Plan IA</button>
-        </div>
-
-        <div class="loader" id="loaderHoy"><div class="dots"><span></span><span></span><span></span></div> Analizando leads...</div>
-        <div class="ai-result" id="planResult" style="display:none">
-          <div class="ai-result-header">
-            <div class="ai-result-label"><div class="ai-pulse"></div>Plan generado por IA</div>
-            <button class="copy-btn" onclick="copyText('planBody')">📋 Copiar</button>
-          </div>
-          <div class="ai-body" id="planBody"></div>
-        </div>
-
-        <div id="hoyContainer"></div>
+      <!-- ══ PANEL SEMANA ══ -->
+      <div class="panel active" id="panel-semana">
+        <div class="search-bar"><input type="text" placeholder="Buscar empresa o contacto..." oninput="filtrarSemana(this.value)" /></div>
+        <div id="semanaWrapper"></div>
       </div>
 
-      <!-- ══ PANEL: LEADS ══ -->
+      <!-- ══ PANEL LEADS ══ -->
       <div class="panel" id="panel-leads">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Leads 2026 — Con interés confirmado</div>
-            <button class="btn btn-primary btn-sm" onclick="openModal('modalLead')">+ Nuevo Lead</button>
-          </div>
-          <div style="overflow-x:auto">
-            <table class="leads-table" id="leadsTable">
-              <thead>
-                <tr>
-                  <th>Empresa / Contacto</th>
-                  <th>Contacto directo</th>
-                  <th>Estado</th>
-                  <th>Semáforo</th>
-                  <th>Próximo paso</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody id="leadsBody">
-                <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Cargando...</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="search-bar" style="flex:1;margin-bottom:0"><input type="text" placeholder="Buscar empresa o contacto..." oninput="filtrarLeads(this.value)" /></div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modalNuevoLead')">+ Nuevo lead</button>
         </div>
+        <div class="leads-grid" id="leadsGrid"></div>
       </div>
 
-      <!-- ══ PANEL: VISTAGE ══ -->
+      <!-- ══ PANEL VISTAGE ══ -->
       <div class="panel" id="panel-vistage">
+        <div class="search-bar"><input type="text" placeholder="Buscar nombre o compañía..." oninput="filtrarVistage(this.value)" /></div>
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Vistage 2026 — Enviados por LinkedIn</div>
+            <div class="card-title">Vistage 2026 — Contactados por LinkedIn</div>
           </div>
           <div style="overflow-x:auto">
-            <table class="leads-table" id="vistageTable">
-              <thead>
-                <tr>
-                  <th>Nombre / Compañía</th>
-                  <th>Rubro</th>
-                  <th>Estado</th>
-                  <th>Último contacto</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody id="vistageBody">
-                <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">Cargando...</td></tr>
-              </tbody>
+            <table class="vtable" id="vistageTable">
+              <thead><tr>
+                <th>Nombre / Compañía</th><th>Rubro</th><th>Estado</th><th>Último contacto</th><th>Acción</th>
+              </tr></thead>
+              <tbody id="vistageBody"></tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- ══ PANEL: NUEVO VISTAGE ══ -->
-      <div class="panel" id="panel-nuevo_vistage">
+      <!-- ══ PANEL CARGAR VISTAGE ══ -->
+      <div class="panel" id="panel-cargar">
         <div class="card">
           <div class="card-header"><div class="card-title">Cargar desde LinkedIn</div></div>
-          <div class="card-body">
-            <div class="tab-row" style="margin-bottom:16px">
-              <button class="tab-btn active" onclick="switchTab('tab-link',this)">🔗 Pegar URL</button>
-              <button class="tab-btn" onclick="switchTab('tab-texto',this)">📝 Pegar texto del perfil</button>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+            <div class="field">
+              <label>Texto del perfil de LinkedIn (copiá nombre, cargo, empresa, descripción)</label>
+              <textarea id="liTexto" rows="5" placeholder="Pegá acá cualquier info del perfil: nombre, cargo, empresa, descripción..."></textarea>
             </div>
-            <div class="tab-content active" id="tab-link">
-              <div class="field">
-                <label>URL del perfil de LinkedIn</label>
-                <input type="text" id="liUrl" placeholder="https://www.linkedin.com/in/nombre-persona/" />
-              </div>
-              <div class="field">
-                <label>Rubro / Sector (opcional)</label>
-                <input type="text" id="liRubro" placeholder="Ej: Alimentos, Automotriz, Agencia..." />
-              </div>
-              <button class="btn btn-primary" style="margin-top:8px" onclick="analizarLinkedIn()">🤖 Analizar y cargar</button>
+            <div class="form-grid">
+              <div class="field"><label>Rubro (opcional)</label><input type="text" id="liRubro" placeholder="Alimentos, Automotriz..." /></div>
+              <div class="field"><label>URL LinkedIn (opcional)</label><input type="text" id="liUrl" placeholder="https://linkedin.com/in/..." /></div>
             </div>
-            <div class="tab-content" id="tab-texto">
-              <div class="field">
-                <label>Pegá el texto copiado del perfil de LinkedIn (o descripción)</label>
-                <textarea id="liTexto" rows="6" placeholder="Pegá acá el nombre, cargo, empresa, descripción... cualquier info del perfil"></textarea>
-              </div>
-              <div class="field">
-                <label>Rubro / Sector (opcional)</label>
-                <input type="text" id="liRubro2" placeholder="Ej: Alimentos, Automotriz, Agencia..." />
-              </div>
-              <button class="btn btn-primary" style="margin-top:8px" onclick="analizarTextoLinkedIn()">🤖 Analizar y cargar</button>
-            </div>
-
-            <div class="loader" id="loaderLi" style="margin-top:12px"><div class="dots"><span></span><span></span><span></span></div> Analizando perfil...</div>
-            <div class="ai-result" id="liResult" style="display:none;margin-top:12px">
-              <div class="ai-result-header">
-                <div class="ai-result-label"><div class="ai-pulse"></div>Perfil analizado</div>
-              </div>
-              <div class="ai-body" id="liBody"></div>
-            </div>
-            <div id="liFormContainer" style="display:none;margin-top:16px">
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Confirmá los datos antes de guardar</div>
+            <button class="btn btn-primary" style="align-self:flex-start" onclick="analizarLinkedIn()">🤖 Analizar y cargar</button>
+            <div class="loader" id="loaderLi"><div class="dots"><span></span><span></span><span></span></div> Analizando perfil...</div>
+            <div id="liFormContainer" style="display:none;flex-direction:column;gap:10px">
+              <div class="section-label">Confirmá los datos</div>
               <div class="form-grid">
                 <div class="field"><label>Nombre</label><input type="text" id="vi_nombre" /></div>
                 <div class="field"><label>Compañía</label><input type="text" id="vi_company" /></div>
                 <div class="field"><label>Cargo</label><input type="text" id="vi_cargo" /></div>
                 <div class="field"><label>Rubro</label><input type="text" id="vi_rubro" /></div>
-                <div class="field"><label>LinkedIn URL</label><input type="text" id="vi_url" /></div>
-                <div class="field"><label>Provincia</label><input type="text" id="vi_prov" placeholder="Ej: Buenos Aires" /></div>
                 <div class="field full"><label>Primer mensaje sugerido</label><textarea id="vi_msg" rows="4"></textarea></div>
               </div>
-              <button class="btn btn-green" style="margin-top:8px" onclick="guardarVistage()">✓ Guardar en Vistage 2026</button>
+              <button class="btn btn-green" style="align-self:flex-start" onclick="guardarVistage()">✓ Guardar en Vistage 2026</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ══ PANEL: RESPUESTA ══ -->
-      <div class="panel" id="panel-respuesta">
-        <div class="card">
-          <div class="card-header"><div class="card-title">Registrar respuesta de un lead</div></div>
-          <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
-            <div class="field">
-              <label>¿Quién respondió?</label>
-              <select id="respLead">
-                <option value="">— Seleccioná el lead —</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>¿Desde dónde venía? (hoja de origen)</label>
-              <select id="respOrigen">
-                <option value="vistage">Vistage 2026</option>
-                <option value="leads">Ya estaba en Leads 2026</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Pegá la respuesta que te mandaron</label>
-              <textarea id="respTexto" rows="5" placeholder="Copiá y pegá el mensaje de LinkedIn, WhatsApp o email..."></textarea>
-            </div>
-            <div class="field">
-              <label>Datos de contacto que tenés (si los conseguiste)</label>
-              <div class="form-grid">
-                <div class="field"><label>WhatsApp</label><input type="text" id="respWpp" placeholder="+54 11 ..." /></div>
-                <div class="field"><label>Email</label><input type="text" id="respMail" placeholder="email@empresa.com" /></div>
-              </div>
-            </div>
-            <button class="btn btn-primary" onclick="procesarRespuesta()">🤖 Analizar y generar próximo paso</button>
-
-            <div class="loader" id="loaderResp"><div class="dots"><span></span><span></span><span></span></div> Analizando conversación...</div>
-
-            <div class="ai-result" id="respResult" style="display:none">
-              <div class="ai-result-header">
-                <div class="ai-result-label"><div class="ai-pulse"></div>Análisis y próximo paso</div>
-                <button class="copy-btn" onclick="copyText('respBody')">📋 Copiar mensaje</button>
-              </div>
-              <div class="ai-body" id="respBody"></div>
-            </div>
-
-            <div id="respAccion" style="display:none">
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:10px">UNA VEZ QUE MANDASTE EL MENSAJE</div>
-              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-                <span style="font-size:13px;color:var(--muted)">Próximo seguimiento en:</span>
-                <select id="respDias" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;outline:none">
-                  <option value="3">3 días</option>
-                  <option value="5" selected>5 días</option>
-                  <option value="7">7 días</option>
-                  <option value="14">14 días</option>
-                  <option value="30">30 días</option>
-                </select>
-                <button class="btn btn-green btn-sm" onclick="confirmarEnvio()">✓ Mensaje enviado — actualizar fecha</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ PANEL: CONFIG ══ -->
+      <!-- ══ PANEL CONFIG ══ -->
       <div class="panel" id="panel-config">
         <div class="card">
-          <div class="card-header"><div class="card-title">Configuración — Google Apps Script</div></div>
+          <div class="card-header"><div class="card-title">Configuración</div></div>
           <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
-            <div style="background:var(--goldbg);border:1px solid rgba(240,192,64,.3);border-radius:8px;padding:14px;font-size:13px;color:var(--gold);line-height:1.7">
-              <strong>Para sincronizar con Google Sheets necesitás instalar el script.</strong><br>
-              Descargá el archivo <code>EnfocoScript_v2.gs</code>, seguí las instrucciones y pegá la URL acá.
-            </div>
             <div class="field">
-              <label>URL del Apps Script (Web App)</label>
+              <label>URL del Google Apps Script (para escribir en el Sheets)</label>
               <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/..." />
             </div>
-            <button class="btn btn-primary" onclick="saveScriptUrl()">Guardar URL</button>
+            <button class="btn btn-primary btn-sm" style="align-self:flex-start" onclick="saveScriptUrl()">Guardar URL</button>
             <div id="scriptStatus" style="font-size:12px;color:var(--muted)"></div>
-            <hr style="border:none;border-top:1px solid var(--border)">
-            <div style="font-size:12px;color:var(--muted);line-height:1.8">
-              <strong style="color:var(--text)">Pasos para instalar el script:</strong><br>
-              1. Abrí tu Google Sheets → Extensiones → Apps Script<br>
-              2. Borrá todo y pegá el contenido del archivo .gs<br>
-              3. Guardá → Implementar → Nueva implementación<br>
-              4. Tipo: Aplicación web · Acceso: Cualquier persona<br>
-              5. Copiá la URL y pegala arriba
-            </div>
           </div>
         </div>
       </div>
 
-    </div>
+    </div><!-- /content -->
   </main>
+</div><!-- /shell -->
+
+<!-- ══════════════════════════════════════════ -->
+<!-- MODAL: PERFIL DEL LEAD                    -->
+<!-- ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalPerfil">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="font-family:'Playfair Display',serif;font-size:20px" id="pf_titulo">—</div>
+          <div id="pf_estado_chip"></div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px" id="pf_subtitulo"></div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" id="pf_badges"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalPerfil')">×</button>
+    </div>
+
+    <!-- SECCIÓN: CONTROLES DE FECHA/ESTADO -->
+    <div class="perfil-section" style="background:var(--s2);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div style="font-size:11px;color:var(--muted)">Próxima acción:</div>
+      <input type="date" id="pf_fecha" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:monospace;font-size:12px;outline:none;cursor:pointer" />
+      <select id="pf_semaforo" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:'Syne',sans-serif;font-size:12px;outline:none">
+        <option value="🔴 Vencido">🔴 Urgente</option>
+        <option value="🟡 Hoy">🟡 Esta semana</option>
+        <option value="🟢 Ok">🟢 Al día</option>
+      </select>
+      <select id="pf_estado" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:'Syne',sans-serif;font-size:12px;outline:none">
+        <option value="1 - Nuevo">1 - Nuevo</option>
+        <option value="2 - Enviado">2 - Enviado</option>
+        <option value="6 - Proyecto En Tratativa">En Tratativa</option>
+        <option value="3 - En Pausa">En Pausa</option>
+        <option value="0 - Perdido">Perdido</option>
+      </select>
+      <button class="btn btn-green btn-sm" onclick="guardarCambiosLead()">✓ Guardar</button>
+    </div>
+
+    <!-- SECCIÓN: CONTEXTO AI -->
+    <div class="perfil-section" id="pf_ai_section">
+      <div class="section-label">Sugerencia IA</div>
+      <div class="loader" id="loaderAI"><div class="dots"><span></span><span></span><span></span></div> Analizando historial...</div>
+      <div class="ai-block" id="pf_ai_block" style="display:none">
+        <div class="ai-block-header">
+          <div class="ai-pulse"></div>
+          <div class="ai-block-label">Contexto + recomendación</div>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button class="copy-btn" onclick="copyElText('pf_ai_body')">📋</button>
+          </div>
+        </div>
+        <div class="ai-block-body" id="pf_ai_body"></div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: ACCIONES -->
+    <div class="perfil-section" style="background:var(--s2)">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary btn-sm" onclick="toggleResponder()">✉️ Responder ahora</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleNota()">📝 Agregar nota</button>
+        <button class="btn btn-ghost btn-sm" onclick="refreshAI()">🤖 Re-analizar</button>
+      </div>
+
+      <!-- GENERADOR DE MENSAJE (dentro del perfil) -->
+      <div id="pf_responder" style="display:none;margin-top:14px;display:none;flex-direction:column;gap:10px">
+        <div class="canal-row" id="pf_canal_row">
+          <button class="canal-opt wpp active" onclick="selectCanal('wpp',this)">💬 WhatsApp</button>
+          <button class="canal-opt li" onclick="selectCanal('li',this)">💼 LinkedIn</button>
+          <button class="canal-opt mail" onclick="selectCanal('mail',this)">📧 Email</button>
+        </div>
+        <select id="pf_msg_tipo" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:7px;font-size:12px;outline:none;font-family:'Syne',sans-serif">
+          <option value="seguimiento al historial de conversación">Seguimiento (basado en historial)</option>
+          <option value="primer contacto frío">Primer contacto</option>
+          <option value="respuesta a lo que me dijeron">Responder mensaje recibido</option>
+          <option value="propuesta concreta">Propuesta / Cierre</option>
+        </select>
+        <div class="field">
+          <label>Contexto extra (pegá lo que te respondieron, algo nuevo...)</label>
+          <textarea id="pf_msg_ctx" rows="3" placeholder="Opcional — pegá respuesta recibida o info nueva"></textarea>
+        </div>
+        <button class="btn btn-primary btn-sm" style="align-self:flex-start" onclick="generarMensajePerfil()">✨ Generar mensaje</button>
+        <div class="loader" id="loaderMsg"><div class="dots"><span></span><span></span><span></span></div> Generando...</div>
+        <div class="ai-block" id="pf_msg_block" style="display:none">
+          <div class="ai-block-header">
+            <div class="ai-pulse"></div>
+            <div class="ai-block-label">Mensaje listo</div>
+            <div style="margin-left:auto;display:flex;gap:6px">
+              <button class="copy-btn" onclick="copyElText('pf_msg_body')">📋 Copiar</button>
+            </div>
+          </div>
+          <div class="ai-block-body" id="pf_msg_body"></div>
+        </div>
+        <div id="pf_msg_post" style="display:none">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px">
+            <span style="font-size:11px;color:var(--muted)">Próximo seguimiento:</span>
+            <select id="pf_dias" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:7px;font-size:12px;outline:none;font-family:'Syne',sans-serif">
+              <option value="2">2 días</option>
+              <option value="3" selected>3 días</option>
+              <option value="5">5 días</option>
+              <option value="7">7 días</option>
+              <option value="14">14 días</option>
+            </select>
+            <button class="btn btn-green btn-sm" onclick="confirmarEnvio()">✓ Enviado — registrar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTA RÁPIDA -->
+      <div id="pf_nota" style="display:none;margin-top:14px;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:6px">
+          <select id="nt_tipo" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none">
+            <option value="cliente">💬 Respondió el cliente</option>
+            <option value="comercial">✉️ Enviamos mensaje</option>
+            <option value="nota">📝 Nota interna</option>
+          </select>
+          <select id="nt_canal" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none">
+            <option value="wpp">WhatsApp</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="mail">Email</option>
+            <option value="reunion">Reunión</option>
+            <option value="nota">Nota</option>
+          </select>
+        </div>
+        <textarea id="nt_contenido" rows="3" placeholder="Pegá la conversación o escribí una nota..." style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:'Syne',sans-serif"></textarea>
+        <button class="btn btn-primary btn-sm" style="align-self:flex-start" onclick="guardarNota()">+ Guardar</button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: HISTORIAL -->
+    <div class="perfil-section">
+      <div class="section-label">Historial de conversaciones</div>
+      <div id="pf_historial" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto"></div>
+    </div>
+
+  </div><!-- /modal -->
 </div>
 
-<!-- MODAL: NUEVO LEAD MANUAL -->
-<div class="modal-overlay" id="modalLead">
-  <div class="modal">
+<!-- MODAL: NUEVO LEAD -->
+<div class="modal-overlay" id="modalNuevoLead">
+  <div class="modal" style="max-width:560px">
     <div class="modal-header">
-      <div class="modal-title">Nuevo Lead</div>
-      <button class="modal-close" onclick="closeModal('modalLead')">×</button>
+      <div style="font-family:'Playfair Display',serif;font-size:18px">Nuevo Lead</div>
+      <button class="modal-close" onclick="closeModal('modalNuevoLead')">×</button>
     </div>
-    <div class="modal-body">
+    <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
       <div class="form-grid">
         <div class="field"><label>Empresa</label><input type="text" id="nl_empresa" /></div>
         <div class="field"><label>Contacto</label><input type="text" id="nl_contacto" /></div>
@@ -531,782 +501,873 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
         <div class="field"><label>WhatsApp</label><input type="text" id="nl_wpp" /></div>
         <div class="field"><label>Email</label><input type="text" id="nl_mail" /></div>
         <div class="field"><label>Origen</label>
-          <select id="nl_origen">
-            <option>Vistage</option><option>LinkedIn</option><option>Referido</option><option>Expo/Feria</option>
-          </select>
+          <select id="nl_origen"><option>Vistage</option><option>LinkedIn</option><option>Referido</option><option>Expo/Feria</option></select>
         </div>
-        <div class="field"><label>Estado inicial</label>
-          <select id="nl_estado">
-            <option value="1 - Nuevo">1 - Nuevo</option>
-            <option value="2 - Enviado">2 - Enviado</option>
-          </select>
+        <div class="field"><label>Estado</label>
+          <select id="nl_estado"><option value="1 - Nuevo">1 - Nuevo</option><option value="2 - Enviado">2 - Enviado</option></select>
         </div>
-        <div class="field full"><label>Próximo paso / Notas</label><textarea id="nl_paso" rows="3"></textarea></div>
+        <div class="field full"><label>Próximo paso / notas</label><textarea id="nl_paso" rows="2"></textarea></div>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modalLead')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarLead()">Guardar lead</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: GENERAR MENSAJE PARA UN LEAD -->
-<div class="modal-overlay" id="modalMensaje">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modalMensajeTitulo">Generar mensaje</div>
-      <button class="modal-close" onclick="closeModal('modalMensaje')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="field">
-        <label>Canal</label>
-        <div class="canal-selector">
-          <button class="canal-opt wpp active" onclick="selectCanal('wpp',this)">💬 WhatsApp</button>
-          <button class="canal-opt li" onclick="selectCanal('li',this)">💼 LinkedIn</button>
-          <button class="canal-opt mail" onclick="selectCanal('mail',this)">📧 Email</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>Tipo de mensaje</label>
-        <select id="msg_tipo">
-          <option value="primer contacto frío">Primer contacto</option>
-          <option value="seguimiento — no respondió">Seguimiento (no respondió)</option>
-          <option value="respuesta a lo que me dijeron">Responder lo recibido</option>
-          <option value="propuesta concreta / cierre">Propuesta / Cierre</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Conversación / contexto (pegá lo que hablaron)</label>
-        <textarea id="msg_contexto" rows="5" placeholder="Pegá acá la conversación de LinkedIn, WhatsApp o cualquier contexto relevante..."></textarea>
-      </div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="generarMensaje()">✨ Generar mensaje</button>
-      <div class="loader" id="loaderMsg"><div class="dots"><span></span><span></span><span></span></div> Generando...</div>
-      <div class="ai-result" id="msgResult" style="display:none">
-        <div class="ai-result-header">
-          <div class="ai-result-label"><div class="ai-pulse"></div>Mensaje listo</div>
-          <button class="copy-btn" onclick="copyText('msgBody')">📋 Copiar</button>
-        </div>
-        <div class="ai-body" id="msgBody"></div>
-      </div>
-      <div id="msgAccion" style="display:none;margin-top:12px">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:10px">DESPUÉS DE ENVIAR</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span style="font-size:12px;color:var(--muted)">Próximo seguimiento:</span>
-          <select id="msgDias" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font-family:'Syne',sans-serif;font-size:12px;outline:none">
-            <option value="3">3 días</option>
-            <option value="5" selected>5 días</option>
-            <option value="7">7 días</option>
-            <option value="14">14 días</option>
-          </select>
-          <button class="btn btn-green btn-sm" onclick="confirmarEnvioMsg()">✓ Enviado</button>
-        </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modalNuevoLead')">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="guardarNuevoLead()">Guardar lead</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- MODAL: PERFIL DEL LEAD -->
-<div class="modal-overlay" id="modalPerfil">
-  <div class="modal" style="max-width:680px">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title" id="perfilTitulo">Perfil</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:3px" id="perfilSubtitulo"></div>
-      </div>
-      <button class="modal-close" onclick="closeModal('modalPerfil')">×</button>
-    </div>
-    <div class="modal-body" style="gap:0;padding:0">
-
-      <!-- Info del lead -->
-      <div id="perfilInfo" style="padding:18px 24px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
-
-      <!-- Editar fecha -->
-      <div style="padding:14px 24px;border-bottom:1px solid var(--border);background:var(--s2);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span style="font-size:12px;color:var(--muted)">Próxima acción:</span>
-        <input type="date" id="perfilFecha" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:monospace;font-size:12px;outline:none" />
-        <select id="perfilSemaforo" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:'Syne',sans-serif;font-size:12px;outline:none">
-          <option value="🔴 Vencido">🔴 Urgente</option>
-          <option value="🟡 Hoy">🟡 Esta semana</option>
-          <option value="🟢 Ok">🟢 Al día</option>
-        </select>
-        <select id="perfilEstado" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:'Syne',sans-serif;font-size:12px;outline:none">
-          <option value="1 - Nuevo">1 - Nuevo</option>
-          <option value="2 - Enviado">2 - Enviado</option>
-          <option value="6 - Proyecto En Tratativa">6 - En Tratativa</option>
-          <option value="3 - En Pausa">3 - En Pausa</option>
-          <option value="0 - Perdido">0 - Perdido</option>
-        </select>
-        <button class="btn btn-green btn-sm" onclick="guardarCambiosLead()">✓ Guardar</button>
-      </div>
-
-      <!-- Historial -->
-      <div style="padding:16px 24px;border-bottom:1px solid var(--border)">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Historial de conversaciones</div>
-        <div id="perfilHistorial" style="display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto"></div>
-      </div>
-
-      <!-- Agregar nota -->
-      <div style="padding:16px 24px">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Agregar nota o conversación</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;gap:8px">
-            <select id="notaTipo" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:7px;font-size:12px;outline:none">
-              <option value="conversacion">💬 Conversación</option>
-              <option value="mensaje_enviado">✉️ Mensaje enviado</option>
-              <option value="nota">📝 Nota interna</option>
-            </select>
-            <select id="notaCanal" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:7px;font-size:12px;outline:none">
-              <option value="WhatsApp">WhatsApp</option>
-              <option value="LinkedIn">LinkedIn</option>
-              <option value="Email">Email</option>
-              <option value="Reunión">Reunión</option>
-            </select>
-          </div>
-          <textarea id="notaContenido" rows="3" placeholder="Pegá la conversación, el mensaje enviado o escribí una nota..." style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;outline:none;resize:vertical"></textarea>
-          <button class="btn btn-primary btn-sm" onclick="guardarNota()" style="align-self:flex-end">+ Guardar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- NOTIFY -->
 <div class="notify" id="notify"></div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────
-const SHEET_ID = '1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87';
+// ════════════════════════════════════════════
+// CONFIG & ESTADO GLOBAL
+// ════════════════════════════════════════════
+const LEADS_CSV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSROJCqfeSILX3MWmwvpS6dcUKqWqP580naRZu_CjpVijSUSqZfre59Id0TQyyfOQ/pub?output=csv&gid=1488122141';
+const VISTAGE_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSROJCqfeSILX3MWmwvpS6dcUKqWqP580naRZu_CjpVijSUSqZfre59Id0TQyyfOQ/pub?output=csv&gid=530322819';
+
 const ENFOCO_CTX = `Sos el asistente comercial de Enfoco Films, productora audiovisual de Buenos Aires.
 SERVICIOS: video corporativo/institucional, streaming de eventos, publicidad, fotografía, animación.
 DIRECTOR: Dami Guelman, miembro Vistage G-308.
 CLIENTES REF: GS1, INTA, Amcor, Essilor Luxottica, BAT, CPACF.
-TONO: cercano, directo, argentino, sin protocolo. Hablar de par a par.
+TONO: cercano, directo, argentino. Hablar de igual a igual. Sin protocolo.
 CANAL PREFERIDO: WhatsApp. Si no hay número → LinkedIn con objetivo de conseguir WPP.
-REGLAS DE MENSAJES: siempre mencionar Vistage G-308 en primer contacto. Máx 5 líneas para WPP/LinkedIn. Terminar con UNA sola pregunta.`;
+REGLAS: mencionar Vistage G-308 en primer contacto. Máx 5 líneas WPP/LinkedIn. Terminar con UNA sola pregunta.`;
 
 let API_KEY = '';
-let sheetData = { leads: [], vistage: [] };
-let currentLead = null;
-// Store seguro para leads - evita problemas con caracteres especiales
-const leadStore = {};
-let leadStoreIdx = 0;
-const leadKeyMap = {}; // empresa+contacto -> key, para deduplicar re-renders
-function storeLead(obj){
-  const dedupKey = (obj.empresa||'') + '|' + (obj.contacto||'');
-  if (leadKeyMap[dedupKey]) {
-    // Actualizar el objeto existente con datos frescos
-    Object.assign(leadStore[leadKeyMap[dedupKey]], obj);
-    return leadKeyMap[dedupKey];
+let SCRIPT_URL = '';
+let selectedCanal = 'wpp';
+let currentPerfilKey = null;
+
+// Store de leads en memoria (clave → objeto lead enriquecido)
+const store = {};
+let storeIdx = 0;
+
+function setLead(obj) {
+  // Si ya existe por empresa, actualizar
+  const existingKey = Object.keys(store).find(k => store[k].empresa === obj.empresa);
+  if (existingKey) {
+    // Preservar historial existente
+    const hist = store[existingKey].historial || [];
+    store[existingKey] = { ...store[existingKey], ...obj, historial: hist };
+    return existingKey;
   }
-  const k='l'+(leadStoreIdx++);
-  leadStore[k]=obj;
-  leadKeyMap[dedupKey]=k;
+  const k = 'l' + (storeIdx++);
+  // Cargar historial de localStorage
+  obj.historial = cargarHistorialLocal(obj.empresa);
+  store[k] = obj;
   return k;
 }
-function getLead(k){return leadStore[k]||null;}
-let selectedCanal = 'wpp';
-let currentTab = 'tab-link';
 
-// ── SETUP ─────────────────────────────────────────────────
+function getLead(k) { return store[k] || null; }
+function getAllLeads() { return Object.entries(store).map(([k,v]) => ({...v, _key:k})); }
+
+// ════════════════════════════════════════════
+// HISTORIAL LOCAL
+// ════════════════════════════════════════════
+function histKey(empresa) {
+  return 'hist_' + empresa.toLowerCase().replace(/[^a-z0-9]/g,'_');
+}
+
+function cargarHistorialLocal(empresa) {
+  try { return JSON.parse(localStorage.getItem(histKey(empresa)) || '[]'); }
+  catch { return []; }
+}
+
+function guardarHistorialLocal(empresa, historial) {
+  localStorage.setItem(histKey(empresa), JSON.stringify(historial));
+}
+
+function agregarEntradaHistorial(empresa, entrada) {
+  // entrada: { fecha, tipo (wpp|mail|linkedin|reunion|nota), contenido, quien (Comercial|Cliente) }
+  const leads = getAllLeads();
+  const lead = leads.find(l => l.empresa === empresa);
+  if (!lead) return;
+  const hist = lead.historial || [];
+  hist.push({ ...entrada, fecha: entrada.fecha || new Date().toLocaleString('es-AR') });
+  store[lead._key].historial = hist;
+  guardarHistorialLocal(empresa, hist);
+  // Sync Sheets si hay script
+  if (SCRIPT_URL) {
+    callScript('saveHistorial', { empresa, contacto: lead.contacto, entrada }).catch(() => {});
+  }
+}
+
+// ════════════════════════════════════════════
+// SETUP
+// ════════════════════════════════════════════
 function saveSetup() {
   const k = document.getElementById('setupKey').value.trim();
   if (!k.startsWith('sk-ant-')) { showNotify('La key debe empezar con sk-ant-', 'error'); return; }
   API_KEY = k;
   localStorage.setItem('ef_key', k);
-  document.getElementById('setupOverlay').style.display = 'none';
-  document.getElementById('mainShell').style.display = 'grid';
-  init();
+  bootApp();
 }
 
 function checkSetup() {
   const k = localStorage.getItem('ef_key');
-  if (k) {
-    API_KEY = k;
-    document.getElementById('setupOverlay').style.display = 'none';
-    document.getElementById('mainShell').style.display = 'grid';
-    init();
-  }
+  if (k) { API_KEY = k; bootApp(); }
 }
 
-// ── INIT ──────────────────────────────────────────────────
-function init() {
-  const now = new Date();
-  document.getElementById('todayDate').textContent =
-    now.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
-  // Pre-cargar URL del script si existe
-  const savedUrl = localStorage.getItem('ef_script_url');
-  if (savedUrl) {
-    SCRIPT_URL = savedUrl;
-    document.getElementById('scriptUrl').value = savedUrl;
-  }
+function bootApp() {
+  document.getElementById('setupOverlay').style.display = 'none';
+  document.getElementById('mainShell').style.display = 'grid';
+  SCRIPT_URL = localStorage.getItem('ef_script_url') || '';
+  if (SCRIPT_URL) document.getElementById('scriptUrl').value = SCRIPT_URL;
   loadSheetData();
 }
 
-// ── LEER GOOGLE SHEETS ────────────────────────────────────
+// ════════════════════════════════════════════
+// CARGA DE DATOS
+// ════════════════════════════════════════════
 async function loadSheetData() {
-  // URLs públicas CSV (publicadas en la web desde Google Sheets)
-  const LEADS_CSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRNTY6vMHOY4L93hTmj8XYBtqDzR-fDEV5NnfAiKjG0X-7FV__XoOLdxEUVOiKl-rqWFwbgqKfWTtbE/pub?output=csv';
-  const VISTAGE_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRNTY6vMHOY4L93hTmj8XYBtqDzR-fDEV5NnfAiKjG0X-7FV__XoOLdxEUVOiKl-rqWFwbgqKfWTtbE/pub?output=csv&gid=530322819';
-
   try {
-    const [leadsResp, vistageResp] = await Promise.all([
-      fetch(LEADS_CSV), fetch(VISTAGE_CSV)
-    ]);
-
-    if (leadsResp.ok) {
-      const csv = await leadsResp.text();
-      const rows = parseCSV(csv);
-      // Debug: mostrar primeras filas en consola para verificar columnas
-      console.log('[Enfoco CRM] Primeras 3 filas del CSV:', rows.slice(0,3));
-      // Saltar filas de título/headers hasta encontrar datos reales
-      sheetData.leads = rows.filter(r => {
+    const [lr, vr] = await Promise.all([fetch(LEADS_CSV), fetch(VISTAGE_CSV)]);
+    if (lr.ok) {
+      const rows = parseCSV(await lr.text()).filter(r => {
         const e = (r[0]||'').trim();
-        return e && e !== 'Empresa' && e !== '💼  LEADS 2026 — Prospectos con interés confirmado' && !e.startsWith('🔥') && !e.startsWith('💼') && !e.startsWith('#');
+        return e && e !== 'Empresa' && !e.startsWith('💼') && !e.startsWith('🔥') && !e.startsWith('26/');
+      });
+      rows.forEach(r => {
+        setLead({
+          empresa:    r[0]||'', contacto: r[1]||'', cargo: r[2]||'',
+          wpp:        r[3]||'', mail:     r[4]||'', medio: r[5]||'',
+          rubro:      r[6]||'', estado:   r[8]||'',
+          proxAccion: r[9]||'', semaforo: r[10]||'', proxPaso: r[11]||r[6]||'',
+        });
       });
     }
-
-    if (vistageResp.ok) {
-      const csv = await vistageResp.text();
-      const rows = parseCSV(csv);
-      sheetData.vistage = rows.filter(r => {
+    // Vistage: guardar por separado
+    if (vr.ok) {
+      const vrows = parseCSV(await vr.text()).filter(r => {
         const n = (r[2]||'').trim();
-        return n && n.length < 60 && n !== 'Nombre' && !n.startsWith('🏆');
+        return n && n !== 'Nombre' && n.length < 60 && !n.startsWith('🏆');
       });
+      window._vistageRows = vrows;
     }
-
-    renderHoy();
-    renderLeads();
-    renderVistage();
-    populateRespSelect();
-    showNotify('Planilla actualizada ✓', 'success');
+    renderAll();
+    showNotify('Planilla sincronizada ✓', 'success');
   } catch(e) {
-    loadFallbackData();
-    showNotify('Modo offline — datos locales', 'error');
+    loadFallback();
   }
 }
 
 function parseCSV(text) {
-  const rows = [];
-  const lines = text.split('\n');
-  for (const line of lines) {
-    const row = [];
-    let inQ = false, cur = '';
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
+  return text.split('\n').map(line => {
+    const row = []; let inQ = false, cur = '';
+    for (const c of line) {
       if (c === '"') { inQ = !inQ; continue; }
       if (c === ',' && !inQ) { row.push(cur.trim()); cur = ''; continue; }
       cur += c;
     }
     row.push(cur.trim());
-    rows.push(row);
-  }
-  return rows;
+    return row;
+  });
 }
 
-function loadFallbackData() {
-  // Datos de la planilla que ya leímos en esta sesión
-  sheetData.leads = [
-    ['Dianddi Orax','Axel Dillon','','11-6374-9826','','Vistage','','','2 - Enviado','2026-02-26','🟡 Hoy','escribimos por wpp reunion semana de marzo'],
-    ['LEFER SRL','Fernando Morreale','','','fernandomorreale@hotmail.com','Vistage','','','2 - Enviado','2026-02-26','🟡 Hoy','LE MANDE POR LINKEDIN PARA REUNION'],
-    ['Yellow & Co','Vistoria Compagno','','','','Vistage','','','1 - Nuevo','2026-02-26','🟡 Hoy','Nos respondio que nos escribe cuando necesite'],
-    ['MC Servicios Integrales','Cynthi Othatceguy','','','cynthia@mcservicios.org','Vistage','','','1 - Nuevo','2026-02-26','🟡 Hoy','PEDIR REUNION PARA VIERNES POR LINKEDIN'],
-    ['AWD Agency','Juan Elliot','','','','Vistage - Agencia','','','1 - Nuevo','2026-02-26','🟡 Hoy','PAS: Coordinar por mail una reunion'],
-    ['Bien Buenos Aires','Nacho Perez Vidal','','','','Vistage - Agencia','','','1 - Nuevo','2026-02-26','🟡 Hoy','PAS: Coordinar por mail una reunion'],
-    ['Rotundo Media Group','Macarena Baez','','','','Vistage - Agencia','','','1 - Nuevo','2026-02-26','🟡 Hoy','PAS: Hacer seguimiento por Whatapp para reunion'],
-    ['TORKY','Juan Ignacio Guajardo','','','torkymobility@gmail.com','Vistage','','','2 - Enviado','2026-03-03','🟢 Ok','PAS: Le hice el seguimiento, si no responde bajarlo a 0%'],
-    ['AUDIO BUENOS AIRES','Leonardo Gaston Nadur','','','lnadur@buenosaires-sa.com.ar','Vistage','','','2 - Enviado','2026-03-03','🟢 Ok','PAS: Le mande mail personalizado'],
-    ['FontanaSisti','Soledad Fontana','','','','Vistage - Agencia','','','6 - Proyecto En Tratativa','2026-03-04','🟢 Ok','REUNION 4-3-26'],
-    ['Siglo XXI Editores','Sofia Miranda','','','','Feria del Libro','','','2 - Enviado','2026-03-02','🟢 Ok','Marcelo Mingiano Gerente Comercial nos paso el contacto'],
-    ['AUTOTRONICA LA PLATA','Diego Suarez','','','','Vistage','','','2 - Enviado','2026-03-02','🟢 Ok','podcast'],
-    ['Reydi de HP SA','Alejandra Pelayes','','','','Vistage','','','2 - Enviado','2026-03-02','🟢 Ok','Escribirle en Marzo'],
-    ['Fidegroup SA','Federico Marini','','','','Vistage - Alimentos','','','1 - Nuevo','2026-03-17','🟢 Ok','Dijo que ahora no pero mas adelante reunirnos'],
-    ['DOLZ','Lujan Belloli','','','','Automechanika','','','3 - En Pausa','2026-04-13','🟢 Ok','Por el momento no quieren nada'],
-    ['SD Direcciones','Eric Prieto','','','','Vistage','','','3 - En Pausa','2026-04-13','🟢 Ok','Por el momento no quieren nada'],
-    ['STARRETT','Aurelio Soares','','','','Podcast Red','','','1 - Nuevo','','','Envie via Linkedin para 3D de Productos'],
-    ['INTEGRALIM','Bruno Sechet','','','','Podcast MB','','','1 - Nuevo','','','Proponerle Podcast o Workshops'],
-    ['VERALIMENT','Andres Garcia','','','','Podcast MB','','','1 - Nuevo','','','venderle tutorial, proponerle Podcast'],
+function loadFallback() {
+  const fallback = [
+    {empresa:'Dianddi Orax',contacto:'Axel Dillon',cargo:'',wpp:'11-6374-9826',mail:'',medio:'Vistage',rubro:'',estado:'2 - Enviado',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'escribimos por wpp reunion semana de marzo'},
+    {empresa:'LEFER SRL',contacto:'Fernando Morreale',cargo:'',wpp:'',mail:'fernandomorreale@hotmail.com',medio:'Vistage',rubro:'Automotriz',estado:'2 - Enviado',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'LE MANDE POR LINKEDIN PARA REUNION'},
+    {empresa:'Yellow & Co',contacto:'Vistoria Compagno',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'',estado:'1 - Nuevo',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'Nos respondio que nos escribe cuando necesite'},
+    {empresa:'MC Servicios',contacto:'Cynthi Othatceguy',cargo:'',wpp:'',mail:'cynthia@mcservicios.org',medio:'Vistage',rubro:'',estado:'1 - Nuevo',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'PEDIR REUNION PARA VIERNES POR LINKEDIN'},
+    {empresa:'AWD Agency',contacto:'Juan Elliot',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'Agencia',estado:'1 - Nuevo',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'Coordinar por mail una reunion'},
+    {empresa:'Bien Buenos Aires',contacto:'Nacho Perez Vidal',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'Agencia',estado:'1 - Nuevo',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'Coordinar por mail una reunion'},
+    {empresa:'Rotundo Media',contacto:'Macarena Baez',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'Agencia',estado:'1 - Nuevo',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'Hacer seguimiento por Whatapp para reunion'},
+    {empresa:'FontanaSisti',contacto:'Soledad Fontana',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'Agencia',estado:'6 - Proyecto En Tratativa',proxAccion:hoy(6),semaforo:'🟢 Ok',proxPaso:'REUNION 4-3-26'},
+    {empresa:'TORKY',contacto:'Juan Ignacio Guajardo',cargo:'',wpp:'',mail:'torkymobility@gmail.com',medio:'Vistage',rubro:'',estado:'2 - Enviado',proxAccion:hoy(5),semaforo:'🟢 Ok',proxPaso:'Le hice el seguimiento, si no responde bajarlo a 0%'},
+    {empresa:'AUDIO BUENOS AIRES',contacto:'Leonardo Nadur',cargo:'',wpp:'',mail:'lnadur@buenosaires-sa.com.ar',medio:'Vistage',rubro:'',estado:'2 - Enviado',proxAccion:hoy(5),semaforo:'🟢 Ok',proxPaso:'Le mande mail personalizado'},
+    {empresa:'Siglo XXI Editores',contacto:'Sofia Miranda',cargo:'',wpp:'',mail:'',medio:'Feria del Libro',rubro:'Editorial',estado:'2 - Enviado',proxAccion:hoy(4),semaforo:'🟢 Ok',proxPaso:'Marcelo Mingiano nos paso el contacto'},
+    {empresa:'STARRETT',contacto:'Aurelio Soares',cargo:'',wpp:'',mail:'',medio:'Podcast',rubro:'Industrial',estado:'1 - Nuevo',proxAccion:hoy(3),semaforo:'🟢 Ok',proxPaso:'Envie via Linkedin para 3D de Productos'},
+    {empresa:'INTEGRALIM',contacto:'Bruno Sechet',cargo:'',wpp:'',mail:'',medio:'Podcast',rubro:'Alimentos',estado:'1 - Nuevo',proxAccion:hoy(3),semaforo:'🟢 Ok',proxPaso:'Proponerle Podcast o Workshops'},
+    {empresa:'VERALIMENT',contacto:'Andres Garcia',cargo:'',wpp:'',mail:'',medio:'Podcast',rubro:'Alimentos',estado:'1 - Nuevo',proxAccion:hoy(3),semaforo:'🟢 Ok',proxPaso:'venderle tutorial, proponerle Podcast'},
+    {empresa:'Fidegroup SA',contacto:'Federico Marini',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'Alimentos',estado:'1 - Nuevo',proxAccion:hoy(19),semaforo:'🟢 Ok',proxPaso:'Dijo que ahora no pero mas adelante reunirnos'},
   ];
-  sheetData.vistage = [];
-  renderHoy();
+  fallback.forEach(l => setLead(l));
+  window._vistageRows = [];
+  renderAll();
+}
+
+function hoy(addDays=0) {
+  const d = new Date(); d.setDate(d.getDate()+addDays);
+  return d.toISOString().split('T')[0];
+}
+
+// ════════════════════════════════════════════
+// RENDER SEMANA
+// ════════════════════════════════════════════
+function renderAll() {
+  renderSemana();
   renderLeads();
   renderVistage();
-  populateRespSelect();
 }
 
-// ── RENDER HOY ────────────────────────────────────────────
-function renderHoy() {
-  const container = document.getElementById('hoyContainer');
-  const leads = sheetData.leads;
+function renderSemana(filtro='') {
+  const wrapper = document.getElementById('semanaWrapper');
+  const hoyDate = new Date();
+  hoyDate.setHours(0,0,0,0);
 
-  const urgent = leads.filter(r => (r[10]||'').includes('🔴') || (r[10]||'').toLowerCase().includes('vencido'));
-  const today  = leads.filter(r => (r[10]||'').includes('🟡') || (r[10]||'').toLowerCase().includes('hoy'));
-  const ok     = leads.filter(r => (r[10]||'').includes('🟢'));
-  const sin    = leads.filter(r => !r[10] || r[10].trim() === '');
+  // Calcular lunes de la semana actual
+  const dayOfWeek = hoyDate.getDay(); // 0=Dom
+  const lunes = new Date(hoyDate);
+  lunes.setDate(hoyDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
 
-  const total = urgent.length + today.length;
-  document.getElementById('urgentCount').textContent =
-    total > 0 ? `${total} para hoy` : 'Al día ✓';
+  const dias = Array.from({length:7}, (_,i) => {
+    const d = new Date(lunes); d.setDate(lunes.getDate()+i);
+    return d;
+  });
 
-  let html = '';
+  const DIAS_NOMBRES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
-  if (urgent.length) {
-    html += `<div class="urgency-section">
-      <div class="urgency-label" style="color:var(--red)">🔴 Urgente — acción inmediata</div>`;
-    urgent.forEach(r => html += leadCard(r, 'urgent'));
+  // Agrupar leads por día
+  const leads = getAllLeads().filter(l => !filtro || matchFiltro(l, filtro));
+  const porDia = Array.from({length:7}, () => []);
+  const sinFecha = [];
+
+  leads.forEach(lead => {
+    const pa = parseFechaStr(lead.proxAccion);
+    if (!pa) { sinFecha.push(lead); return; }
+    pa.setHours(0,0,0,0);
+    for (let i = 0; i < 7; i++) {
+      if (pa.getTime() === dias[i].getTime()) { porDia[i].push(lead); return; }
+    }
+    // Vencido → columna lunes
+    if (pa < lunes) { porDia[0].push(lead); return; }
+    // Futuro → columna domingo
+    if (pa > dias[6]) { porDia[6].push(lead); return; }
+  });
+
+  let html = `<div class="week-header">`;
+  dias.forEach((d,i) => {
+    const esHoy = d.getTime() === hoyDate.getTime();
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    html += `<div class="week-day-label${esHoy?' today':''}">
+      ${DIAS_NOMBRES[i]}<br><span style="font-size:11px">${dd}/${mm}</span>
+    </div>`;
+  });
+  html += `</div><div class="week-grid">`;
+
+  dias.forEach((d,i) => {
+    const esHoy = d.getTime() === hoyDate.getTime();
+    html += `<div class="week-col${esHoy?' today-col':''}">`;
+    if (!porDia[i].length) {
+      html += `<div style="text-align:center;padding:12px 0;color:var(--muted2);font-size:10px">—</div>`;
+    } else {
+      porDia[i].forEach(lead => {
+        const cls = semClass(lead.semaforo);
+        const canal = canalIcono(lead);
+        html += `<div class="lead-pill ${cls}" onclick="abrirPerfil('${lead._key}')">
+          <div class="pill-empresa">${lead.empresa}</div>
+          <div class="pill-contacto">${lead.contacto}</div>
+          <div class="pill-canal" style="color:${canalColor(lead)}">${canal}</div>
+        </div>`;
+      });
+    }
     html += `</div>`;
-  }
+  });
 
-  if (today.length) {
-    html += `<div class="urgency-section">
-      <div class="urgency-label" style="color:var(--orange)">🟡 Esta semana</div>`;
-    today.forEach(r => html += leadCard(r, 'today'));
-    html += `</div>`;
-  }
+  html += `</div>`;
 
-  if (ok.length) {
-    html += `<div class="urgency-section">
-      <div class="urgency-label" style="color:var(--muted)">🟢 Al día</div>`;
-    ok.forEach(r => html += leadCard(r, 'ok'));
-    html += `</div>`;
-  }
-
-  if (sin.length) {
-    html += `<div class="urgency-section">
-      <div class="urgency-label" style="color:var(--muted)">Sin semáforo</div>`;
-    sin.forEach(r => html += leadCard(r, 'ok'));
-    html += `</div>`;
-  }
-
-  if (!html) html = `<div class="empty"><div class="empty-icon">🎉</div><div class="empty-msg">No hay leads cargados aún</div></div>`;
-  container.innerHTML = html;
-}
-
-function leadCard(r, cls) {
-  const empresa = r[0]||'';
-  const contacto = r[1]||'';
-  const wpp = r[3]||'';
-  const mail = r[4]||'';
-  const medio = r[5]||'';
-  const estado = r[8]||'';
-  const paso = r[11]||r[6]||'';
-  const fecha = r[9]||'';
-
-  const hasWpp = wpp && wpp.trim() && wpp !== 'nan';
-  const hasMail = mail && mail.trim() && mail !== 'nan';
-  const canal = hasWpp ? '💬 WhatsApp' : hasMail ? '📧 Email' : '💼 LinkedIn';
-  const canalColor = hasWpp ? 'var(--green)' : hasMail ? 'var(--gold)' : 'var(--blue)';
-
-  const _key = storeLead({empresa,contacto,wpp,mail,medio,estado,paso,fecha});
-
-  return `<div class="lead-card ${cls}" onclick="openMensajeModal('${_key}')">
-    <div>
-      <div class="lc-empresa">${empresa}</div>
-      <div class="lc-contacto">${contacto} · <span style="color:var(--muted);font-size:11px">${medio}</span></div>
-      ${paso ? `<div class="lc-paso">${paso}</div>` : ''}
-      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${canalColor}">${canal}</span>
-        ${fecha ? `<span class="prox-fecha" onclick="editarFecha('${_key}',event)" title="Click para editar fecha" style="cursor:pointer;text-decoration:underline dotted">· ${fecha.split(' ')[0]}</span>` : `<span class="prox-fecha" onclick="editarFecha('${_key}',event)" style="cursor:pointer;color:var(--muted2)">+ fecha</span>`}
+  if (sinFecha.length) {
+    html += `<div style="margin-top:16px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+        Sin fecha asignada <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span>
       </div>
-    </div>
-    <div class="lc-actions">
-      ${estadoChip(estado)}
-      <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px" onclick="event.stopPropagation();abrirPerfil('${_key}')">👤 Perfil</button>
-    </div>
-  </div>`;
+      <div style="display:flex;gap:8px;flex-wrap:wrap">`;
+    sinFecha.forEach(lead => {
+      html += `<div class="lead-pill neutral" style="min-width:160px" onclick="abrirPerfil('${lead._key}')">
+        <div class="pill-empresa">${lead.empresa}</div>
+        <div class="pill-contacto">${lead.contacto}</div>
+        <div class="pill-canal" style="color:var(--muted2)">${canalIcono(lead)}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  wrapper.innerHTML = html;
+}
+
+function filtrarSemana(v) { renderSemana(v); }
+
+function parseFechaStr(str) {
+  if (!str) return null;
+  str = str.trim();
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return new Date(str.split(' ')[0]);
+  // DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) {
+    const [d,m,y] = str.split('/'); return new Date(+y, +m-1, +d);
+  }
+  return null;
+}
+
+function semClass(sem) {
+  if (!sem) return 'ok';
+  if (sem.includes('🔴') || sem.toLowerCase().includes('vencido')) return 'urgent';
+  if (sem.includes('🟡') || sem.toLowerCase().includes('hoy')) return 'today-p';
+  return 'ok';
+}
+
+function canalIcono(lead) {
+  if (lead.wpp && lead.wpp !== 'nan') return '💬 WPP';
+  if (lead.mail && lead.mail !== 'nan') return '📧 Mail';
+  return '💼 LinkedIn';
+}
+
+function canalColor(lead) {
+  if (lead.wpp && lead.wpp !== 'nan') return 'var(--green)';
+  if (lead.mail && lead.mail !== 'nan') return 'var(--gold)';
+  return 'var(--blue)';
+}
+
+function matchFiltro(lead, filtro) {
+  const f = filtro.toLowerCase();
+  return (lead.empresa||'').toLowerCase().includes(f) || (lead.contacto||'').toLowerCase().includes(f);
+}
+
+// ════════════════════════════════════════════
+// RENDER LEADS CARDS
+// ════════════════════════════════════════════
+function renderLeads(filtro='') {
+  const grid = document.getElementById('leadsGrid');
+  const leads = getAllLeads().filter(l => !filtro || matchFiltro(l,filtro));
+
+  if (!leads.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div>Sin leads cargados</div></div>`;
+    return;
+  }
+
+  // Ordenar: urgente > hoy > ok > sin semáforo
+  const order = l => {
+    const s = l.semaforo||'';
+    if (s.includes('🔴')) return 0;
+    if (s.includes('🟡')) return 1;
+    if (s.includes('🟢')) return 2;
+    return 3;
+  };
+  leads.sort((a,b) => order(a)-order(b));
+
+  grid.innerHTML = leads.map(lead => {
+    const cls = semClass(lead.semaforo);
+    const clsMap = {urgent:'urgent', 'today-p':'today-c', ok:'ok'};
+    const cardCls = clsMap[cls]||'neutral';
+    const hist = lead.historial||[];
+    const hasWpp = lead.wpp && lead.wpp !== 'nan';
+    const hasMail = lead.mail && lead.mail !== 'nan';
+
+    return `<div class="lead-card ${cardCls}" onclick="abrirPerfil('${lead._key}')">
+      <div class="lc-top">
+        <div>
+          <div class="lc-empresa">${lead.empresa}</div>
+          <div class="lc-contacto">${lead.contacto}</div>
+          ${lead.cargo ? `<div class="lc-cargo">${lead.cargo}</div>` : ''}
+        </div>
+        ${estadoChip(lead.estado)}
+      </div>
+      <div class="lc-contacts">
+        ${hasWpp  ? `<span class="lc-badge badge-wpp">💬 ${lead.wpp}</span>` : ''}
+        ${hasMail ? `<span class="lc-badge badge-mail">📧 ${lead.mail}</span>` : ''}
+        ${!hasWpp && !hasMail ? `<span class="lc-badge badge-li">💼 LinkedIn</span>` : ''}
+      </div>
+      ${lead.proxPaso ? `<div class="lc-paso">${lead.proxPaso}</div>` : ''}
+      <div class="lc-bottom">
+        <span class="lc-fecha">${formatFecha(lead.proxAccion)}</span>
+        ${hist.length ? `<span class="hist-count">📋 ${hist.length} entradas</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filtrarLeads(v) { renderLeads(v); }
+
+function formatFecha(str) {
+  if (!str) return '—';
+  const d = parseFechaStr(str);
+  if (!d) return str;
+  return d.toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric'});
 }
 
 function estadoChip(e) {
-  if (!e) return '<span class="chip chip-muted">—</span>';
-  if (e.includes('Tratativa')) return `<span class="chip chip-green">🤝 Tratativa</span>`;
-  if (e.includes('Enviado')) return `<span class="chip chip-gold">✉️ Enviado</span>`;
-  if (e.includes('Nuevo')) return `<span class="chip chip-blue">🆕 Nuevo</span>`;
-  if (e.includes('Pausa')) return `<span class="chip chip-muted">⏸ Pausa</span>`;
-  return `<span class="chip chip-muted">${e}</span>`;
+  if (!e) return '';
+  if (e.includes('Tratativa')) return `<span class="chip chip-green">🤝</span>`;
+  if (e.includes('Enviado'))   return `<span class="chip chip-gold">✉️</span>`;
+  if (e.includes('Nuevo'))     return `<span class="chip chip-blue">🆕</span>`;
+  if (e.includes('Pausa'))     return `<span class="chip chip-muted">⏸</span>`;
+  if (e.includes('Perdido'))   return `<span class="chip chip-red">✗</span>`;
+  return `<span class="chip chip-muted">${e.substring(0,8)}</span>`;
 }
 
-// ── RENDER LEADS TABLE ────────────────────────────────────
-function renderLeads() {
-  const tbody = document.getElementById('leadsBody');
-  if (!sheetData.leads.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Sin leads cargados</td></tr>';
-    return;
-  }
-  tbody.innerHTML = sheetData.leads.map(r => {
-    const wpp = r[3]||'';
-    const mail = r[4]||'';
-    const hasWpp = wpp && wpp !== 'nan';
-    const hasMail = mail && mail !== 'nan';
-    const _key = storeLead({empresa:r[0],contacto:r[1],wpp:r[3],mail:r[4],medio:r[5],estado:r[8],paso:r[11]||r[6],fecha:r[9]});
-    return `<tr>
-      <td>
-        <div class="lead-empresa">${r[0]||''}</div>
-        <div class="lead-contacto">${r[1]||''}</div>
-      </td>
-      <td>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          ${hasWpp ? `<span style="font-size:11px;color:var(--green)">💬 ${wpp}</span>` : ''}
-          ${hasMail ? `<span style="font-size:11px;color:var(--gold)">📧 ${mail}</span>` : ''}
-          ${!hasWpp && !hasMail ? `<span style="font-size:11px;color:var(--muted)">Solo LinkedIn</span>` : ''}
-        </div>
-      </td>
-      <td>${estadoChip(r[8]||'')}</td>
-      <td>${r[10]||'—'}</td>
-      <td><div class="paso-text">${r[11]||r[6]||'—'}</div>
-        ${r[9] ? `<div class="prox-fecha">${(r[9]+'').split(' ')[0]}</div>` : ''}
-      </td>
-      <td style="display:flex;gap:6px;flex-direction:column">
-        <button class="btn btn-ghost btn-sm" onclick="openMensajeModal('${_key}')">✉️ Mensaje</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:10px" onclick="abrirPerfil('${_key}')">👤 Perfil</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-// ── RENDER VISTAGE ────────────────────────────────────────
-function renderVistage() {
+// ════════════════════════════════════════════
+// RENDER VISTAGE
+// ════════════════════════════════════════════
+function renderVistage(filtro='') {
   const tbody = document.getElementById('vistageBody');
-  if (!sheetData.vistage.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">Sin datos de Vistage cargados en el Sheets</td></tr>';
+  const rows = (window._vistageRows||[]).filter(r => {
+    if (!filtro) return true;
+    const f = filtro.toLowerCase();
+    return (r[0]||'').toLowerCase().includes(f) || (r[2]||'').toLowerCase().includes(f);
+  });
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--muted)">Sin datos Vistage</td></tr>`;
     return;
   }
-  tbody.innerHTML = sheetData.vistage.map(r => `<tr>
+
+  tbody.innerHTML = rows.map(r => `<tr onclick="abrirPerfilVistage(${JSON.stringify([r[0],r[2],r[4],r[5],r[6]]).replace(/"/g,'&quot;')})">
     <td>
-      <div class="lead-empresa">${r[2]||''}</div>
-      <div class="lead-contacto">${r[0]||''}</div>
+      <div style="font-weight:700;font-size:13px">${r[2]||''}</div>
+      <div style="font-size:11px;color:var(--muted)">${r[0]||''}</div>
     </td>
-    <td><span style="font-size:12px;color:var(--muted)">${r[4]||'—'}</span></td>
+    <td style="font-size:12px;color:var(--muted)">${r[4]||'—'}</td>
     <td>${estadoChip(r[5]||'')}</td>
-    <td><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">${(r[6]||'').split(' ')[0]||'—'}</span></td>
-    <td><button class="btn btn-ghost btn-sm" onclick="moverALeads('${encodeURIComponent(r[2]||'')}','${encodeURIComponent(r[0]||'')}','${encodeURIComponent(r[4]||'')}')">→ A Leads</button></td>
+    <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">${(r[6]||'').split(' ')[0]||'—'}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();moverALeads('${encodeURIComponent(r[0]||'')}','${encodeURIComponent(r[2]||'')}','${encodeURIComponent(r[4]||'')}')">→ A Leads</button></td>
   </tr>`).join('');
 }
 
-// ── POPULATE SELECTS ──────────────────────────────────────
-function populateRespSelect() {
-  const sel = document.getElementById('respLead');
-  const opts = sheetData.leads.map(r => {
-    const rk = storeLead({empresa:r[0],contacto:r[1],wpp:r[3],mail:r[4],paso:r[11]||r[6]});
-    return `<option value="${rk}">${r[0]} — ${r[1]}</option>`;
-  }).join('');
-  sel.innerHTML = '<option value="">— Seleccioná el lead —</option>' + opts;
+function filtrarVistage(v) { renderVistage(v); }
+
+function abrirPerfilVistage(data) {
+  const [company, nombre, rubro, estado, ultimoContacto] = data;
+  const key = setLead({
+    empresa: company || nombre,
+    contacto: nombre,
+    cargo: '', wpp:'', mail:'', medio:'Vistage', rubro,
+    estado: estado||'0 - Enviado Linkedin',
+    proxAccion:'', semaforo:'🟢 Ok', proxPaso:''
+  });
+  abrirPerfil(key);
 }
 
-// ── PLAN DEL DÍA IA ───────────────────────────────────────
-async function generarPlanDia() {
-  const leads = sheetData.leads;
-  if (!leads.length) { showNotify('Cargá la planilla primero', 'error'); return; }
-
-  const resumen = leads.map(r => {
-    const wpp = r[3]&&r[3]!=='nan' ? `WPP: ${r[3]}` : '';
-    const mail = r[4]&&r[4]!=='nan' ? `Mail: ${r[4]}` : '';
-    const contacto = wpp || mail || 'Solo LinkedIn';
-    return `• ${r[0]} / ${r[1]} | ${r[5]||''} | ${r[8]||''} | ${r[10]||'sin semáforo'} | ${contacto} | ${r[11]||r[6]||''}`;
-  }).join('\n');
-
-  const prompt = `${ENFOCO_CTX}
-
-HOY ES: ${new Date().toLocaleDateString('es-AR', {weekday:'long',day:'numeric',month:'long'})}
-
-LEADS ACTUALES:
-${resumen}
-
-Dame el plan del día:
-1. Los 3-5 leads que hay que tocar HOY en orden de prioridad
-2. Para cada uno: por qué medio (WPP/LinkedIn/Mail) y por qué
-3. Una línea de qué decirle a cada uno
-
-Sé directo y concreto. Sin intro larga.`;
-
-  document.getElementById('loaderHoy').classList.add('on');
-  document.getElementById('planResult').style.display = 'none';
-
-  try {
-    const r = await callClaude(prompt);
-    document.getElementById('planBody').textContent = r;
-    document.getElementById('planResult').style.display = 'block';
-  } catch(e) { showNotify('Error IA: ' + e.message, 'error'); }
-  finally { document.getElementById('loaderHoy').classList.remove('on'); }
+function moverALeads(companyEnc, nombreEnc, rubroEnc) {
+  const company = decodeURIComponent(companyEnc);
+  const nombre  = decodeURIComponent(nombreEnc);
+  const rubro   = decodeURIComponent(rubroEnc);
+  const key = setLead({
+    empresa: company||nombre, contacto: nombre,
+    cargo:'', wpp:'', mail:'', medio:'Vistage', rubro,
+    estado:'1 - Nuevo', proxAccion: hoy(0), semaforo:'🟡 Hoy', proxPaso:'Respondió en Vistage'
+  });
+  renderLeads();
+  showNotify(`${nombre} movido a Leads ✓`, 'success');
+  abrirPerfil(key);
 }
 
-// ── MODAL MENSAJE ─────────────────────────────────────────
-function openMensajeModal(key) {
-  currentLead = getLead(key);
-  if(!currentLead){showNotify('Error cargando lead','error');return;}
-  document.getElementById('modalMensajeTitulo').textContent =
-    `Mensaje para ${currentLead.empresa}`;
-  document.getElementById('msgResult').style.display = 'none';
-  document.getElementById('msgAccion').style.display = 'none';
-  document.getElementById('msg_contexto').value = '';
+// ════════════════════════════════════════════
+// PERFIL DEL LEAD
+// ════════════════════════════════════════════
+function abrirPerfil(key) {
+  const lead = getLead(key);
+  if (!lead) return;
+  currentPerfilKey = key;
 
-  // Auto-seleccionar canal según datos disponibles
-  if (currentLead.wpp && currentLead.wpp !== 'nan') selectCanal('wpp', document.querySelector('.canal-opt.wpp'));
-  else if (currentLead.mail && currentLead.mail !== 'nan') selectCanal('mail', document.querySelector('.canal-opt.mail'));
+  // Header
+  document.getElementById('pf_titulo').textContent = lead.empresa;
+  document.getElementById('pf_subtitulo').textContent =
+    [lead.contacto, lead.cargo, lead.rubro].filter(Boolean).join(' · ');
+  document.getElementById('pf_estado_chip').innerHTML = estadoChipFull(lead.estado);
+
+  // Badges de contacto
+  const hasWpp  = lead.wpp && lead.wpp !== 'nan';
+  const hasMail = lead.mail && lead.mail !== 'nan';
+  document.getElementById('pf_badges').innerHTML = [
+    hasWpp  ? `<span class="lc-badge badge-wpp">💬 ${lead.wpp}</span>` : '',
+    hasMail ? `<span class="lc-badge badge-mail">📧 ${lead.mail}</span>` : '',
+    !hasWpp&&!hasMail ? `<span class="lc-badge badge-li">💼 Solo LinkedIn</span>` : '',
+    lead.medio ? `<span class="lc-badge" style="background:var(--s3);color:var(--muted);border:1px solid var(--border)">📌 ${lead.medio}</span>` : '',
+  ].join('');
+
+  // Fecha — sugerir +3 días si está vacía
+  let fechaISO = '';
+  if (lead.proxAccion) {
+    const d = parseFechaStr(lead.proxAccion);
+    if (d) fechaISO = d.toISOString().split('T')[0];
+  }
+  if (!fechaISO) {
+    // Sugerir +3 días
+    const sugerida = new Date(); sugerida.setDate(sugerida.getDate()+3);
+    fechaISO = sugerida.toISOString().split('T')[0];
+  }
+  document.getElementById('pf_fecha').value = fechaISO;
+
+  // Semáforo y estado
+  const semSel = document.getElementById('pf_semaforo');
+  if (lead.semaforo?.includes('🔴')) semSel.value = '🔴 Vencido';
+  else if (lead.semaforo?.includes('🟡')) semSel.value = '🟡 Hoy';
+  else semSel.value = '🟢 Ok';
+
+  const estSel = document.getElementById('pf_estado');
+  const estados = ['1 - Nuevo','2 - Enviado','6 - Proyecto En Tratativa','3 - En Pausa','0 - Perdido'];
+  const estMatch = estados.find(e => lead.estado && lead.estado.includes(e.split(' - ')[1]?.split(' ')[0]||'X'));
+  if (lead.estado) {
+    // Match por valor exacto o parcial
+    const opt = Array.from(estSel.options).find(o => lead.estado.includes(o.value.split(' - ')[1]?.split(' ')[0]||'XXX'));
+    if (opt) estSel.value = opt.value; else estSel.value = '1 - Nuevo';
+  }
+
+  // Auto-seleccionar canal
+  if (hasWpp) selectCanal('wpp', document.querySelector('.canal-opt.wpp'));
+  else if (hasMail) selectCanal('mail', document.querySelector('.canal-opt.mail'));
   else selectCanal('li', document.querySelector('.canal-opt.li'));
 
-  openModal('modalMensaje');
+  // Resetear secciones
+  document.getElementById('pf_responder').style.display = 'none';
+  document.getElementById('pf_nota').style.display = 'none';
+  document.getElementById('pf_msg_block').style.display = 'none';
+  document.getElementById('pf_msg_post').style.display = 'none';
+
+  // Historial
+  renderHistorialPerfil(lead);
+
+  openModal('modalPerfil');
+
+  // Generar sugerencia AI
+  generarSugerenciaAI(lead);
 }
 
-async function generarMensaje() {
-  if (!currentLead) return;
+function estadoChipFull(e) {
+  if (!e) return '';
+  if (e.includes('Tratativa')) return `<span class="chip chip-green">🤝 En Tratativa</span>`;
+  if (e.includes('Enviado'))   return `<span class="chip chip-gold">✉️ Enviado</span>`;
+  if (e.includes('Nuevo'))     return `<span class="chip chip-blue">🆕 Nuevo</span>`;
+  if (e.includes('Pausa'))     return `<span class="chip chip-muted">⏸ En Pausa</span>`;
+  if (e.includes('Perdido'))   return `<span class="chip chip-red">✗ Perdido</span>`;
+  return `<span class="chip chip-muted">${e}</span>`;
+}
 
-  const tipo = document.getElementById('msg_tipo').value;
-  const ctx  = document.getElementById('msg_contexto').value;
-  const canalNombre = selectedCanal === 'wpp' ? 'WhatsApp' : selectedCanal === 'li' ? 'LinkedIn' : 'Email';
+function renderHistorialPerfil(lead) {
+  const container = document.getElementById('pf_historial');
+  const hist = lead.historial || [];
+  if (!hist.length) {
+    container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Sin historial. Registrá la primera interacción.</div>`;
+    return;
+  }
+  container.innerHTML = [...hist].reverse().map(h => {
+    const isCliente = h.quien === 'Cliente';
+    const isCom = h.quien === 'Comercial';
+    const isNota = h.tipo === 'nota';
+    const cls = isCliente ? 'cliente' : isCom ? 'comercial' : 'nota';
+    const tipoLabel = {wpp:'💬 WhatsApp', mail:'📧 Email', linkedin:'💼 LinkedIn', reunion:'🤝 Reunión', nota:'📝 Nota'}[h.tipo] || h.tipo;
+    const colorTipo = {wpp:'var(--green)', mail:'var(--gold)', linkedin:'var(--blue)', reunion:'var(--purple)', nota:'var(--gold)'}[h.tipo] || 'var(--muted)';
+    return `<div class="hist-item ${cls}">
+      <div class="hist-meta">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="hist-tipo" style="color:${colorTipo}">${tipoLabel}</span>
+          <span style="font-size:10px;font-weight:700;color:${isCliente?'var(--green)':isCom?'var(--blue)':'var(--muted)'}">${h.quien||''}</span>
+        </div>
+        <span class="hist-fecha">${h.fecha||''}</span>
+      </div>
+      <div class="hist-contenido">${h.contenido||''}</div>
+    </div>`;
+  }).join('');
+}
 
-  const prompt = `${ENFOCO_CTX}
+// ════════════════════════════════════════════
+// SUGERENCIA AI (al abrir perfil)
+// ════════════════════════════════════════════
+async function generarSugerenciaAI(lead) {
+  document.getElementById('pf_ai_block').style.display = 'none';
+  document.getElementById('loaderAI').classList.add('on');
 
-Generame un mensaje de ${canalNombre} para:
-- Empresa: ${currentLead.empresa}
-- Contacto: ${currentLead.contacto}
-- Tipo: ${tipo}
-- Contexto previo: ${currentLead.paso||'sin historial'}
-- Info adicional: ${ctx||'ninguna'}
-${currentLead.wpp && currentLead.wpp!=='nan' ? `- Tiene WhatsApp: ${currentLead.wpp}` : ''}
-${currentLead.mail && currentLead.mail!=='nan' ? `- Tiene email: ${currentLead.mail}` : '- Sin contacto directo, solo LinkedIn'}
+  const hist = (lead.historial||[]).slice(-3);
+  const histText = hist.length
+    ? hist.map(h => `[${h.quien||'?'} - ${h.tipo}] ${h.contenido}`).join('\n')
+    : `Último paso registrado: ${lead.proxPaso||'ninguno'}`;
 
-Escribí SOLO el mensaje, listo para copiar y pegar. Sin comillas ni explicaciones.${canalNombre==='Email' ? ' Incluí asunto en la primera línea.' : ''}`;
+  const fechaSugerida = (() => {
+    const d = new Date(); d.setDate(d.getDate()+3);
+    return d.toLocaleDateString('es-AR');
+  })();
 
-  document.getElementById('loaderMsg').classList.add('on');
-  document.getElementById('msgResult').style.display = 'none';
-  document.getElementById('msgAccion').style.display = 'none';
+  const prompt = ENFOCO_CTX + `
+
+LEAD: ${lead.empresa} / ${lead.contacto}
+${lead.rubro ? `Rubro: ${lead.rubro}` : ''}
+${lead.wpp && lead.wpp!=='nan' ? `Tiene WhatsApp: ${lead.wpp}` : lead.mail && lead.mail!=='nan' ? `Tiene email: ${lead.mail}` : 'Solo LinkedIn'}
+Estado: ${lead.estado||'—'}
+
+ÚLTIMAS INTERACCIONES:
+${histText}
+
+Analizá el historial y respondé en este formato exacto (3 líneas máximo por sección):
+TEMA: [de qué vienen hablando, o qué propusimos]
+SUGERENCIA: [qué decirle ahora y por dónde]
+CUÁNDO: [${fechaSugerida} — o si hay mejor momento según contexto]`;
 
   try {
     const r = await callClaude(prompt);
-    document.getElementById('msgBody').textContent = r;
-    document.getElementById('msgResult').style.display = 'block';
-    document.getElementById('msgAccion').style.display = 'block';
-    // Auto-guardar en historial local
-    const localKey = 'hist_' + currentLead.empresa.toLowerCase().replace(/\s/g,'_');
-    const local = JSON.parse(localStorage.getItem(localKey) || '[]');
-    local.push({ tipo: 'mensaje_enviado', canal: canalNombre, contenido: r, fecha: new Date().toLocaleString('es-AR') });
-    localStorage.setItem(localKey, JSON.stringify(local));
+    document.getElementById('pf_ai_body').textContent = r;
+    document.getElementById('pf_ai_block').style.display = 'block';
+  } catch(e) {
+    document.getElementById('pf_ai_body').textContent = 'No se pudo generar sugerencia: ' + e.message;
+    document.getElementById('pf_ai_block').style.display = 'block';
+  } finally {
+    document.getElementById('loaderAI').classList.remove('on');
+  }
+}
+
+async function refreshAI() {
+  const lead = getLead(currentPerfilKey);
+  if (lead) generarSugerenciaAI(lead);
+}
+
+// ════════════════════════════════════════════
+// GENERADOR DE MENSAJE DENTRO DEL PERFIL
+// ════════════════════════════════════════════
+function toggleResponder() {
+  const el = document.getElementById('pf_responder');
+  const visible = el.style.display === 'flex';
+  el.style.display = visible ? 'none' : 'flex';
+  el.style.flexDirection = 'column';
+  document.getElementById('pf_nota').style.display = 'none';
+}
+
+function toggleNota() {
+  const el = document.getElementById('pf_nota');
+  const visible = el.style.display === 'flex';
+  el.style.display = visible ? 'none' : 'flex';
+  el.style.flexDirection = 'column';
+  document.getElementById('pf_responder').style.display = 'none';
+}
+
+async function generarMensajePerfil() {
+  const lead = getLead(currentPerfilKey);
+  if (!lead) return;
+
+  const tipo = document.getElementById('pf_msg_tipo').value;
+  const ctx  = document.getElementById('pf_msg_ctx').value.trim();
+  const canalNombre = selectedCanal === 'wpp' ? 'WhatsApp' : selectedCanal === 'li' ? 'LinkedIn' : 'Email';
+
+  const hist = (lead.historial||[]).slice(-3);
+  const histText = hist.map(h => `[${h.quien} - ${h.tipo}]: ${h.contenido}`).join('\n') || lead.proxPaso || 'sin historial previo';
+
+  const prompt = ENFOCO_CTX + `
+
+Generame un mensaje de ${canalNombre} para:
+Empresa: ${lead.empresa}
+Contacto: ${lead.contacto}
+${lead.cargo ? `Cargo: ${lead.cargo}` : ''}
+${lead.rubro ? `Rubro: ${lead.rubro}` : ''}
+Tipo: ${tipo}
+${lead.wpp && lead.wpp!=='nan' ? `WhatsApp: ${lead.wpp}` : lead.mail && lead.mail!=='nan' ? `Email: ${lead.mail}` : 'Sin contacto directo — solo LinkedIn'}
+
+HISTORIAL RECIENTE:
+${histText}
+${ctx ? `\nINFO NUEVA / RESPUESTA RECIBIDA:\n${ctx}` : ''}
+
+Escribí SOLO el mensaje listo para copiar. Sin comillas ni explicaciones previas.${canalNombre==='Email' ? ' Primera línea: Asunto: ...' : ''}`;
+
+  document.getElementById('loaderMsg').classList.add('on');
+  document.getElementById('pf_msg_block').style.display = 'none';
+  document.getElementById('pf_msg_post').style.display = 'none';
+
+  try {
+    const r = await callClaude(prompt);
+    document.getElementById('pf_msg_body').textContent = r;
+    document.getElementById('pf_msg_block').style.display = 'block';
+    document.getElementById('pf_msg_post').style.display = 'block';
+
+    // Auto-guardar en historial como mensaje generado
+    agregarEntradaHistorial(lead.empresa, {
+      tipo: selectedCanal,
+      quien: 'Comercial',
+      contenido: `[GENERADO - sin confirmar envío]\n${r}`
+    });
   } catch(e) { showNotify('Error: ' + e.message, 'error'); }
   finally { document.getElementById('loaderMsg').classList.remove('on'); }
 }
 
-function confirmarEnvioMsg() {
-  const dias = parseInt(document.getElementById('msgDias').value);
-  const nueva = new Date();
-  nueva.setDate(nueva.getDate() + dias);
-  const fechaFmt = nueva.toLocaleDateString('es-AR');
+function confirmarEnvio() {
+  const lead = getLead(currentPerfilKey);
+  if (!lead) return;
+  const dias = parseInt(document.getElementById('pf_dias').value);
+  const nueva = new Date(); nueva.setDate(nueva.getDate()+dias);
+  const fechaISO = nueva.toISOString().split('T')[0];
+  const msg = document.getElementById('pf_msg_body').textContent;
 
-  // Actualizar fecha en memoria si hay lead seleccionado
-  if (currentLead) {
-    const idx = sheetData.leads.findIndex(r => r[0] === currentLead.empresa);
-    if (idx >= 0) {
-      sheetData.leads[idx][9] = fechaFmt;
-      sheetData.leads[idx][10] = dias <= 2 ? '🟡 Hoy' : '🟢 Ok';
-    }
-    currentLead.fecha = fechaFmt;
+  // Actualizar historial — marcar como enviado
+  const hist = lead.historial||[];
+  // Reemplazar el último entry "GENERADO" con confirmado
+  const lastIdx = hist.map(h=>h.contenido).lastIndexOf(hist.filter(h=>h.contenido?.startsWith('[GENERADO')).slice(-1)[0]?.contenido);
+  if (lastIdx >= 0) {
+    hist[lastIdx].contenido = msg;
+    hist[lastIdx].quien = 'Comercial';
+    guardarHistorialLocal(lead.empresa, hist);
   }
 
-  showNotify(`✓ Registrado. Próximo seguimiento: ${fechaFmt}`, 'success');
-  document.getElementById('msgAccion').style.display = 'none';
-  closeModal('modalMensaje');
-  renderHoy();
+  // Actualizar fecha en store
+  store[currentPerfilKey].proxAccion = fechaISO;
+
+  // Sync Sheets
+  if (SCRIPT_URL) {
+    callScript('updateLead', {
+      empresa: lead.empresa,
+      proxAccion: nueva.toLocaleDateString('es-AR'),
+      semaforo: '🟢 Ok',
+    }).catch(()=>{});
+  }
+
+  document.getElementById('pf_msg_post').style.display = 'none';
+  showNotify(`✓ Registrado. Próximo: ${nueva.toLocaleDateString('es-AR')}`, 'success');
+  renderHistorialPerfil(getLead(currentPerfilKey));
+  renderAll();
+}
+
+// ════════════════════════════════════════════
+// GUARDAR NOTA
+// ════════════════════════════════════════════
+function guardarNota() {
+  const lead = getLead(currentPerfilKey);
+  if (!lead) return;
+  const tipo     = document.getElementById('nt_tipo').value; // cliente|comercial|nota
+  const canal    = document.getElementById('nt_canal').value;
+  const contenido= document.getElementById('nt_contenido').value.trim();
+  if (!contenido) { showNotify('Escribí algo primero', 'error'); return; }
+
+  const quien = tipo === 'cliente' ? 'Cliente' : tipo === 'comercial' ? 'Comercial' : 'Nota';
+  agregarEntradaHistorial(lead.empresa, { tipo: canal, quien, contenido });
+
+  document.getElementById('nt_contenido').value = '';
+  renderHistorialPerfil(getLead(currentPerfilKey));
   renderLeads();
+  renderSemana();
+  showNotify('Guardado ✓', 'success');
 }
 
-// ── ANALIZAR LINKEDIN ─────────────────────────────────────
+// ════════════════════════════════════════════
+// GUARDAR CAMBIOS DEL LEAD
+// ════════════════════════════════════════════
+async function guardarCambiosLead() {
+  const lead = getLead(currentPerfilKey);
+  if (!lead) return;
+
+  const fechaVal  = document.getElementById('pf_fecha').value;
+  const semaforo  = document.getElementById('pf_semaforo').value;
+  const estado    = document.getElementById('pf_estado').value;
+
+  let fechaFmt = '';
+  if (fechaVal) {
+    const [y,m,d] = fechaVal.split('-');
+    fechaFmt = `${d}/${m}/${y}`;
+  }
+
+  store[currentPerfilKey].proxAccion = fechaVal || lead.proxAccion;
+  store[currentPerfilKey].semaforo   = semaforo;
+  store[currentPerfilKey].estado     = estado;
+
+  if (SCRIPT_URL) {
+    try {
+      await callScript('updateLead', { empresa: lead.empresa, proxAccion: fechaFmt, semaforo, estado });
+      showNotify('✓ Guardado en Sheets', 'success');
+    } catch(e) {
+      showNotify('Guardado local (Sheets: ' + e.message + ')', 'error');
+    }
+  } else {
+    showNotify('✓ Actualizado', 'success');
+  }
+
+  renderAll();
+  closeModal('modalPerfil');
+}
+
+// ════════════════════════════════════════════
+// CARGAR VISTAGE DESDE LINKEDIN
+// ════════════════════════════════════════════
 async function analizarLinkedIn() {
-  const url = document.getElementById('liUrl').value.trim();
-  const rubro = document.getElementById('liRubro').value.trim();
-  if (!url) { showNotify('Ingresá la URL', 'error'); return; }
-
-  const prompt = `${ENFOCO_CTX}
-
-Me pasaron este perfil de LinkedIn para prospectar: ${url}
-Rubro aproximado: ${rubro||'desconocido'}
-
-Basándote en la URL (extrae el nombre del slug si podés) y el rubro:
-1. Sugerí nombre probable, empresa probable, cargo probable
-2. Generá un mensaje de primer contacto de LinkedIn listo para enviar
-3. Devolvé en este formato exacto:
-NOMBRE: [nombre]
-EMPRESA: [empresa]
-CARGO: [cargo]
-RUBRO: [rubro]
-MENSAJE:
-[el mensaje]`;
-
-  await procesarAnalisisLi(prompt, url);
-}
-
-async function analizarTextoLinkedIn() {
   const texto = document.getElementById('liTexto').value.trim();
-  const rubro = document.getElementById('liRubro2').value.trim();
-  if (!texto) { showNotify('Pegá el texto del perfil', 'error'); return; }
+  const rubro = document.getElementById('liRubro').value.trim();
+  const url   = document.getElementById('liUrl').value.trim();
+  if (!texto && !url) { showNotify('Pegá texto del perfil o la URL', 'error'); return; }
 
-  const prompt = `${ENFOCO_CTX}
+  const prompt = ENFOCO_CTX + `
 
-Me pasaron esta info de un perfil de LinkedIn:
-${texto}
-Rubro adicional: ${rubro||''}
+Perfil a analizar:
+${texto || 'URL: ' + url}
+Rubro adicional: ${rubro||'desconocido'}
 
-1. Extraé: nombre, empresa, cargo, rubro
-2. Generá un mensaje de primer contacto de LinkedIn personalizado basándote en los datos
-3. Devolvé en este formato exacto:
-NOMBRE: [nombre]
+Extraé la info y generá un primer mensaje de LinkedIn.
+Respondé EXACTAMENTE en este formato:
+NOMBRE: [nombre completo]
 EMPRESA: [empresa]
 CARGO: [cargo]
 RUBRO: [rubro]
 MENSAJE:
-[el mensaje]`;
+[mensaje de primer contacto, máx 5 líneas, mencioná Vistage G-308]`;
 
-  await procesarAnalisisLi(prompt, '');
-}
-
-async function procesarAnalisisLi(prompt, url) {
   document.getElementById('loaderLi').classList.add('on');
-  document.getElementById('liResult').style.display = 'none';
   document.getElementById('liFormContainer').style.display = 'none';
 
   try {
     const r = await callClaude(prompt);
-    document.getElementById('liBody').textContent = r;
-    document.getElementById('liResult').style.display = 'block';
-
-    // Parsear respuesta
-    const nombre  = (r.match(/NOMBRE:\s*(.+)/i)||[])[1]?.trim()||'';
-    const empresa = (r.match(/EMPRESA:\s*(.+)/i)||[])[1]?.trim()||'';
-    const cargo   = (r.match(/CARGO:\s*(.+)/i)||[])[1]?.trim()||'';
-    const rubro   = (r.match(/RUBRO:\s*(.+)/i)||[])[1]?.trim()||'';
+    const get = (field) => (r.match(new RegExp(field+':\\s*(.+)','i'))||[])[1]?.trim()||'';
     const msgMatch = r.match(/MENSAJE:\s*([\s\S]+)/i);
-    const msg = msgMatch ? msgMatch[1].trim() : '';
 
-    document.getElementById('vi_nombre').value  = nombre;
-    document.getElementById('vi_company').value = empresa;
-    document.getElementById('vi_cargo').value   = cargo;
-    document.getElementById('vi_rubro').value   = rubro;
-    document.getElementById('vi_url').value     = url || '';
-    document.getElementById('vi_msg').value     = msg;
-    document.getElementById('liFormContainer').style.display = 'block';
+    document.getElementById('vi_nombre').value  = get('NOMBRE');
+    document.getElementById('vi_company').value = get('EMPRESA');
+    document.getElementById('vi_cargo').value   = get('CARGO');
+    document.getElementById('vi_rubro').value   = get('RUBRO') || rubro;
+    document.getElementById('vi_msg').value     = msgMatch ? msgMatch[1].trim() : '';
+    document.getElementById('liFormContainer').style.display = 'flex';
   } catch(e) { showNotify('Error: ' + e.message, 'error'); }
   finally { document.getElementById('loaderLi').classList.remove('on'); }
 }
 
 function guardarVistage() {
-  const nombre  = document.getElementById('vi_nombre').value;
-  const empresa = document.getElementById('vi_company').value;
-  if (!nombre && !empresa) { showNotify('Completá al menos nombre o empresa', 'error'); return; }
+  const nombre  = document.getElementById('vi_nombre').value.trim();
+  const company = document.getElementById('vi_company').value.trim();
+  const msg     = document.getElementById('vi_msg').value.trim();
+  if (!nombre && !company) { showNotify('Completá al menos nombre o empresa', 'error'); return; }
 
-  // Agregar a datos locales
-  const entry = [empresa,'',nombre,document.getElementById('vi_url').value,
-    document.getElementById('vi_rubro').value,'0 - Enviado Linkedin',
-    new Date().toLocaleDateString('es-AR'),'','',document.getElementById('vi_msg').value,''];
-  sheetData.vistage.unshift(entry);
+  const row = [company,'',nombre,'',document.getElementById('vi_rubro').value,'0 - Enviado Linkedin',
+    new Date().toLocaleDateString('es-AR'),'','','','',''];
+  if (!window._vistageRows) window._vistageRows = [];
+  window._vistageRows.unshift(row);
   renderVistage();
-  showNotify(`✓ ${nombre} guardado en Vistage 2026`, 'success');
 
-  // Limpiar
-  ['vi_nombre','vi_company','vi_cargo','vi_rubro','vi_url','vi_prov','vi_msg'].forEach(id =>
+  // Guardar en historial local
+  if (msg) {
+    agregarEntradaHistorial(company||nombre, {tipo:'linkedin', quien:'Comercial', contenido: msg});
+  }
+
+  if (SCRIPT_URL) {
+    callScript('addVistage', {company, nombre, rubro:document.getElementById('vi_rubro').value, primerMensaje:msg}).catch(()=>{});
+  }
+
+  showNotify(`✓ ${nombre||company} guardado en Vistage`, 'success');
+  ['liTexto','liUrl','liRubro','vi_nombre','vi_company','vi_cargo','vi_rubro','vi_msg'].forEach(id =>
     document.getElementById(id).value = '');
-  document.getElementById('liResult').style.display = 'none';
   document.getElementById('liFormContainer').style.display = 'none';
-  document.getElementById('liUrl').value = '';
-  document.getElementById('liTexto').value = '';
 }
 
-// ── PROCESAR RESPUESTA ────────────────────────────────────
-async function procesarRespuesta() {
-  const leadSel = document.getElementById('respLead').value;
-  const texto   = document.getElementById('respTexto').value.trim();
-  if (!leadSel || !texto) { showNotify('Seleccioná el lead y pegá la respuesta', 'error'); return; }
+// ════════════════════════════════════════════
+// NUEVO LEAD MANUAL
+// ════════════════════════════════════════════
+function guardarNuevoLead() {
+  const empresa = document.getElementById('nl_empresa').value.trim();
+  if (!empresa) { showNotify('Completá la empresa', 'error'); return; }
 
-  const lead = getLead(leadSel) || {};
-  const wpp  = document.getElementById('respWpp').value.trim() || lead.wpp;
-  const mail = document.getElementById('respMail').value.trim() || lead.mail;
-  const hasWpp  = wpp && wpp !== 'nan';
-  const hasMail = mail && mail !== 'nan';
-  const canal   = hasWpp ? 'WhatsApp' : hasMail ? 'Email' : 'LinkedIn';
+  setLead({
+    empresa, contacto: document.getElementById('nl_contacto').value,
+    cargo: document.getElementById('nl_cargo').value,
+    rubro: document.getElementById('nl_rubro').value,
+    wpp:   document.getElementById('nl_wpp').value,
+    mail:  document.getElementById('nl_mail').value,
+    medio: document.getElementById('nl_origen').value,
+    estado: document.getElementById('nl_estado').value,
+    proxAccion: hoy(0), semaforo:'🟡 Hoy',
+    proxPaso: document.getElementById('nl_paso').value,
+  });
 
-  const prompt = `${ENFOCO_CTX}
-
-LEAD: ${lead.empresa} / ${lead.contacto}
-HISTORIAL PREVIO: ${lead.paso||'sin historial'}
-${hasWpp ? `TIENE WHATSAPP: ${wpp}` : hasMail ? `TIENE EMAIL: ${mail}` : 'SOLO LINKEDIN'}
-
-ME RESPONDIÓ ESTO:
-"${texto}"
-
-Hacé 3 cosas:
-1. RESUMEN (2 líneas): qué dijo y cómo está la conversación
-2. PRÓXIMO PASO: qué recomendar hacer ahora
-3. MENSAJE (listo para copiar por ${canal}): la respuesta ideal
-
-Formato:
-RESUMEN:
-[resumen]
-
-PRÓXIMO PASO:
-[recomendación]
-
-MENSAJE POR ${canal.toUpperCase()}:
-[mensaje]`;
-
-  document.getElementById('loaderResp').classList.add('on');
-  document.getElementById('respResult').style.display = 'none';
-  document.getElementById('respAccion').style.display = 'none';
-
-  try {
-    const r = await callClaude(prompt);
-    document.getElementById('respBody').textContent = r;
-    document.getElementById('respResult').style.display = 'block';
-    document.getElementById('respAccion').style.display = 'block';
-
-    // Si respondió → mover a leads si venía de vistage
-    const origen = document.getElementById('respOrigen').value;
-    if (origen === 'vistage') {
-      showNotify(`${lead.empresa} debería moverse a Leads 2026`, 'success');
-    }
-  } catch(e) { showNotify('Error: ' + e.message, 'error'); }
-  finally { document.getElementById('loaderResp').classList.remove('on'); }
-}
-
-function confirmarEnvio() {
-  const dias = parseInt(document.getElementById('respDias').value);
-  const nueva = new Date();
-  nueva.setDate(nueva.getDate() + dias);
-  showNotify(`✓ Próximo seguimiento: ${nueva.toLocaleDateString('es-AR')}`, 'success');
-  document.getElementById('respAccion').style.display = 'none';
-}
-
-function moverALeads(empresa, nombre, rubro) {
-  showPanel('respuesta', document.querySelector('.nav-item:nth-child(6)'));
-  document.getElementById('respOrigen').value = 'vistage';
-  showNotify(`Registrá la respuesta de ${decodeURIComponent(nombre)} para moverlo a Leads`, 'success');
-}
-
-// ── GUARDAR LEAD MANUAL ───────────────────────────────────
-function guardarLead() {
-  const empresa = document.getElementById('nl_empresa').value;
-  if (!empresa) { showNotify('Completá al menos la empresa', 'error'); return; }
-  const entry = [
-    empresa,
-    document.getElementById('nl_contacto').value,
-    document.getElementById('nl_cargo').value,
-    document.getElementById('nl_wpp').value,
-    document.getElementById('nl_mail').value,
-    document.getElementById('nl_origen').value,
-    document.getElementById('nl_rubro').value,
-    '',
-    document.getElementById('nl_estado').value,
-    '',
-    '🟡 Hoy',
-    document.getElementById('nl_paso').value,
-  ];
-  sheetData.leads.unshift(entry);
-  renderHoy();
-  renderLeads();
-  populateRespSelect();
-  closeModal('modalLead');
-  showNotify(`✓ ${empresa} agregado a Leads 2026`, 'success');
-  ['nl_empresa','nl_contacto','nl_cargo','nl_wpp','nl_mail','nl_paso'].forEach(id =>
+  renderAll();
+  closeModal('modalNuevoLead');
+  showNotify(`✓ ${empresa} agregado`, 'success');
+  ['nl_empresa','nl_contacto','nl_cargo','nl_rubro','nl_wpp','nl_mail','nl_paso'].forEach(id =>
     document.getElementById(id).value = '');
 }
 
-// ── CLAUDE API ────────────────────────────────────────────
+// ════════════════════════════════════════════
+// CLAUDE API
+// ════════════════════════════════════════════
 async function callClaude(prompt) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -1318,286 +1379,30 @@ async function callClaude(prompt) {
     body: JSON.stringify({
       model: 'claude-opus-4-6',
       max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role:'user', content: prompt }]
     })
   });
   if (!res.ok) {
-    const e = await res.json();
-    throw new Error(e.error?.message || 'Error API');
+    const e = await res.json().catch(()=>({}));
+    throw new Error(e.error?.message || 'Error API ' + res.status);
   }
   const d = await res.json();
   return d.content[0].text;
 }
 
-// ── UI HELPERS ────────────────────────────────────────────
-function editarFecha(key, event) {
-  event.stopPropagation();
-  const lead = getLead(key);
-  if(!lead) return;
-  const nueva = prompt(`Próxima acción para ${lead.empresa}:\nIngresá la fecha (DD/MM/YYYY):`, lead.fecha ? lead.fecha.split(' ')[0] : '');
-  if(nueva) {
-    lead.fecha = nueva;
-    // Actualizar en sheetData también
-    const idx = sheetData.leads.findIndex(r => r[0] === lead.empresa && r[1] === lead.contacto);
-    if(idx >= 0) sheetData.leads[idx][9] = nueva;
-    renderHoy();
-    renderLeads();
-    showNotify(`Fecha actualizada: ${nueva}`, 'success');
-  }
-}
-
-function showPanel(name, btn) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-' + name).classList.add('active');
-  if (btn) btn.classList.add('active');
-  const titles = {
-    hoy: 'Plan del <em>Día</em>',
-    leads: '<em>Leads</em> 2026',
-    vistage: '<em>Vistage</em> 2026',
-    nuevo_vistage: 'Cargar desde <em>LinkedIn</em>',
-    respuesta: 'Registrar <em>Respuesta</em>'
-  };
-  document.getElementById('pageTitle').innerHTML = titles[name] || name;
-}
-
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function selectCanal(c, el) {
-  selectedCanal = c;
-  document.querySelectorAll('.canal-opt').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
-}
-
-function switchTab(id, btn) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  btn.classList.add('active');
-}
-
-function copyText(id) {
-  const text = document.getElementById(id).textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    showNotify('✓ Copiado al portapapeles', 'success');
-  });
-}
-
-function showNotify(msg, type='success') {
-  const n = document.getElementById('notify');
-  n.textContent = msg;
-  n.className = `notify show ${type}`;
-  setTimeout(() => n.classList.remove('show'), 3000);
-}
-
-// Close modal on overlay click
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
-});
-
-// ── SCRIPT URL ───────────────────────────────────────────
-let SCRIPT_URL = localStorage.getItem('ef_script_url') || '';
-
-function saveScriptUrl() {
-  const url = document.getElementById('scriptUrl').value.trim();
-  if (!url.startsWith('https://script.google.com')) {
-    showNotify('URL inválida — debe empezar con https://script.google.com', 'error');
-    return;
-  }
-  SCRIPT_URL = url;
-  localStorage.setItem('ef_script_url', url);
-  document.getElementById('scriptStatus').innerHTML = '<span style="color:var(--green)">✓ URL guardada. Probando conexión...</span>';
-  testScript();
-}
-
-async function testScript() {
-  try {
-    const r = await callScript('getLeads');
-    if (r.leads) {
-      document.getElementById('scriptStatus').innerHTML = `<span style="color:var(--green)">✓ Conectado — ${r.leads.length} leads en el Sheets</span>`;
-      sheetData.leads = r.leads.map(l => [l.empresa,l.contacto,l.cargo,l.wpp,l.mail,l.medio,l.rubro,'',l.estado,l.proxAccion,l.semaforo,l.proxPaso]);
-      renderHoy(); renderLeads(); populateRespSelect();
-    }
-  } catch(e) {
-    document.getElementById('scriptStatus').innerHTML = '<span style="color:var(--red)">✗ Error de conexión: ' + e.message + '</span>';
-  }
-}
-
+// ════════════════════════════════════════════
+// GOOGLE APPS SCRIPT
+// ════════════════════════════════════════════
 async function callScript(action, body={}) {
-  if (!SCRIPT_URL) throw new Error('URL del script no configurada. Ir a ⚙️ Configuración.');
-  const url = SCRIPT_URL + '?action=' + action;
-  const res = await fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({action, ...body}),
-    headers: {'Content-Type':'application/json'}
+  if (!SCRIPT_URL) throw new Error('Script URL no configurada');
+  const res = await fetch(SCRIPT_URL + '?action=' + action, {
+    method:'POST',
+    body: JSON.stringify({action,...body}),
+    headers:{'Content-Type':'application/json'}
   });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return data;
-}
-
-// ── PERFIL DEL LEAD ───────────────────────────────────────
-let currentPerfilLead = null;
-
-function abrirPerfil(key) {
-  const lead = getLead(key);
-  if (!lead) return;
-  currentPerfilLead = lead;
-
-  document.getElementById('perfilTitulo').textContent = lead.empresa;
-  document.getElementById('perfilSubtitulo').textContent = lead.contacto + (lead.cargo ? ' · ' + lead.cargo : '');
-
-  // Info básica
-  const info = document.getElementById('perfilInfo');
-  info.innerHTML = [
-    lead.wpp   ? `<div><span style="font-size:10px;color:var(--muted);font-family:monospace">WHATSAPP</span><div style="margin-top:3px;color:var(--green)">${lead.wpp}</div></div>` : '',
-    lead.mail  ? `<div><span style="font-size:10px;color:var(--muted);font-family:monospace">EMAIL</span><div style="margin-top:3px;color:var(--gold)">${lead.mail}</div></div>` : '',
-    lead.medio ? `<div><span style="font-size:10px;color:var(--muted);font-family:monospace">ORIGEN</span><div style="margin-top:3px">${lead.medio}</div></div>` : '',
-    lead.estado? `<div><span style="font-size:10px;color:var(--muted);font-family:monospace">ESTADO</span><div style="margin-top:3px">${estadoChip(lead.estado)}</div></div>` : '',
-  ].filter(Boolean).join('');
-
-  // Fecha actual
-  if (lead.fecha) {
-    const parts = lead.fecha.split(/[\/\- ]/);
-    try {
-      // Intentar parsear DD/MM/YYYY o YYYY-MM-DD
-      let d;
-      if (parts[0].length === 4) d = new Date(parts[0], parts[1]-1, parts[2]);
-      else d = new Date(parts[2], parts[1]-1, parts[0]);
-      if (!isNaN(d)) {
-        document.getElementById('perfilFecha').value = d.toISOString().split('T')[0];
-      }
-    } catch(e) {}
-  }
-
-  // Semáforo y estado actuales
-  const semSel = document.getElementById('perfilSemaforo');
-  const estSel = document.getElementById('perfilEstado');
-  if (lead.semaforo) semSel.value = lead.semaforo.includes('🔴') ? '🔴 Vencido' : lead.semaforo.includes('🟡') ? '🟡 Hoy' : '🟢 Ok';
-  if (lead.estado)   estSel.value = lead.estado;
-
-  // Cargar historial
-  cargarHistorial(lead.empresa);
-  openModal('modalPerfil');
-}
-
-async function cargarHistorial(empresa) {
-  const container = document.getElementById('perfilHistorial');
-  container.innerHTML = '<div style="color:var(--muted);font-size:12px">Cargando...</div>';
-
-  // Primero mostrar historial local
-  const localKey = 'hist_' + empresa.toLowerCase().replace(/\s/g,'_');
-  const local = JSON.parse(localStorage.getItem(localKey) || '[]');
-  renderHistorial(local);
-
-  // Si hay script configurado, intentar traer del Sheets
-  if (SCRIPT_URL) {
-    try {
-      const r = await callScript('getHistorial', {empresa});
-      if (r.historial && r.historial.length) {
-        renderHistorial([...r.historial, ...local]);
-      }
-    } catch(e) { /* usar solo local */ }
-  }
-}
-
-function renderHistorial(items) {
-  const container = document.getElementById('perfilHistorial');
-  if (!items.length) {
-    container.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">Sin historial aún. Registrá conversaciones acá.</div>';
-    return;
-  }
-  container.innerHTML = items.reverse().map(h => {
-    const iconos = {conversacion:'💬', mensaje_enviado:'✉️', nota:'📝'};
-    const colores = {conversacion:'var(--blue)', mensaje_enviado:'var(--green)', nota:'var(--gold)'};
-    const tipo = h.tipo || 'nota';
-    return `<div style="background:var(--s2);border:1px solid var(--border);border-left:3px solid ${colores[tipo]||'var(--muted)'};border-radius:8px;padding:12px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:11px;color:${colores[tipo]||'var(--muted)'};font-family:monospace">${iconos[tipo]||'📝'} ${tipo.replace('_',' ').toUpperCase()} · ${h.canal||''}</span>
-        <span style="font-size:10px;color:var(--muted);font-family:monospace">${h.fecha||''}</span>
-      </div>
-      <div style="font-size:12px;color:var(--text);line-height:1.6;white-space:pre-wrap">${h.contenido||''}</div>
-    </div>`;
-  }).join('');
-}
-
-async function guardarNota() {
-  if (!currentPerfilLead) return;
-  const tipo     = document.getElementById('notaTipo').value;
-  const canal    = document.getElementById('notaCanal').value;
-  const contenido= document.getElementById('notaContenido').value.trim();
-  if (!contenido) { showNotify('Escribí algo antes de guardar', 'error'); return; }
-
-  const fecha = new Date().toLocaleString('es-AR');
-  const entrada = {tipo, canal, contenido, fecha};
-
-  // Guardar local siempre
-  const localKey = 'hist_' + currentPerfilLead.empresa.toLowerCase().replace(/\s/g,'_');
-  const local = JSON.parse(localStorage.getItem(localKey) || '[]');
-  local.push(entrada);
-  localStorage.setItem(localKey, JSON.stringify(local));
-
-  // Si hay script, guardar en Sheets también
-  if (SCRIPT_URL) {
-    try {
-      await callScript('saveHistorial', {
-        empresa: currentPerfilLead.empresa,
-        contacto: currentPerfilLead.contacto,
-        entrada
-      });
-    } catch(e) { /* guardado local igual */ }
-  }
-
-  document.getElementById('notaContenido').value = '';
-  cargarHistorial(currentPerfilLead.empresa);
-  showNotify('Guardado ✓', 'success');
-}
-
-async function guardarCambiosLead() {
-  if (!currentPerfilLead) return;
-  const fecha    = document.getElementById('perfilFecha').value;
-  const semaforo = document.getElementById('perfilSemaforo').value;
-  const estado   = document.getElementById('perfilEstado').value;
-
-  // Formatear fecha DD/MM/YYYY
-  let fechaFmt = fecha;
-  if (fecha) {
-    const [y,m,d] = fecha.split('-');
-    fechaFmt = `${d}/${m}/${y}`;
-  }
-
-  // Actualizar en memoria local
-  const idx = sheetData.leads.findIndex(r => r[0] === currentPerfilLead.empresa);
-  if (idx >= 0) {
-    if (fecha)    sheetData.leads[idx][9]  = fechaFmt;
-    if (semaforo) sheetData.leads[idx][10] = semaforo;
-    if (estado)   sheetData.leads[idx][8]  = estado;
-    currentPerfilLead.fecha    = fechaFmt;
-    currentPerfilLead.semaforo = semaforo;
-    currentPerfilLead.estado   = estado;
-  }
-
-  // Guardar en Sheets si hay script
-  if (SCRIPT_URL) {
-    try {
-      await callScript('updateLead', {
-        empresa:    currentPerfilLead.empresa,
-        proxAccion: fechaFmt,
-        semaforo,
-        estado
-      });
-    } catch(e) { showNotify('Local guardado, Sheets: ' + e.message, 'error'); return; }
-  }
-
-  renderHoy();
-  renderLeads();
-  closeModal('modalPerfil');
-  showNotify('✓ Actualizado', 'success');
-}
-
-function saveConfig() {
-  saveScriptUrl();
+  const d = await res.json();
+  if (d.error) throw new Error(d.error);
+  return d;
 }
 
 function saveScriptUrl() {
@@ -1607,11 +1412,54 @@ function saveScriptUrl() {
   }
   SCRIPT_URL = url;
   localStorage.setItem('ef_script_url', url);
-  showNotify('✓ URL guardada', 'success');
   document.getElementById('scriptStatus').innerHTML = '<span style="color:var(--green)">✓ Guardada</span>';
+  showNotify('URL guardada ✓', 'success');
 }
 
-// ── START ─────────────────────────────────────────────────
+// ════════════════════════════════════════════
+// UI HELPERS
+// ════════════════════════════════════════════
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  const titles = {
+    semana:'Plan <em>Semanal</em>', leads:'<em>Leads</em> 2026',
+    vistage:'<em>Vistage</em> 2026', cargar:'Cargar desde <em>LinkedIn</em>',
+    config:'<em>Configuración</em>'
+  };
+  document.getElementById('pageTitle').innerHTML = titles[name]||name;
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function selectCanal(c, el) {
+  selectedCanal = c;
+  document.querySelectorAll('#pf_canal_row .canal-opt').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+function copyElText(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => showNotify('✓ Copiado', 'success'));
+}
+
+function showNotify(msg, type='success') {
+  const n = document.getElementById('notify');
+  n.textContent = msg; n.className = `notify show ${type}`;
+  setTimeout(() => n.classList.remove('show'), 3000);
+}
+
+// Cerrar modal al clickear overlay
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ════════════════════════════════════════════
+// ARRANQUE
+// ════════════════════════════════════════════
 window.onload = checkSetup;
 </script>
 </body>
