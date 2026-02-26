@@ -691,7 +691,19 @@ let currentLead = null;
 // Store seguro para leads - evita problemas con caracteres especiales
 const leadStore = {};
 let leadStoreIdx = 0;
-function storeLead(obj){const k='l'+(leadStoreIdx++);leadStore[k]=obj;return k;}
+const leadKeyMap = {}; // empresa+contacto -> key, para deduplicar re-renders
+function storeLead(obj){
+  const dedupKey = (obj.empresa||'') + '|' + (obj.contacto||'');
+  if (leadKeyMap[dedupKey]) {
+    // Actualizar el objeto existente con datos frescos
+    Object.assign(leadStore[leadKeyMap[dedupKey]], obj);
+    return leadKeyMap[dedupKey];
+  }
+  const k='l'+(leadStoreIdx++);
+  leadStore[k]=obj;
+  leadKeyMap[dedupKey]=k;
+  return k;
+}
 function getLead(k){return leadStore[k]||null;}
 let selectedCanal = 'wpp';
 let currentTab = 'tab-link';
@@ -734,8 +746,8 @@ function init() {
 // ── LEER GOOGLE SHEETS ────────────────────────────────────
 async function loadSheetData() {
   // URLs públicas CSV (publicadas en la web desde Google Sheets)
-  const LEADS_CSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSROJCqfeSILX3MWmwvpS6dcUKqWqP580naRZu_CjpVijSUSqZfre59Id0TQyyfOQ/pub?output=csv&gid=1488122141';
-  const VISTAGE_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSROJCqfeSILX3MWmwvpS6dcUKqWqP580naRZu_CjpVijSUSqZfre59Id0TQyyfOQ/pub?output=csv&gid=530322819';
+  const LEADS_CSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRNTY6vMHOY4L93hTmj8XYBtqDzR-fDEV5NnfAiKjG0X-7FV__XoOLdxEUVOiKl-rqWFwbgqKfWTtbE/pub?output=csv';
+  const VISTAGE_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRNTY6vMHOY4L93hTmj8XYBtqDzR-fDEV5NnfAiKjG0X-7FV__XoOLdxEUVOiKl-rqWFwbgqKfWTtbE/pub?output=csv&gid=530322819';
 
   try {
     const [leadsResp, vistageResp] = await Promise.all([
@@ -745,10 +757,12 @@ async function loadSheetData() {
     if (leadsResp.ok) {
       const csv = await leadsResp.text();
       const rows = parseCSV(csv);
+      // Debug: mostrar primeras filas en consola para verificar columnas
+      console.log('[Enfoco CRM] Primeras 3 filas del CSV:', rows.slice(0,3));
       // Saltar filas de título/headers hasta encontrar datos reales
       sheetData.leads = rows.filter(r => {
         const e = (r[0]||'').trim();
-        return e && e !== 'Empresa' && e !== '💼  LEADS 2026 — Prospectos con interés confirmado' && !e.startsWith('🔥') && !e.startsWith('💼');
+        return e && e !== 'Empresa' && e !== '💼  LEADS 2026 — Prospectos con interés confirmado' && !e.startsWith('🔥') && !e.startsWith('💼') && !e.startsWith('#');
       });
     }
 
@@ -1062,6 +1076,11 @@ Escribí SOLO el mensaje, listo para copiar y pegar. Sin comillas ni explicacion
     document.getElementById('msgBody').textContent = r;
     document.getElementById('msgResult').style.display = 'block';
     document.getElementById('msgAccion').style.display = 'block';
+    // Auto-guardar en historial local
+    const localKey = 'hist_' + currentLead.empresa.toLowerCase().replace(/\s/g,'_');
+    const local = JSON.parse(localStorage.getItem(localKey) || '[]');
+    local.push({ tipo: 'mensaje_enviado', canal: canalNombre, contenido: r, fecha: new Date().toLocaleString('es-AR') });
+    localStorage.setItem(localKey, JSON.stringify(local));
   } catch(e) { showNotify('Error: ' + e.message, 'error'); }
   finally { document.getElementById('loaderMsg').classList.remove('on'); }
 }
@@ -1070,9 +1089,23 @@ function confirmarEnvioMsg() {
   const dias = parseInt(document.getElementById('msgDias').value);
   const nueva = new Date();
   nueva.setDate(nueva.getDate() + dias);
-  showNotify(`✓ Registrado. Próximo seguimiento: ${nueva.toLocaleDateString('es-AR')}`, 'success');
+  const fechaFmt = nueva.toLocaleDateString('es-AR');
+
+  // Actualizar fecha en memoria si hay lead seleccionado
+  if (currentLead) {
+    const idx = sheetData.leads.findIndex(r => r[0] === currentLead.empresa);
+    if (idx >= 0) {
+      sheetData.leads[idx][9] = fechaFmt;
+      sheetData.leads[idx][10] = dias <= 2 ? '🟡 Hoy' : '🟢 Ok';
+    }
+    currentLead.fecha = fechaFmt;
+  }
+
+  showNotify(`✓ Registrado. Próximo seguimiento: ${fechaFmt}`, 'success');
   document.getElementById('msgAccion').style.display = 'none';
   closeModal('modalMensaje');
+  renderHoy();
+  renderLeads();
 }
 
 // ── ANALIZAR LINKEDIN ─────────────────────────────────────
@@ -1561,28 +1594,6 @@ async function guardarCambiosLead() {
   renderLeads();
   closeModal('modalPerfil');
   showNotify('✓ Actualizado', 'success');
-}
-
-// Guardar mensaje generado en historial automáticamente
-const _origGenerarMensaje = generarMensaje;
-async function generarMensaje() {
-  await _origGenerarMensaje();
-  // Auto-guardar si se generó exitosamente
-  setTimeout(() => {
-    const msg = document.getElementById('msgBody').textContent;
-    if (msg && currentLead) {
-      const canalNombre = selectedCanal === 'wpp' ? 'WhatsApp' : selectedCanal === 'li' ? 'LinkedIn' : 'Email';
-      const localKey = 'hist_' + currentLead.empresa.toLowerCase().replace(/\s/g,'_');
-      const local = JSON.parse(localStorage.getItem(localKey) || '[]');
-      local.push({
-        tipo: 'mensaje_enviado',
-        canal: canalNombre,
-        contenido: msg,
-        fecha: new Date().toLocaleString('es-AR')
-      });
-      localStorage.setItem(localKey, JSON.stringify(local));
-    }
-  }, 500);
 }
 
 function saveConfig() {
