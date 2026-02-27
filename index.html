@@ -575,31 +575,57 @@ function getAllLeads() { return Object.entries(store).map(([k,v]) => ({...v, _ke
 // HISTORIAL LOCAL
 // ════════════════════════════════════════════
 function histKey(empresa) {
-  return 'hist_' + empresa.toLowerCase().replace(/[^a-z0-9]/g,'_');
+  return 'efcrm_hist_' + empresa.toLowerCase().replace(/[^a-z0-9]/g,'_').substring(0,40);
 }
 
 function cargarHistorialLocal(empresa) {
-  try { return JSON.parse(localStorage.getItem(histKey(empresa)) || '[]'); }
-  catch { return []; }
+  try {
+    const raw = localStorage.getItem(histKey(empresa));
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch(e) {
+    console.warn('Error cargando historial:', e);
+    return [];
+  }
 }
 
 function guardarHistorialLocal(empresa, historial) {
-  localStorage.setItem(histKey(empresa), JSON.stringify(historial));
+  try {
+    localStorage.setItem(histKey(empresa), JSON.stringify(historial));
+    // Backup: guardar índice de empresas con historial
+    const idx = JSON.parse(localStorage.getItem('efcrm_hist_index') || '[]');
+    if (!idx.includes(empresa)) { idx.push(empresa); localStorage.setItem('efcrm_hist_index', JSON.stringify(idx)); }
+  } catch(e) {
+    console.warn('Error guardando historial:', e);
+  }
 }
 
 function agregarEntradaHistorial(empresa, entrada) {
-  // entrada: { fecha, tipo (wpp|mail|linkedin|reunion|nota), contenido, quien (Comercial|Cliente) }
   const leads = getAllLeads();
   const lead = leads.find(l => l.empresa === empresa);
-  if (!lead) return;
-  const hist = lead.historial || [];
-  hist.push({ ...entrada, fecha: entrada.fecha || new Date().toLocaleString('es-AR') });
-  store[lead._key].historial = hist;
+  const key = lead ? lead._key : null;
+  const hist = key ? (store[key].historial || []) : cargarHistorialLocal(empresa);
+  const nuevaEntrada = {
+    fecha:    entrada.fecha    || new Date().toLocaleString('es-AR'),
+    tipo:     entrada.tipo     || 'nota',
+    contenido:entrada.contenido|| '',
+    quien:    entrada.quien    || 'Comercial'
+  };
+  hist.push(nuevaEntrada);
+  if (key) store[key].historial = hist;
   guardarHistorialLocal(empresa, hist);
-  // Sync Sheets si hay script
   if (SCRIPT_URL) {
-    callScript('saveHistorial', { empresa, contacto: lead.contacto, entrada }).catch(() => {});
+    callScript('saveHistorial', { empresa, contacto: lead?.contacto||'', entrada: nuevaEntrada }).catch(()=>{});
   }
+}
+
+// Al cargar leads, recuperar historial guardado
+function rehidratarHistoriales() {
+  const idx = JSON.parse(localStorage.getItem('efcrm_hist_index') || '[]');
+  getAllLeads().forEach(lead => {
+    const hist = cargarHistorialLocal(lead.empresa);
+    if (hist.length) store[lead._key].historial = hist;
+  });
 }
 
 // ════════════════════════════════════════════
@@ -623,7 +649,7 @@ function bootApp() {
   document.getElementById('mainShell').style.display = 'grid';
   SCRIPT_URL = localStorage.getItem('ef_script_url') || '';
   if (SCRIPT_URL) document.getElementById('scriptUrl').value = SCRIPT_URL;
-  loadSheetData();
+  loadSheetData().then(() => rehidratarHistoriales());
 }
 
 // ════════════════════════════════════════════
@@ -819,7 +845,7 @@ function renderSemana(filtro='') {
         draggable="true"
         ondragstart="onDragStart(event,'${lead._key}')"
         ondragend="onDragEnd(event)"
-        onclick="abrirPerfil('${lead._key}')">
+        onclick="pilClick(event,'${lead._key}')">
         <div class="pill-empresa">${lead.empresa}</div>
         <div class="pill-contacto">${lead.contacto}</div>
         <div class="pill-canal" style="color:var(--muted2)">Sin agenda</div>
@@ -836,62 +862,82 @@ function cambiarSemana(dir) { semanaOffset += dir; renderSemana(document.querySe
 function irSemanaActual() { semanaOffset = 0; renderSemana(); }
 
 // ── DRAG & DROP ──────────────────────────
+let isDragging = false;
+let dragMoved = false;
+
 function onDragStart(event, key) {
+  isDragging = true;
+  dragMoved = false;
   draggedLeadKey = key;
   event.dataTransfer.effectAllowed = 'move';
-  event.target.style.opacity = '0.4';
+  event.dataTransfer.setData('text/plain', key);
+  // Pequeño delay para no interferir con click
+  setTimeout(() => { if(event.target) event.target.classList.add('dragging'); }, 0);
 }
 
 function onDragEnd(event) {
-  event.target.style.opacity = '1';
-  draggedLeadKey = null;
+  event.target.classList.remove('dragging');
+  setTimeout(() => { isDragging = false; draggedLeadKey = null; }, 50);
 }
 
 function onDragOver(event, col) {
   event.preventDefault();
+  dragMoved = true;
   event.dataTransfer.dropEffect = 'move';
-  col.style.background = 'rgba(240,192,64,0.08)';
-  col.style.borderColor = 'rgba(240,192,64,0.4)';
+  col.classList.add('drag-over');
 }
 
 function onDragLeave(col) {
-  col.style.background = '';
-  col.style.borderColor = '';
+  col.classList.remove('drag-over');
 }
 
 function onDrop(event, fechaISO) {
   event.preventDefault();
+  event.stopPropagation();
   const col = event.currentTarget;
-  col.style.background = ''; col.style.borderColor = '';
+  col.classList.remove('drag-over');
 
-  if (!draggedLeadKey) return;
-  const lead = getLead(draggedLeadKey);
+  const key = event.dataTransfer.getData('text/plain') || draggedLeadKey;
+  if (!key) return;
+  const lead = getLead(key);
   if (!lead) return;
 
   if (fechaISO === 'sin-fecha') {
-    store[draggedLeadKey].proxAccion = '';
+    store[key].proxAccion = '';
+    store[key].semaforo = '';
   } else {
-    store[draggedLeadKey].proxAccion = fechaISO;
-    // Actualizar semáforo automáticamente
+    store[key].proxAccion = fechaISO;
     const hoyD = new Date(); hoyD.setHours(0,0,0,0);
-    const dropD = new Date(fechaISO); dropD.setHours(0,0,0,0);
-    const diff = (dropD - hoyD) / 86400000;
-    store[draggedLeadKey].semaforo = diff < 0 ? '🔴 Vencido' : diff <= 2 ? '🟡 Hoy' : '🟢 Ok';
+    const dropD = new Date(fechaISO + 'T12:00:00');
+    dropD.setHours(0,0,0,0);
+    const diff = Math.round((dropD - hoyD) / 86400000);
+    store[key].semaforo = diff < 0 ? '🔴 Vencido' : diff <= 2 ? '🟡 Hoy' : '🟢 Ok';
   }
 
-  // Sync Sheets si hay script
+  // Sync Sheets
   if (SCRIPT_URL && fechaISO !== 'sin-fecha') {
     const [y,m,d] = fechaISO.split('-');
     callScript('updateLead', {
       empresa: lead.empresa,
-      proxAccion: `${d}/${m}/${y}`,
-      semaforo: store[draggedLeadKey].semaforo
+      proxAccion: d+'/'+m+'/'+y,
+      semaforo: store[key].semaforo
     }).catch(()=>{});
   }
 
-  showNotify(`${lead.empresa} → ${fechaISO === 'sin-fecha' ? 'sin fecha' : new Date(fechaISO+'T12:00').toLocaleDateString('es-AR')}`, 'success');
-  renderSemana(document.querySelector('#panel-semana .search-bar input')?.value||'');
+  const label = fechaISO === 'sin-fecha'
+    ? 'sin fecha'
+    : new Date(fechaISO + 'T12:00:00').toLocaleDateString('es-AR', {weekday:'short',day:'numeric',month:'short'});
+  showNotify(lead.empresa + ' → ' + label, 'success');
+
+  const filtro = document.querySelector('#panel-semana .search-bar input')?.value||'';
+  renderSemana(filtro);
   renderLeads();
+}
+
+// Función segura para abrir perfil (no dispara si fue drag)
+function pilClick(event, key) {
+  if (isDragging) { event.preventDefault(); return; }
+  abrirPerfil(key);
 }
 
 function filtrarSemana(v) { renderSemana(v); }
@@ -1504,60 +1550,40 @@ function copiarMensajeAI() {
 // CLAUDE API
 // ════════════════════════════════════════════
 async function callClaude(prompt) {
-  // Intentar llamada directa primero
+  const HEADERS = {
+    'Content-Type': 'application/json',
+    'x-api-key': API_KEY,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true'
+  };
+  const BODY = JSON.stringify({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1000,
+    messages: [{ role:'user', content: prompt }]
+  });
+
+  // Intentar directo con el header correcto
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
-        messages: [{ role:'user', content: prompt }]
-      })
+      method: 'POST', headers: HEADERS, body: BODY
     });
-    if (res.ok) {
-      const d = await res.json();
-      return d.content[0].text;
-    }
-    // Si falla por CORS o 4xx, intentar via proxy
+    if (res.ok) { const d = await res.json(); return d.content[0].text; }
     const err = await res.json().catch(()=>({}));
-    if (res.status === 401) throw new Error('API Key inválida. Verificá en ⚙️ Configuración.');
-    throw new Error(err.error?.message || 'Error ' + res.status);
-  } catch(e) {
-    // Si es error de red (CORS), usar proxy
-    if (e.message.includes('fetch') || e.message.includes('network') || e.message.includes('Failed')) {
-      return await callClaudeProxy(prompt);
+    if (res.status === 401) throw new Error('API Key inválida — verificá en ⚙️ Configuración');
+    throw new Error(err.error?.message || 'Error API ' + res.status);
+  } catch(fetchErr) {
+    // Si sigue fallando por red, intentar proxy como fallback
+    if (fetchErr.message.startsWith('API Key') || fetchErr.message.startsWith('Error API')) throw fetchErr;
+    try {
+      const res2 = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.anthropic.com/v1/messages'), {
+        method: 'POST', headers: HEADERS, body: BODY
+      });
+      if (!res2.ok) { const e = await res2.json().catch(()=>({})); throw new Error(e.error?.message||'Error proxy'); }
+      const d2 = await res2.json(); return d2.content[0].text;
+    } catch(proxyErr) {
+      throw new Error('Sin conexión a la IA: ' + proxyErr.message);
     }
-    throw e;
   }
-}
-
-async function callClaudeProxy(prompt) {
-  // Proxy CORS-free via corsproxy.io
-  const PROXY = 'https://corsproxy.io/?https://api.anthropic.com/v1/messages';
-  const res = await fetch(PROXY, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1000,
-      messages: [{ role:'user', content: prompt }]
-    })
-  });
-  if (!res.ok) {
-    const e = await res.json().catch(()=>({}));
-    throw new Error(e.error?.message || 'Error proxy ' + res.status);
-  }
-  const d = await res.json();
-  return d.content[0].text;
 }
 
 // ════════════════════════════════════════════
