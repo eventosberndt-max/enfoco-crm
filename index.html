@@ -257,6 +257,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
       <button class="nav-item" onclick="showPanel('vistage',this)"><span class="ni">🏆</span> Vistage 2026</button>
       <div class="nav-sep"></div>
       <button class="nav-item" onclick="showPanel('cargar',this)"><span class="ni">➕</span> Cargar Vistage</button>
+      <button class="nav-item" onclick="showPanel('sheets',this)"><span class="ni">📊</span> Editar Planilla</button>
       <button class="nav-item" onclick="showPanel('config',this)"><span class="ni">⚙️</span> Configuración</button>
     </nav>
     <div class="sidebar-footer">
@@ -277,8 +278,29 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
       <!-- ══ PANEL SEMANA ══ -->
       <div class="panel active" id="panel-semana">
-        <div class="search-bar"><input type="text" placeholder="Buscar empresa o contacto..." oninput="filtrarSemana(this.value)" /></div>
-        <div id="semanaWrapper"></div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="search-bar" style="flex:1;margin-bottom:0">
+            <input type="text" id="semBuscador" placeholder="Buscar empresa o contacto..." oninput="filtrarSemana(this.value)" />
+          </div>
+        </div>
+        <!-- Navegación: siempre fija en el DOM -->
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onclick="cambiarSemana(-1)" class="btn btn-ghost btn-sm" style="font-size:18px;padding:5px 14px;line-height:1">‹</button>
+          <div id="semLabel" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);flex:1;text-align:center;letter-spacing:.5px"></div>
+          <button onclick="cambiarSemana(1)" class="btn btn-ghost btn-sm" style="font-size:18px;padding:5px 14px;line-height:1">›</button>
+          <button id="semHoyBtn" onclick="irSemanaActual()" class="btn btn-ghost btn-sm" style="font-size:10px;font-family:monospace;display:none">Hoy</button>
+        </div>
+        <!-- Headers: siempre fijos -->
+        <div id="semHeaders" style="display:grid;grid-template-columns:repeat(5,1fr) 170px;gap:8px"></div>
+        <!-- Columnas: fijas, solo se actualiza el CONTENIDO interno -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr) 170px;gap:8px;align-items:start" id="semGrid">
+          <div class="week-col" id="wc0" data-col-id="wc0"></div>
+          <div class="week-col" id="wc1" data-col-id="wc1"></div>
+          <div class="week-col" id="wc2" data-col-id="wc2"></div>
+          <div class="week-col" id="wc3" data-col-id="wc3"></div>
+          <div class="week-col" id="wc4" data-col-id="wc4"></div>
+          <div class="week-col" id="wc5" data-col-id="wc5" style="border-color:var(--muted2);border-style:dashed"></div>
+        </div>
       </div>
 
       <!-- ══ PANEL LEADS ══ -->
@@ -335,6 +357,30 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
               <button class="btn btn-green" style="align-self:flex-start" onclick="guardarVistage()">✓ Guardar en Vistage 2026</button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL SHEETS ══ -->
+      <div class="panel" id="panel-sheets">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div style="font-size:13px;color:var(--muted)">Editá directamente en la planilla. Los cambios se sincronizan al hacer click en <strong style="color:var(--gold)">⟳ Sync</strong>.</div>
+          <button class="btn btn-primary btn-sm" onclick="loadSheetData().then(()=>rehidratarHistoriales()).then(()=>showNotify('Sincronizado ✓','success'))">⟳ Cargar cambios</button>
+        </div>
+        <!-- Selector de hoja -->
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button class="btn btn-ghost btn-sm" id="tab-leads-sh" onclick="cambiarHojaSheets('leads')" style="border-color:var(--gold);color:var(--gold)">💼 Leads 2026</button>
+          <button class="btn btn-ghost btn-sm" id="tab-vistage-sh" onclick="cambiarHojaSheets('vistage')">🏆 Vistage 2026</button>
+        </div>
+        <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);background:white">
+          <iframe
+            id="sheetsFrame"
+            src="https://docs.google.com/spreadsheets/d/1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87/edit?usp=sharing&rm=minimal&gid=1488122141"
+            style="width:100%;height:600px;border:none;display:block"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;font-family:'IBM Plex Mono',monospace">
+          💡 Editá en la planilla → guardá → hacé click en "Cargar cambios" para sincronizar la app
         </div>
       </div>
 
@@ -650,6 +696,7 @@ function bootApp() {
   SCRIPT_URL = localStorage.getItem('ef_script_url') || '';
   if (SCRIPT_URL) document.getElementById('scriptUrl').value = SCRIPT_URL;
   loadSheetData().then(() => rehidratarHistoriales());
+  setTimeout(initDrag, 100);
 }
 
 // ════════════════════════════════════════════
@@ -738,205 +785,200 @@ function renderAll() {
 }
 
 function renderSemana(filtro='') {
-  const wrapper = document.getElementById('semanaWrapper');
   const hoyDate = new Date(); hoyDate.setHours(0,0,0,0);
-
-  // Calcular lunes de la semana con offset
   const dow = hoyDate.getDay();
   const lunes = new Date(hoyDate);
-  lunes.setDate(hoyDate.getDate() - (dow === 0 ? 6 : dow - 1) + semanaOffset * 7);
+  lunes.setDate(hoyDate.getDate() - (dow===0?6:dow-1) + semanaOffset*7);
   lunes.setHours(0,0,0,0);
 
-  // Solo Lun–Vie (5 días)
   const DIAS = ['Lun','Mar','Mié','Jue','Vie'];
   const dias = Array.from({length:5}, (_,i) => {
     const d = new Date(lunes); d.setDate(lunes.getDate()+i); return d;
   });
-  const viernes = dias[4];
 
-  // Label de semana
+  // Guardar fechas en columnas para que onDrop las lea
+  dias.forEach((d,i) => {
+    const col = document.getElementById('wc'+i);
+    if (col) col.dataset.fecha = d.toISOString().split('T')[0];
+  });
+  const sfCol = document.getElementById('wc5');
+  if (sfCol) sfCol.dataset.fecha = 'sin-fecha';
+
+  // Label navegación
   const lunesLabel = lunes.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
-  const viernesLabel = viernes.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
-  const esEstaSemana = semanaOffset === 0;
+  const viernesLabel = dias[4].toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+  const esEsta = semanaOffset === 0;
+  document.getElementById('semLabel').textContent =
+    (esEsta ? '— SEMANA ACTUAL — ' : '') + lunesLabel + ' – ' + viernesLabel;
+  document.getElementById('semLabel').style.color = esEsta ? 'var(--gold)' : 'var(--muted)';
+  const hoyBtn = document.getElementById('semHoyBtn');
+  if (hoyBtn) hoyBtn.style.display = esEsta ? 'none' : '';
+
+  // Headers
+  const headersEl = document.getElementById('semHeaders');
+  headersEl.innerHTML = dias.map((d,i) => {
+    const esHoy = d.getTime()===hoyDate.getTime();
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    return `<div class="week-day-label${esHoy?' today':''}">${DIAS[i]}<br><span style="font-size:11px">${dd}/${mm}</span></div>`;
+  }).join('') + '<div class="week-day-label" style="color:var(--muted2)">Sin fecha</div>';
+
+  // Actualizar clase today-col
+  dias.forEach((d,i) => {
+    const col = document.getElementById('wc'+i);
+    if (!col) return;
+    col.classList.toggle('today-col', d.getTime()===hoyDate.getTime());
+  });
 
   // Agrupar leads
   const leads = getAllLeads().filter(l => !filtro || matchFiltro(l,filtro));
-  const porDia = Array.from({length:5}, () => []);
+  const porDia = Array.from({length:5}, ()=>[]);
   const sinFecha = [];
-  const fuera = []; // antes o después de esta semana
 
   leads.forEach(lead => {
     const pa = parseFechaStr(lead.proxAccion);
     if (!pa) { sinFecha.push(lead); return; }
     pa.setHours(0,0,0,0);
-    let colocado = false;
-    for (let i=0; i<5; i++) {
-      if (pa.getTime() === dias[i].getTime()) { porDia[i].push(lead); colocado=true; break; }
+    let ok = false;
+    for (let i=0;i<5;i++) {
+      if (pa.getTime()===dias[i].getTime()) { porDia[i].push(lead); ok=true; break; }
     }
-    if (!colocado) sinFecha.push(lead);
+    if (!ok) sinFecha.push(lead);
   });
 
-  let h = '';
-
-  // Barra de navegación
-  h += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-    <button onclick="cambiarSemana(-1)" class="btn btn-ghost btn-sm" style="font-size:16px;padding:6px 12px">‹</button>
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:${esEstaSemana?'var(--gold)':'var(--muted)'};flex:1;text-align:center;letter-spacing:.5px">
-      ${esEstaSemana ? '— SEMANA ACTUAL —' : semanaOffset > 0 ? '→ ' : '← '}
-      ${lunesLabel} – ${viernesLabel}
-      ${esEstaSemana ? '' : semanaOffset > 0 ? '(próxima)' : '(anterior)'}
-    </div>
-    <button onclick="cambiarSemana(1)" class="btn btn-ghost btn-sm" style="font-size:16px;padding:6px 12px">›</button>
-    ${!esEstaSemana ? `<button onclick="irSemanaActual()" class="btn btn-ghost btn-sm" style="font-size:10px;font-family:monospace">Hoy</button>` : ''}
-  </div>`;
-
-  // Headers
-  h += `<div style="display:grid;grid-template-columns:repeat(5,1fr) 160px;gap:8px;margin-bottom:4px">`;
-  dias.forEach((d,i) => {
-    const esHoy = d.getTime() === hoyDate.getTime();
-    const dd = String(d.getDate()).padStart(2,'0');
-    const mm = String(d.getMonth()+1).padStart(2,'0');
-    h += `<div class="week-day-label${esHoy?' today':''}">${DIAS[i]}<br><span style="font-size:11px">${dd}/${mm}</span></div>`;
-  });
-  h += `<div class="week-day-label" style="color:var(--muted2)">Sin fecha</div>`;
-  h += `</div>`;
-
-  // Grid
-  h += `<div style="display:grid;grid-template-columns:repeat(5,1fr) 160px;gap:8px;align-items:start">`;
-
-  // Columnas Lun–Vie
-  dias.forEach((d,i) => {
-    const esHoy = d.getTime() === hoyDate.getTime();
-    const isoStr = d.toISOString().split('T')[0];
-    h += `<div class="week-col${esHoy?' today-col':''}" 
-      data-date="${isoStr}"
-      ondragover="onDragOver(event,this)" 
-      ondragleave="onDragLeave(this)"
-      ondrop="onDrop(event,'${isoStr}')">`;
-    if (!porDia[i].length) {
-      h += `<div style="text-align:center;padding:16px 0;color:var(--muted2);font-size:10px;border:1px dashed var(--border);border-radius:6px;margin:2px">Libre</div>`;
-    } else {
-      porDia[i].forEach(lead => {
-        const cls = semClass(lead.semaforo);
-        h += `<div class="lead-pill ${cls}" 
-          draggable="true"
-          ondragstart="onDragStart(event,'${lead._key}')"
-          ondragend="onDragEnd(event)"
-          onclick="abrirPerfil('${lead._key}')">
-          <div class="pill-empresa">${lead.empresa}</div>
-          <div class="pill-contacto">${lead.contacto}</div>
-          <div class="pill-canal" style="color:${canalColor(lead)}">${canalIcono(lead)}</div>
-        </div>`;
-      });
-    }
-    h += `</div>`;
-  });
-
-  // Columna "Sin fecha"
-  h += `<div class="week-col" style="border-color:var(--muted2);border-style:dashed"
-    ondragover="onDragOver(event,this)"
-    ondragleave="onDragLeave(this)"
-    ondrop="onDrop(event,'sin-fecha')">`;
-  if (!sinFecha.length) {
-    h += `<div style="text-align:center;padding:16px 0;color:var(--muted2);font-size:10px">—</div>`;
-  } else {
-    sinFecha.forEach(lead => {
-      h += `<div class="lead-pill neutral" 
-        draggable="true"
-        ondragstart="onDragStart(event,'${lead._key}')"
-        ondragend="onDragEnd(event)"
-        onclick="pilClick(event,'${lead._key}')">
-        <div class="pill-empresa">${lead.empresa}</div>
-        <div class="pill-contacto">${lead.contacto}</div>
-        <div class="pill-canal" style="color:var(--muted2)">Sin agenda</div>
-      </div>`;
-    });
+  // Renderizar contenido de cada columna
+  for (let i=0;i<5;i++) {
+    const col = document.getElementById('wc'+i);
+    if (!col) continue;
+    col.innerHTML = porDia[i].length
+      ? porDia[i].map(l => pillHTML(l)).join('')
+      : '<div style="text-align:center;padding:14px 0;color:var(--muted2);font-size:10px;border:1px dashed var(--border);border-radius:6px;margin:2px">Libre</div>';
   }
-  h += `</div>`;
-
-  h += `</div>`; // /grid
-  wrapper.innerHTML = h;
+  const sf = document.getElementById('wc5');
+  if (sf) sf.innerHTML = sinFecha.length
+    ? sinFecha.map(l => pillHTML(l, true)).join('')
+    : '<div style="text-align:center;padding:14px 0;color:var(--muted2);font-size:10px">—</div>';
 }
+
+function pillHTML(lead, sinFecha=false) {
+  const cls = semClass(lead.semaforo);
+  return `<div class="lead-pill ${sinFecha?'neutral':cls}"
+    draggable="true"
+    data-key="${lead._key}"
+    data-empresa="${(lead.empresa||'').replace(/"/g,'&quot;')}">
+    <div class="pill-empresa">${lead.empresa}</div>
+    <div class="pill-contacto">${lead.contacto}</div>
+    <div class="pill-canal" style="color:${sinFecha?'var(--muted2)':canalColor(lead)}">${sinFecha?'Sin agenda':canalIcono(lead)}</div>
+  </div>`;
+}
+
 
 function cambiarSemana(dir) { semanaOffset += dir; renderSemana(document.querySelector('#panel-semana .search-bar input')?.value||''); }
 function irSemanaActual() { semanaOffset = 0; renderSemana(); }
 
-// ── DRAG & DROP ──────────────────────────
-let isDragging = false;
-let dragMoved = false;
+// ── DRAG & DROP via event delegation ────
+let dragKey = null;
+let dragCounter = 0; // counter global para dragleave
 
-function onDragStart(event, key) {
-  isDragging = true;
-  dragMoved = false;
-  draggedLeadKey = key;
-  event.dataTransfer.effectAllowed = 'move';
-  event.dataTransfer.setData('text/plain', key);
-  // Pequeño delay para no interferir con click
-  setTimeout(() => { if(event.target) event.target.classList.add('dragging'); }, 0);
+// Registrar listeners una vez en initDrag (llamado en bootApp)
+function initDrag() {
+  const grid = document.getElementById('semGrid');
+  if (!grid) return;
+
+  grid.addEventListener('dragstart', e => {
+    const pill = e.target.closest('[data-key]');
+    if (!pill) return;
+    dragKey = pill.dataset.key;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragKey);
+    pill.style.opacity = '0.35';
+    isDragging = true;
+  });
+
+  grid.addEventListener('dragend', e => {
+    const pill = e.target.closest('[data-key]');
+    if (pill) pill.style.opacity = '';
+    document.querySelectorAll('.week-col').forEach(c => c.classList.remove('drag-over'));
+    setTimeout(() => { isDragging = false; dragKey = null; }, 80);
+  });
+
+  grid.addEventListener('dragenter', e => {
+    const col = e.target.closest('.week-col');
+    if (!col || !dragKey) return;
+    e.preventDefault();
+    col.classList.add('drag-over');
+  });
+
+  grid.addEventListener('dragover', e => {
+    const col = e.target.closest('.week-col');
+    if (!col || !dragKey) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  });
+
+  grid.addEventListener('dragleave', e => {
+    const col = e.target.closest('.week-col');
+    if (!col) return;
+    // Solo quitar highlight si el mouse salió realmente de la columna
+    const rect = col.getBoundingClientRect();
+    const x = e.clientX, y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      col.classList.remove('drag-over');
+    }
+  });
+
+  grid.addEventListener('drop', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const col = e.target.closest('.week-col');
+    if (!col) return;
+    col.classList.remove('drag-over');
+
+    const key = e.dataTransfer.getData('text/plain') || dragKey;
+    if (!key) return;
+    const lead = getLead(key);
+    if (!lead) return;
+
+    const fechaISO = col.dataset.fecha || 'sin-fecha';
+
+    if (fechaISO === 'sin-fecha') {
+      store[key].proxAccion = '';
+      store[key].semaforo = '🟢 Ok';
+    } else {
+      store[key].proxAccion = fechaISO;
+      const hoy0 = new Date(); hoy0.setHours(0,0,0,0);
+      const drop0 = new Date(fechaISO+'T12:00:00'); drop0.setHours(0,0,0,0);
+      const diff = Math.round((drop0-hoy0)/86400000);
+      store[key].semaforo = diff<0 ? '🔴 Vencido' : diff<=2 ? '🟡 Hoy' : '🟢 Ok';
+    }
+
+    if (SCRIPT_URL && fechaISO!=='sin-fecha') {
+      const [y,m,d] = fechaISO.split('-');
+      callScript('updateLead',{empresa:lead.empresa,proxAccion:d+'/'+m+'/'+y,semaforo:store[key].semaforo}).catch(()=>{});
+    }
+
+    const label = fechaISO==='sin-fecha'
+      ? 'sin fecha'
+      : new Date(fechaISO+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+    showNotify(lead.empresa+' → '+label, 'success');
+
+    const filtro = document.getElementById('semBuscador')?.value||'';
+    renderSemana(filtro);
+    renderLeads();
+  });
+
+  // Click delegation para pills
+  grid.addEventListener('click', e => {
+    if (isDragging) return;
+    const pill = e.target.closest('[data-key]');
+    if (!pill) return;
+    abrirPerfil(pill.dataset.key);
+  });
 }
 
-function onDragEnd(event) {
-  event.target.classList.remove('dragging');
-  setTimeout(() => { isDragging = false; draggedLeadKey = null; }, 50);
-}
 
-function onDragOver(event, col) {
-  event.preventDefault();
-  dragMoved = true;
-  event.dataTransfer.dropEffect = 'move';
-  col.classList.add('drag-over');
-}
-
-function onDragLeave(col) {
-  col.classList.remove('drag-over');
-}
-
-function onDrop(event, fechaISO) {
-  event.preventDefault();
-  event.stopPropagation();
-  const col = event.currentTarget;
-  col.classList.remove('drag-over');
-
-  const key = event.dataTransfer.getData('text/plain') || draggedLeadKey;
-  if (!key) return;
-  const lead = getLead(key);
-  if (!lead) return;
-
-  if (fechaISO === 'sin-fecha') {
-    store[key].proxAccion = '';
-    store[key].semaforo = '';
-  } else {
-    store[key].proxAccion = fechaISO;
-    const hoyD = new Date(); hoyD.setHours(0,0,0,0);
-    const dropD = new Date(fechaISO + 'T12:00:00');
-    dropD.setHours(0,0,0,0);
-    const diff = Math.round((dropD - hoyD) / 86400000);
-    store[key].semaforo = diff < 0 ? '🔴 Vencido' : diff <= 2 ? '🟡 Hoy' : '🟢 Ok';
-  }
-
-  // Sync Sheets
-  if (SCRIPT_URL && fechaISO !== 'sin-fecha') {
-    const [y,m,d] = fechaISO.split('-');
-    callScript('updateLead', {
-      empresa: lead.empresa,
-      proxAccion: d+'/'+m+'/'+y,
-      semaforo: store[key].semaforo
-    }).catch(()=>{});
-  }
-
-  const label = fechaISO === 'sin-fecha'
-    ? 'sin fecha'
-    : new Date(fechaISO + 'T12:00:00').toLocaleDateString('es-AR', {weekday:'short',day:'numeric',month:'short'});
-  showNotify(lead.empresa + ' → ' + label, 'success');
-
-  const filtro = document.querySelector('#panel-semana .search-bar input')?.value||'';
-  renderSemana(filtro);
-  renderLeads();
-}
-
-// Función segura para abrir perfil (no dispara si fue drag)
 function pilClick(event, key) {
-  if (isDragging) { event.preventDefault(); return; }
+  if (isDragging) return;
   abrirPerfil(key);
 }
 
@@ -1615,6 +1657,21 @@ function saveScriptUrl() {
 // ════════════════════════════════════════════
 // UI HELPERS
 // ════════════════════════════════════════════
+function cambiarHojaSheets(hoja) {
+  const gids = {
+    leads:   '1488122141',
+    vistage: '530322819'
+  };
+  const gid = gids[hoja] || gids.leads;
+  document.getElementById('sheetsFrame').src =
+    'https://docs.google.com/spreadsheets/d/1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87/edit?usp=sharing&rm=minimal&gid=' + gid;
+  // Resaltar tab activo
+  document.getElementById('tab-leads-sh').style.color = hoja==='leads' ? 'var(--gold)' : '';
+  document.getElementById('tab-leads-sh').style.borderColor = hoja==='leads' ? 'var(--gold)' : '';
+  document.getElementById('tab-vistage-sh').style.color = hoja==='vistage' ? 'var(--gold)' : '';
+  document.getElementById('tab-vistage-sh').style.borderColor = hoja==='vistage' ? 'var(--gold)' : '';
+}
+
 function showPanel(name, btn) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -1623,7 +1680,7 @@ function showPanel(name, btn) {
   const titles = {
     semana:'Plan <em>Semanal</em>', leads:'<em>Leads</em> 2026',
     vistage:'<em>Vistage</em> 2026', cargar:'Cargar desde <em>LinkedIn</em>',
-    config:'<em>Configuración</em>'
+    sheets:'Editar <em>Planilla</em>', config:'<em>Configuración</em>'
   };
   document.getElementById('pageTitle').innerHTML = titles[name]||name;
 }
