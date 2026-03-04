@@ -3,521 +3,626 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Enfoco CRM</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Enfoco CRM v2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:#0a0a0b;--s1:#111113;--s2:#18181b;--s3:#222226;--border:#2e2e34;
-  --gold:#f0c040;--gold2:#c89a20;--goldbg:#1a1500;
-  --green:#3dba7a;--greenbg:#071812;
-  --red:#e05555;--redbg:#1a0707;
-  --orange:#e88c30;--orangebg:#1a0e00;
-  --blue:#4d8fd4;--bluebg:#070f1a;
-  --purple:#9b72e0;--purplebg:#0f0a1a;
-  --text:#e8e4dc;--muted:#6b6860;--muted2:#4a4845;
+/* ── TOKENS ── */
+:root{
+  --ink:#0d0d0f;
+  --ink2:#16161a;
+  --ink3:#1e1e24;
+  --ink4:#28282f;
+  --line:#323239;
+  --line2:#3e3e47;
+  --fog:#6b6b78;
+  --fog2:#9191a0;
+  --paper:#e8e6e0;
+  --paper2:#f2f0ea;
+  --gold:#e8b84b;
+  --gold-dim:#3a2e0d;
+  --gold-glow:rgba(232,184,75,.15);
+  --sage:#5db87a;
+  --sage-dim:#0d2617;
+  --sage-glow:rgba(93,184,122,.12);
+  --rose:#d4605a;
+  --rose-dim:#2e0d0c;
+  --amber:#d48a3a;
+  --amber-dim:#2e1a06;
+  --sky:#5a8fd4;
+  --sky-dim:#0d1a2e;
+  --sky-glow:rgba(90,143,212,.12);
+  --r:10px;--r2:14px;--r3:20px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
-body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:999;opacity:.6}
+html{font-size:15px}
+body{
+  background:var(--ink);
+  color:var(--paper);
+  font-family:'DM Sans',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* GRAIN */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='.04'/%3E%3C/svg%3E");
+  opacity:.7;
+}
 
 /* LAYOUT */
-.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.app{position:relative;z-index:1;display:grid;grid-template-columns:200px 1fr;min-height:100vh}
 
 /* SIDEBAR */
-.sidebar{background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
-.logo-block{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
-.logo-name{font-family:'Playfair Display',serif;font-size:18px;color:var(--gold)}
-.logo-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px}
-.nav{padding:12px;flex:1;display:flex;flex-direction:column;gap:2px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;text-align:left}
-.nav-item:hover{background:var(--s2);color:var(--text)}
-.nav-item.active{background:rgba(240,192,64,.1);color:var(--gold);border-left:2px solid var(--gold)}
-.nav-item .ni{font-size:14px;width:20px;text-align:center}
-.nav-sep{height:1px;background:var(--border);margin:8px 0}
-.sidebar-footer{padding:14px 20px;border-top:1px solid var(--border)}
-.api-dot{width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block;margin-right:6px}
-.api-dot.ok{background:var(--green)}
-.api-status-text{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)}
+.nav{
+  background:var(--ink2);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.nav-logo{padding:22px 18px 18px;border-bottom:1px solid var(--line)}
+.nav-logo-name{font-family:'DM Serif Display',serif;font-size:17px;color:var(--gold);letter-spacing:-.2px;line-height:1}
+.nav-logo-sub{font-family:'DM Mono',monospace;font-size:8px;color:var(--fog);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+.nav-links{padding:10px 8px;flex:1;display:flex;flex-direction:column;gap:1px}
+.nav-link{
+  display:flex;align-items:center;gap:9px;padding:8px 10px;
+  border-radius:8px;cursor:pointer;color:var(--fog);font-size:12.5px;font-weight:500;
+  transition:all .14s;border:none;background:none;width:100%;text-align:left;
+}
+.nav-link:hover{background:var(--ink3);color:var(--paper)}
+.nav-link.on{background:var(--gold-dim);color:var(--gold)}
+.nav-link .ico{width:18px;text-align:center;font-size:13px;flex-shrink:0}
+.nav-sep{height:1px;background:var(--line);margin:6px 0}
+.nav-foot{padding:12px 18px;border-top:1px solid var(--line)}
+.sync-status{font-family:'DM Mono',monospace;font-size:9px;color:var(--fog);display:flex;align-items:center;gap:6px}
+.sync-dot{width:5px;height:5px;border-radius:50%;background:var(--rose);flex-shrink:0}
+.sync-dot.ok{background:var(--sage)}
+.sync-dot.spin{background:var(--amber);animation:blink .7s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 
 /* MAIN */
 .main{display:flex;flex-direction:column;min-height:100vh}
-.topbar{padding:18px 28px;border-bottom:1px solid var(--border);background:var(--s1);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
-.page-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--text)}
-.page-title em{color:var(--gold);font-style:italic}
+.topbar{
+  padding:16px 26px;border-bottom:1px solid var(--line);
+  background:var(--ink2);display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:20;
+}
+.topbar-title{font-family:'DM Serif Display',serif;font-size:19px;color:var(--paper)}
+.topbar-title em{color:var(--gold);font-style:italic}
 .topbar-right{display:flex;gap:8px;align-items:center}
-.content{padding:24px 28px;flex:1}
+.content{padding:22px 26px;flex:1}
 
 /* PANELS */
-.panel{display:none;flex-direction:column;gap:18px;animation:fadeIn .18s ease}
-.panel.active{display:flex}
-@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.panel{display:none;flex-direction:column;gap:16px;animation:pop .16s ease}
+.panel.on{display:flex}
+@keyframes pop{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 
-/* SEARCH */
-.search-bar{position:relative;margin-bottom:4px}
-.search-bar input{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:10px 14px 10px 36px;border-radius:9px;font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border-color .15s}
-.search-bar input:focus{border-color:var(--gold)}
-.search-bar::before{content:'⌕';position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none}
-
-/* WEEKLY GRID */
-.week-header{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:4px}
-.week-day-label{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:6px 0}
-.week-day-label.today{color:var(--gold)}
-.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:start}
-.week-col{background:var(--s1);border:1px solid var(--border);border-radius:10px;min-height:80px;padding:8px;display:flex;flex-direction:column;gap:6px}
-.week-col.today-col{border-color:rgba(240,192,64,.35);background:rgba(240,192,64,.03)}
-.week-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);text-align:center;margin-bottom:4px}
-.week-date.today{color:var(--gold);font-weight:600}
-
-/* LEAD PILLS (weekly) */
-.lead-pill{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:7px 9px;cursor:pointer;transition:all .15s;border-left:3px solid var(--muted2)}
-.lead-pill:hover{border-color:var(--gold);background:var(--s3)}
-.lead-pill.urgent{border-left-color:var(--red)}
-.lead-pill.today-p{border-left-color:var(--orange)}
-.lead-pill.ok{border-left-color:var(--green)}
-.pill-empresa{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pill-contacto{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pill-canal{font-size:9px;font-family:'IBM Plex Mono',monospace;margin-top:3px}
-
-/* LEAD CARDS (leads panel) */
-.leads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.lead-card{background:var(--s1);border:1px solid var(--border);border-radius:11px;padding:16px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
-.lead-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
-.lead-card.urgent::before{background:var(--red)}
-.lead-card.today-c::before{background:var(--orange)}
-.lead-card.ok::before{background:var(--green)}
-.lead-card.neutral::before{background:var(--muted2)}
-.lead-card:hover{border-color:rgba(240,192,64,.4);transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,.4)}
-.lc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-.lc-empresa{font-weight:700;font-size:14px;line-height:1.2}
-.lc-contacto{font-size:12px;color:var(--muted);margin-top:2px}
-.lc-cargo{font-size:11px;color:var(--muted2);margin-top:1px}
-.lc-contacts{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}
-.lc-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 7px;border-radius:5px}
-.badge-wpp{background:rgba(61,186,122,.15);color:var(--green);border:1px solid rgba(61,186,122,.2)}
-.badge-mail{background:rgba(240,192,64,.12);color:var(--gold);border:1px solid rgba(240,192,64,.2)}
-.badge-li{background:rgba(77,143,212,.12);color:var(--blue);border:1px solid rgba(77,143,212,.2)}
-.lc-paso{font-size:11px;color:var(--muted);line-height:1.5;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.lc-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
-.lc-fecha{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2)}
-.hist-count{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--purple);background:var(--purplebg);border:1px solid rgba(155,114,224,.2);padding:2px 7px;border-radius:10px}
-
-/* CHIPS */
-.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
-.chip-red{background:var(--redbg);color:var(--red);border:1px solid rgba(224,85,85,.3)}
-.chip-orange{background:var(--orangebg);color:var(--orange);border:1px solid rgba(232,140,48,.3)}
-.chip-green{background:var(--greenbg);color:var(--green);border:1px solid rgba(61,186,122,.3)}
-.chip-blue{background:var(--bluebg);color:var(--blue);border:1px solid rgba(77,143,212,.3)}
-.chip-gold{background:var(--goldbg);color:var(--gold);border:1px solid rgba(240,192,64,.3)}
-.chip-purple{background:var(--purplebg);color:var(--purple);border:1px solid rgba(155,114,224,.3)}
-.chip-muted{background:var(--s3);color:var(--muted);border:1px solid var(--border)}
-
-/* BTNS */
-.btn{padding:9px 16px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:none;display:inline-flex;align-items:center;gap:6px}
-.btn-primary{background:var(--gold);color:#0a0a0b}
-.btn-primary:hover{background:#f8d060;transform:translateY(-1px)}
-.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
-.btn-ghost:hover{border-color:var(--muted);color:var(--text)}
-.btn-green{background:var(--green);color:#0a0a0b}
-.btn-green:hover{background:#55d490}
-.btn-purple{background:var(--purple);color:#fff}
-.btn-purple:hover{background:#b090f0}
-.btn-sm{padding:5px 11px;font-size:11px}
+/* ── BUTTONS ── */
+.btn{
+  padding:8px 15px;border-radius:8px;font-family:'DM Sans',sans-serif;
+  font-size:12.5px;font-weight:600;cursor:pointer;transition:all .13s;
+  border:none;display:inline-flex;align-items:center;gap:6px;line-height:1;
+}
+.btn-gold{background:var(--gold);color:var(--ink)}
+.btn-gold:hover{background:#f0c84e;transform:translateY(-1px)}
+.btn-ghost{background:transparent;border:1px solid var(--line2);color:var(--fog)}
+.btn-ghost:hover{border-color:var(--fog2);color:var(--paper)}
+.btn-sage{background:var(--sage);color:var(--ink)}
+.btn-sage:hover{background:#6fd48e}
+.btn-rose{background:var(--rose);color:#fff}
+.btn-rose:hover{background:#e07070}
+.btn-sm{padding:5px 11px;font-size:11.5px}
 .btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important}
 
-/* INPUTS */
-.field{display:flex;flex-direction:column;gap:5px}
-.field label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.4px}
-.field input,.field textarea,.field select{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border-color .15s;resize:vertical}
-.field input::placeholder,.field textarea::placeholder{color:var(--muted2)}
+/* ── INPUTS ── */
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:10.5px;color:var(--fog);font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+.field input,.field textarea,.field select{
+  background:var(--ink3);border:1px solid var(--line);color:var(--paper);
+  padding:8px 11px;border-radius:8px;font-family:'DM Sans',sans-serif;
+  font-size:13px;outline:none;transition:border-color .13s;resize:vertical;
+}
+.field input::placeholder,.field textarea::placeholder{color:var(--fog)}
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--gold)}
-.field select option{background:var(--s2)}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.full{grid-column:1/-1}
+.field select option{background:var(--ink3)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg.x3{grid-template-columns:1fr 1fr 1fr}
+.fw{grid-column:1/-1}
+.search{position:relative}
+.search input{width:100%;padding-left:34px;background:var(--ink3)}
+.search::before{content:'⌕';position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--fog);font-size:15px;pointer-events:none}
 
-/* AI BLOCK */
-.ai-block{background:var(--s2);border:1px solid rgba(155,114,224,.3);border-radius:10px;overflow:hidden}
-.ai-block-header{padding:10px 14px;background:var(--purplebg);display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(155,114,224,.2)}
-.ai-block-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--purple);letter-spacing:1px}
-.ai-pulse{width:6px;height:6px;border-radius:50%;background:var(--purple);animation:pulse 1.4s infinite;flex-shrink:0}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
-.ai-block-body{padding:14px;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap}
+/* ── CARDS ── */
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r2)}
+.card-h{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:var(--ink3);border-radius:var(--r2) var(--r2) 0 0}
+.card-title{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--fog);letter-spacing:1.2px;text-transform:uppercase;display:flex;align-items:center;gap:7px}
+.card-title::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--gold)}
+.card-body{padding:16px}
 
-/* HISTORIAL */
-.hist-item{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;position:relative}
-.hist-item.comercial{border-left:3px solid var(--blue)}
-.hist-item.cliente{border-left:3px solid var(--green)}
-.hist-item.nota{border-left:3px solid var(--gold)}
-.hist-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.hist-tipo{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.8px;text-transform:uppercase}
-.hist-fecha{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted)}
-.hist-contenido{font-size:12px;line-height:1.6;white-space:pre-wrap;color:var(--text)}
-.hist-quien{font-size:10px;font-weight:700;margin-bottom:3px}
+/* ── CHIPS ── */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;font-family:'DM Mono',monospace;white-space:nowrap}
+.c-gold{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(232,184,75,.25)}
+.c-sage{background:var(--sage-dim);color:var(--sage);border:1px solid rgba(93,184,122,.25)}
+.c-rose{background:var(--rose-dim);color:var(--rose);border:1px solid rgba(212,96,90,.25)}
+.c-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(212,138,58,.25)}
+.c-sky{background:var(--sky-dim);color:var(--sky);border:1px solid rgba(90,143,212,.25)}
+.c-fog{background:var(--ink4);color:var(--fog);border:1px solid var(--line)}
 
-/* LOADER */
-.loader{display:none;align-items:center;gap:10px;padding:14px;color:var(--muted);font-size:12px}
+/* ── LOADER ── */
+.loader{display:none;align-items:center;gap:9px;color:var(--fog);font-size:12px;padding:10px 0}
 .loader.on{display:flex}
-.dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--gold);animation:bounce 1.1s infinite;margin:0 2px}
-.dots span:nth-child(2){animation-delay:.2s}
-.dots span:nth-child(3){animation-delay:.4s}
-@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.3}40%{transform:translateY(-6px);opacity:1}}
+.dots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--gold);animation:bounce 1.1s infinite;margin:0 2px}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.3}40%{transform:translateY(-5px);opacity:1}}
 
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
-.modal-overlay.open{display:flex}
-.modal{background:var(--s1);border:1px solid var(--border);border-radius:14px;width:100%;max-width:700px;margin:auto}
-.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;background:var(--s2);border-radius:14px 14px 0 0}
-.modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:0 4px;flex-shrink:0}
-.modal-close:hover{color:var(--text)}
+/* ── SEMANA ── */
+.week-nav{display:flex;align-items:center;gap:10px}
+.week-label{font-family:'DM Mono',monospace;font-size:11px;flex:1;text-align:center;color:var(--gold)}
+.week-grid{display:grid;grid-template-columns:repeat(5,1fr) 150px;gap:8px}
+.wday-head{text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--fog);letter-spacing:1px;text-transform:uppercase;padding:6px 0}
+.wday-head.today{color:var(--gold)}
+.wcol{
+  background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);
+  min-height:90px;padding:7px;display:flex;flex-direction:column;gap:5px;
+  transition:border-color .15s,background .15s;
+}
+.wcol.today{border-color:rgba(232,184,75,.3);background:rgba(232,184,75,.03)}
+.wcol.sf{border-style:dashed;border-color:var(--line2)}
+/* Pill */
+.pill{
+  background:var(--ink3);border:1px solid var(--line);border-radius:7px;
+  padding:7px 8px;cursor:pointer;transition:all .13s;
+  border-left:3px solid var(--line2);user-select:none;
+}
+.pill:hover{background:var(--ink4);border-color:var(--gold);transform:translateY(-1px)}
+.pill.urg{border-left-color:var(--rose)}
+.pill.hoy{border-left-color:var(--amber)}
+.pill.ok{border-left-color:var(--sage)}
+.pill-emp{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill-con{font-size:10px;color:var(--fog);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill-ch{font-size:9px;font-family:'DM Mono',monospace;margin-top:3px}
+.wcol-empty{text-align:center;padding:16px 0;color:var(--line2);font-size:10px;border:1px dashed var(--line);border-radius:6px}
 
-/* PERFIL MODAL específico */
-.perfil-section{padding:16px 22px;border-bottom:1px solid var(--border)}
-.perfil-section:last-child{border-bottom:none}
-.section-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px}
+/* ── LEAD CARDS GRID ── */
+.leads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.lcard{
+  background:var(--ink2);border:1px solid var(--line);border-radius:var(--r2);
+  padding:15px;cursor:pointer;transition:all .14s;position:relative;overflow:hidden;
+}
+.lcard::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.lcard.urg::after{background:var(--rose)}
+.lcard.hoy::after{background:var(--amber)}
+.lcard.ok::after{background:var(--sage)}
+.lcard.neu::after{background:var(--line2)}
+.lcard:hover{border-color:rgba(232,184,75,.35);transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.lc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:7px}
+.lc-name{font-weight:600;font-size:13.5px}
+.lc-who{font-size:11.5px;color:var(--fog);margin-top:1px}
+.lc-contacts{display:flex;gap:5px;flex-wrap:wrap;margin:7px 0}
+.lc-badge{font-family:'DM Mono',monospace;font-size:9.5px;padding:2px 7px;border-radius:5px}
+.b-wpp{background:var(--sage-dim);color:var(--sage);border:1px solid rgba(93,184,122,.2)}
+.b-mail{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(232,184,75,.2)}
+.b-li{background:var(--sky-dim);color:var(--sky);border:1px solid rgba(90,143,212,.2)}
+.lc-paso{font-size:11px;color:var(--fog);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:9px}
+.lc-fecha{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--fog2)}
+.lc-hist{font-family:'DM Mono',monospace;font-size:9px;background:var(--sky-dim);color:var(--sky);border:1px solid rgba(90,143,212,.2);padding:2px 7px;border-radius:10px}
 
-/* COPY BTN */
-.copy-btn{background:var(--s3);border:1px solid var(--border);color:var(--muted);padding:4px 9px;border-radius:6px;cursor:pointer;font-size:10px;font-family:'IBM Plex Mono',monospace;transition:all .15s}
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
+.overlay.on{display:flex}
+.modal{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r3);width:100%;max-width:680px;margin:auto;position:relative}
+.modal-h{
+  padding:18px 22px;border-bottom:1px solid var(--line);
+  background:var(--ink3);border-radius:var(--r3) var(--r3) 0 0;
+  display:flex;align-items:flex-start;gap:12px;
+}
+.modal-h-info{flex:1}
+.modal-hname{font-family:'DM Serif Display',serif;font-size:19px;line-height:1}
+.modal-hsub{font-size:11.5px;color:var(--fog);margin-top:3px}
+.modal-hbadges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.modal-close{background:none;border:none;color:var(--fog);font-size:22px;cursor:pointer;padding:2px;line-height:1;flex-shrink:0}
+.modal-close:hover{color:var(--paper)}
+.msec{padding:14px 22px;border-bottom:1px solid var(--line)}
+.msec:last-child{border-bottom:none}
+.msec-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--fog);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px}
+
+/* Controles rápidos perfil */
+.quick-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.qc-date{background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:6px 10px;border-radius:7px;font-family:'DM Mono',monospace;font-size:11.5px;outline:none;cursor:pointer}
+.qc-date:focus{border-color:var(--gold)}
+.qc-sel{background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:6px 10px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;cursor:pointer}
+.qc-sel:focus{border-color:var(--gold)}
+
+/* AI block */
+.ai-wrap{background:var(--ink3);border:1px solid rgba(232,184,75,.2);border-radius:var(--r)}
+.ai-head{padding:9px 13px;display:flex;align-items:center;gap:7px;border-bottom:1px solid rgba(232,184,75,.1)}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:blink .9s infinite;flex-shrink:0}
+.ai-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:1px}
+.ai-body{padding:12px 13px;font-size:12.5px;line-height:1.75;color:var(--paper);white-space:pre-wrap}
+.ai-msg-sep{padding:8px 13px 4px;font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:1px;border-top:1px solid rgba(232,184,75,.1);display:flex;justify-content:space-between;align-items:center}
+.ai-msg-body{padding:0 13px 12px;font-size:12.5px;line-height:1.75;color:var(--paper2);white-space:pre-wrap}
+
+/* Historial */
+.hist-feed{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto}
+.hitem{background:var(--ink3);border:1px solid var(--line);border-radius:8px;padding:11px;position:relative}
+.hitem.cli{border-left:3px solid var(--sage)}
+.hitem.com{border-left:3px solid var(--sky)}
+.hitem.not{border-left:3px solid var(--gold)}
+.hitem-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.hitem-tipo{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.7px;text-transform:uppercase}
+.hitem-fecha{font-family:'DM Mono',monospace;font-size:9px;color:var(--fog)}
+.hitem-quien{font-size:10px;font-weight:700;margin-bottom:3px}
+.hitem-txt{font-size:12px;line-height:1.6;color:var(--paper)}
+
+/* Canal selector */
+.canal-row{display:flex;gap:5px;flex-wrap:wrap}
+.canal-opt{padding:6px 12px;border-radius:7px;border:1px solid var(--line);background:var(--ink3);color:var(--fog);font-size:11.5px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;transition:all .13s}
+.canal-opt:hover{color:var(--paper)}
+.canal-opt.on.wpp{border-color:var(--sage);color:var(--sage);background:var(--sage-dim)}
+.canal-opt.on.li{border-color:var(--sky);color:var(--sky);background:var(--sky-dim)}
+.canal-opt.on.mail{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+
+/* Acción tabs */
+.action-tabs{display:flex;gap:6px;flex-wrap:wrap}
+
+/* Vistage table */
+.vtable{width:100%;border-collapse:collapse}
+.vtable th{background:var(--ink3);padding:8px 13px;text-align:left;font-family:'DM Mono',monospace;font-size:9px;color:var(--fog);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--line)}
+.vtable td{padding:10px 13px;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:middle}
+.vtable tr{cursor:pointer;transition:background .1s}
+.vtable tr:hover td{background:rgba(255,255,255,.02)}
+.vtable tr:last-child td{border-bottom:none}
+
+/* Copy btn */
+.copy-btn{background:var(--ink4);border:1px solid var(--line);color:var(--fog);padding:4px 8px;border-radius:5px;cursor:pointer;font-size:10px;font-family:'DM Mono',monospace;transition:all .13s}
 .copy-btn:hover{border-color:var(--gold);color:var(--gold)}
 
-/* CANAL SELECTOR */
-.canal-row{display:flex;gap:6px;flex-wrap:wrap}
-.canal-opt{padding:6px 13px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--muted);font-size:11px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;transition:all .15s}
-.canal-opt:hover{color:var(--text)}
-.canal-opt.active.wpp{border-color:var(--green);color:var(--green);background:var(--greenbg)}
-.canal-opt.active.mail{border-color:var(--gold);color:var(--gold);background:var(--goldbg)}
-.canal-opt.active.li{border-color:var(--blue);color:var(--blue);background:var(--bluebg)}
+/* NOTIFY */
+.notify{position:fixed;bottom:18px;right:18px;background:var(--ink3);border:1px solid var(--line);border-radius:10px;padding:10px 15px;font-size:12.5px;z-index:400;transform:translateY(70px);opacity:0;transition:all .22s;max-width:280px;pointer-events:none}
+.notify.on{transform:translateY(0);opacity:1}
+.notify.ok{border-color:rgba(93,184,122,.4);color:var(--sage)}
+.notify.err{border-color:rgba(212,96,90,.4);color:var(--rose)}
+.notify.info{border-color:rgba(232,184,75,.3);color:var(--gold)}
 
 /* SETUP */
-.setup-overlay{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
-.setup-box{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:36px;max-width:420px;width:100%;text-align:center}
-.setup-title{font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);margin-bottom:6px}
-.setup-sub{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:24px}
-.setup-input{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;width:100%;outline:none;margin-bottom:10px;transition:border-color .15s}
+.setup{position:fixed;inset:0;background:var(--ink);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.setup-box{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r3);padding:36px;max-width:420px;width:100%;text-align:center}
+.setup-title{font-family:'DM Serif Display',serif;font-size:28px;color:var(--gold);margin-bottom:6px}
+.setup-sub{color:var(--fog);font-size:13px;line-height:1.6;margin-bottom:24px}
+.setup-input{background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:10px 13px;border-radius:8px;font-family:'DM Mono',monospace;font-size:12px;width:100%;outline:none;margin-bottom:8px;transition:border-color .13s}
 .setup-input:focus{border-color:var(--gold)}
+.setup-step{display:flex;gap:10px;align-items:flex-start;text-align:left;margin-bottom:12px}
+.ss-n{width:22px;height:22px;border-radius:50%;background:var(--gold-dim);border:1px solid rgba(232,184,75,.3);color:var(--gold);font-size:10px;font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.ss-t{font-size:12.5px;color:var(--fog);line-height:1.5}
+.ss-t strong{color:var(--paper)}
 
-/* NOTIFY */
-.notify{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:11px 16px;font-size:12px;z-index:300;transform:translateY(80px);opacity:0;transition:all .25s;max-width:300px}
-.notify.show{transform:translateY(0);opacity:1}
-.notify.success{border-color:rgba(61,186,122,.4);color:var(--green)}
-.notify.error{border-color:rgba(224,85,85,.4);color:var(--red)}
-
-/* VISTAGE TABLE */
-.vtable{width:100%;border-collapse:collapse}
-.vtable th{background:var(--s2);padding:9px 14px;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
-.vtable td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle}
-.vtable tr:last-child td{border-bottom:none}
-.vtable tr{cursor:pointer;transition:background .1s}
-.vtable tr:hover td{background:rgba(255,255,255,.025)}
-
-/* SCROLL */
-::-webkit-scrollbar{width:4px}
+/* scroll */
+::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:10px}
 
-/* DRAG */
-.lead-pill[draggable]{cursor:grab}
-.lead-pill[draggable]:active{cursor:grabbing}
-.week-col.drag-over{background:rgba(240,192,64,.08)!important;border-color:rgba(240,192,64,.4)!important;transition:all .1s}
-.lead-pill.dragging{opacity:.3;transform:rotate(1deg)}
-
-/* EMPTY */
-.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
-.empty-icon{font-size:32px;margin-bottom:10px}
-
-/* CARD HEADER */
-.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.card-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--s2)}
-.card-title{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
-.card-title::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold)}
-.card-body{padding:18px}
+/* empty */
+.empty{text-align:center;padding:36px 20px;color:var(--fog)}
+.empty-ico{font-size:28px;margin-bottom:8px}
 </style>
 </head>
 <body>
 
 <!-- SETUP -->
-<div class="setup-overlay" id="setupOverlay">
+<div class="setup" id="setup">
   <div class="setup-box">
     <div class="setup-title">Enfoco CRM</div>
-    <div class="setup-sub">Ingresá tu API Key de Anthropic para comenzar.<br>La podés obtener en console.anthropic.com</div>
-    <input class="setup-input" type="password" id="setupKey" placeholder="sk-ant-api03-..." />
-    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="saveSetup()">Comenzar →</button>
+    <div class="setup-sub">Configuración inicial — solo una vez</div>
+    <div class="setup-step">
+      <div class="ss-n">1</div>
+      <div class="ss-t"><strong>API Key de Anthropic</strong> — para generar mensajes con IA<br><span style="font-size:11px">console.anthropic.com → API Keys</span></div>
+    </div>
+    <input class="setup-input" type="password" id="s_key" placeholder="sk-ant-api03-..." />
+    <div class="setup-step" style="margin-top:8px">
+      <div class="ss-n">2</div>
+      <div class="ss-t"><strong>URL del Apps Script</strong> — para sincronizar con Google Sheets<br><span style="font-size:11px">Opcional — podés agregarlo después en ⚙️</span></div>
+    </div>
+    <input class="setup-input" type="text" id="s_script" placeholder="https://script.google.com/macros/s/..." />
+    <button class="btn btn-gold" style="width:100%;justify-content:center;margin-top:8px" onclick="doSetup()">Comenzar →</button>
   </div>
 </div>
 
-<!-- APP SHELL -->
-<div class="shell" id="mainShell" style="display:none">
-  <aside class="sidebar">
-    <div class="logo-block">
-      <div class="logo-name">Enfoco Films</div>
-      <div class="logo-tag">CRM Comercial</div>
-    </div>
-    <nav class="nav">
-      <button class="nav-item active" onclick="showPanel('semana',this)"><span class="ni">📅</span> Plan Semanal</button>
-      <button class="nav-item" onclick="showPanel('leads',this)"><span class="ni">💼</span> Leads 2026</button>
-      <button class="nav-item" onclick="showPanel('vistage',this)"><span class="ni">🏆</span> Vistage 2026</button>
-      <div class="nav-sep"></div>
-      <button class="nav-item" onclick="showPanel('cargar',this)"><span class="ni">➕</span> Cargar Vistage</button>
-      <button class="nav-item" onclick="showPanel('sheets',this)"><span class="ni">📊</span> Editar Planilla</button>
-      <button class="nav-item" onclick="showPanel('config',this)"><span class="ni">⚙️</span> Configuración</button>
-    </nav>
-    <div class="sidebar-footer">
-      <span class="api-dot ok" id="apiDot"></span>
-      <span class="api-status-text" id="apiStatus">API conectada</span>
-    </div>
-  </aside>
+<!-- APP -->
+<div class="app" id="appShell" style="display:none">
 
+  <!-- SIDEBAR -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <div class="nav-logo-name">Enfoco Films</div>
+      <div class="nav-logo-sub">CRM v2</div>
+    </div>
+    <div class="nav-links">
+      <button class="nav-link on" onclick="goPanel('semana',this)"><span class="ico">📅</span>Semana</button>
+      <button class="nav-link" onclick="goPanel('leads',this)"><span class="ico">💼</span>Leads</button>
+      <button class="nav-link" onclick="goPanel('vistage',this)"><span class="ico">🏆</span>Vistage</button>
+      <div class="nav-sep"></div>
+      <button class="nav-link" id="navNuevo" onclick="goPanel('nuevo',this)"><span class="ico">➕</span>Cargar LinkedIn</button>
+      <button class="nav-link" onclick="goPanel('tabla',this)"><span class="ico">📋</span>Tabla / Editar</button>
+      <button class="nav-link" onclick="goPanel('config',this)"><span class="ico">⚙️</span>Config</button>
+    </div>
+    <div class="nav-foot">
+      <div class="sync-status">
+        <div class="sync-dot ok" id="syncDot"></div>
+        <span id="syncLabel">Listo</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
   <main class="main">
     <div class="topbar">
-      <div class="page-title" id="pageTitle">Plan <em>Semanal</em></div>
+      <div class="topbar-title" id="pgTitle">Plan <em>Semanal</em></div>
       <div class="topbar-right">
-        <button class="btn btn-ghost btn-sm" style="font-size:11px;font-family:'IBM Plex Mono',monospace" onclick="loadSheetData()">⟳ Sync</button>
+        <button class="btn btn-ghost btn-sm" onclick="syncFromSheets()" style="font-family:'DM Mono',monospace;font-size:10px">⟳ Sync Sheets</button>
+        <button class="btn btn-gold btn-sm" onclick="openNewLead()">+ Lead</button>
       </div>
     </div>
 
     <div class="content">
 
-      <!-- ══ PANEL SEMANA ══ -->
-      <div class="panel active" id="panel-semana">
+      <!-- SEMANA -->
+      <div class="panel on" id="panel-semana">
         <div style="display:flex;gap:10px;align-items:center">
-          <div class="search-bar" style="flex:1;margin-bottom:0">
-            <input type="text" id="semBuscador" placeholder="Buscar empresa o contacto..." oninput="filtrarSemana(this.value)" />
+          <div class="search" style="flex:1"><input type="text" id="semSearch" placeholder="Buscar..." oninput="drawWeek()" /></div>
+          <div class="week-nav">
+            <button class="btn btn-ghost btn-sm" style="font-size:16px;padding:4px 11px" onclick="weekOff--;drawWeek()">‹</button>
+            <div id="weekLabel" class="week-label" style="min-width:160px"></div>
+            <button class="btn btn-ghost btn-sm" style="font-size:16px;padding:4px 11px" onclick="weekOff++;drawWeek()">›</button>
           </div>
+          <button class="btn btn-ghost btn-sm" id="todayBtn" style="display:none;font-size:11px" onclick="weekOff=0;drawWeek()">Hoy</button>
         </div>
-        <!-- Navegación: siempre fija en el DOM -->
-        <div style="display:flex;align-items:center;gap:10px">
-          <button onclick="cambiarSemana(-1)" class="btn btn-ghost btn-sm" style="font-size:18px;padding:5px 14px;line-height:1">‹</button>
-          <div id="semLabel" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);flex:1;text-align:center;letter-spacing:.5px"></div>
-          <button onclick="cambiarSemana(1)" class="btn btn-ghost btn-sm" style="font-size:18px;padding:5px 14px;line-height:1">›</button>
-          <button id="semHoyBtn" onclick="irSemanaActual()" class="btn btn-ghost btn-sm" style="font-size:10px;font-family:monospace;display:none">Hoy</button>
+        <!-- Headers fijos -->
+        <div id="weekHeads" style="display:grid;grid-template-columns:repeat(5,1fr) 150px;gap:8px"></div>
+        <!-- Columnas fijas — NUNCA se recrean, solo se actualiza innerHTML -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr) 150px;gap:8px;align-items:start">
+          <div class="wcol" id="wc0"></div>
+          <div class="wcol" id="wc1"></div>
+          <div class="wcol" id="wc2"></div>
+          <div class="wcol" id="wc3"></div>
+          <div class="wcol" id="wc4"></div>
+          <div class="wcol sf" id="wc5"></div>
         </div>
-        <!-- Headers: siempre fijos -->
-        <div id="semHeaders" style="display:grid;grid-template-columns:repeat(5,1fr) 170px;gap:8px"></div>
-        <!-- Columnas: fijas, solo se actualiza el CONTENIDO interno -->
-        <div style="display:grid;grid-template-columns:repeat(5,1fr) 170px;gap:8px;align-items:start" id="semGrid">
-          <div class="week-col" id="wc0" data-col-id="wc0"></div>
-          <div class="week-col" id="wc1" data-col-id="wc1"></div>
-          <div class="week-col" id="wc2" data-col-id="wc2"></div>
-          <div class="week-col" id="wc3" data-col-id="wc3"></div>
-          <div class="week-col" id="wc4" data-col-id="wc4"></div>
-          <div class="week-col" id="wc5" data-col-id="wc5" style="border-color:var(--muted2);border-style:dashed"></div>
-        </div>
+        <div id="weekNote" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);text-align:center"></div>
       </div>
 
-      <!-- ══ PANEL LEADS ══ -->
+      <!-- LEADS -->
       <div class="panel" id="panel-leads">
         <div style="display:flex;gap:10px;align-items:center">
-          <div class="search-bar" style="flex:1;margin-bottom:0"><input type="text" placeholder="Buscar empresa o contacto..." oninput="filtrarLeads(this.value)" /></div>
-          <button class="btn btn-primary btn-sm" onclick="openModal('modalNuevoLead')">+ Nuevo lead</button>
+          <div class="search" style="flex:1"><input type="text" id="leadsSearch" placeholder="Buscar empresa o contacto..." oninput="drawLeads()" /></div>
+          <button class="btn btn-gold btn-sm" onclick="openNewLead()">+ Nuevo</button>
         </div>
         <div class="leads-grid" id="leadsGrid"></div>
       </div>
 
-      <!-- ══ PANEL VISTAGE ══ -->
+      <!-- VISTAGE -->
       <div class="panel" id="panel-vistage">
-        <div class="search-bar"><input type="text" placeholder="Buscar nombre o compañía..." oninput="filtrarVistage(this.value)" /></div>
+        <div class="search"><input type="text" id="vSearch" placeholder="Buscar..." oninput="drawVistage()" /></div>
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">Vistage 2026 — Contactados por LinkedIn</div>
+          <div class="card-h">
+            <div class="card-title">Vistage 2026</div>
+            <button class="btn btn-ghost btn-sm" onclick="goPanel('nuevo',document.getElementById('navNuevo'))">+ Cargar perfil</button>
           </div>
           <div style="overflow-x:auto">
-            <table class="vtable" id="vistageTable">
-              <thead><tr>
-                <th>Nombre / Compañía</th><th>Rubro</th><th>Estado</th><th>Último contacto</th><th>Acción</th>
-              </tr></thead>
-              <tbody id="vistageBody"></tbody>
-            </table>
+            <table class="vtable"><thead><tr>
+              <th>Nombre / Empresa</th><th>Rubro</th><th>Estado</th><th>Contacto</th><th></th>
+            </tr></thead><tbody id="vBody"></tbody></table>
           </div>
         </div>
       </div>
 
-      <!-- ══ PANEL CARGAR VISTAGE ══ -->
-      <div class="panel" id="panel-cargar">
+      <!-- CARGAR LINKEDIN -->
+      <div class="panel" id="panel-nuevo">
         <div class="card">
-          <div class="card-header"><div class="card-title">Cargar desde LinkedIn</div></div>
+          <div class="card-h"><div class="card-title">Analizar perfil de LinkedIn con IA</div></div>
           <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
             <div class="field">
-              <label>Texto del perfil de LinkedIn (copiá nombre, cargo, empresa, descripción)</label>
-              <textarea id="liTexto" rows="5" placeholder="Pegá acá cualquier info del perfil: nombre, cargo, empresa, descripción..."></textarea>
+              <label>Pegá el texto del perfil (nombre, cargo, empresa, descripción)</label>
+              <textarea id="li_texto" rows="5" placeholder="Copiá y pegá cualquier info del perfil..."></textarea>
             </div>
-            <div class="form-grid">
-              <div class="field"><label>Rubro (opcional)</label><input type="text" id="liRubro" placeholder="Alimentos, Automotriz..." /></div>
-              <div class="field"><label>URL LinkedIn (opcional)</label><input type="text" id="liUrl" placeholder="https://linkedin.com/in/..." /></div>
+            <div class="fg">
+              <div class="field"><label>Rubro (opcional)</label><input type="text" id="li_rubro" placeholder="Alimentos, Automotriz..." /></div>
+              <div class="field"><label>URL LinkedIn (opcional)</label><input type="text" id="li_url" placeholder="linkedin.com/in/..." /></div>
             </div>
-            <button class="btn btn-primary" style="align-self:flex-start" onclick="analizarLinkedIn()">🤖 Analizar y cargar</button>
-            <div class="loader" id="loaderLi"><div class="dots"><span></span><span></span><span></span></div> Analizando perfil...</div>
-            <div id="liFormContainer" style="display:none;flex-direction:column;gap:10px">
-              <div class="section-label">Confirmá los datos</div>
-              <div class="form-grid">
-                <div class="field"><label>Nombre</label><input type="text" id="vi_nombre" /></div>
-                <div class="field"><label>Compañía</label><input type="text" id="vi_company" /></div>
-                <div class="field"><label>Cargo</label><input type="text" id="vi_cargo" /></div>
-                <div class="field"><label>Rubro</label><input type="text" id="vi_rubro" /></div>
-                <div class="field full"><label>Primer mensaje sugerido</label><textarea id="vi_msg" rows="4"></textarea></div>
+            <button class="btn btn-gold btn-sm" style="align-self:flex-start" onclick="analizarLI()">🤖 Analizar con IA</button>
+            <div class="loader" id="liLoader"><div class="dots"><span></span><span></span><span></span></div>Analizando...</div>
+            <div id="liForm" style="display:none;flex-direction:column;gap:10px">
+              <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--fog);letter-spacing:1px;text-transform:uppercase">Confirmá los datos</div>
+              <div class="fg">
+                <div class="field"><label>Nombre</label><input type="text" id="li_nombre" /></div>
+                <div class="field"><label>Empresa</label><input type="text" id="li_empresa" /></div>
+                <div class="field"><label>Cargo</label><input type="text" id="li_cargo" /></div>
+                <div class="field"><label>Rubro</label><input type="text" id="li_rub2" /></div>
+                <div class="field fw"><label>Mensaje sugerido para enviar</label><textarea id="li_msg" rows="4"></textarea></div>
               </div>
-              <button class="btn btn-green" style="align-self:flex-start" onclick="guardarVistage()">✓ Guardar en Vistage 2026</button>
+              <button class="btn btn-sage btn-sm" style="align-self:flex-start" onclick="guardarVistage()">✓ Guardar en Vistage</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ══ PANEL SHEETS ══ -->
-      <div class="panel" id="panel-sheets">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <div style="font-size:13px;color:var(--muted)">Editá directamente en la planilla. Los cambios se sincronizan al hacer click en <strong style="color:var(--gold)">⟳ Sync</strong>.</div>
-          <button class="btn btn-primary btn-sm" onclick="loadSheetData().then(()=>rehidratarHistoriales()).then(()=>showNotify('Sincronizado ✓','success'))">⟳ Cargar cambios</button>
-        </div>
-        <!-- Selector de hoja -->
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <button class="btn btn-ghost btn-sm" id="tab-leads-sh" onclick="cambiarHojaSheets('leads')" style="border-color:var(--gold);color:var(--gold)">💼 Leads 2026</button>
-          <button class="btn btn-ghost btn-sm" id="tab-vistage-sh" onclick="cambiarHojaSheets('vistage')">🏆 Vistage 2026</button>
-        </div>
-        <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);background:white">
-          <iframe
-            id="sheetsFrame"
-            src="https://docs.google.com/spreadsheets/d/1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87/edit?usp=sharing&rm=minimal&gid=1488122141"
-            style="width:100%;height:600px;border:none;display:block"
-            allowfullscreen>
-          </iframe>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px;font-family:'IBM Plex Mono',monospace">
-          💡 Editá en la planilla → guardá → hacé click en "Cargar cambios" para sincronizar la app
-        </div>
-      </div>
 
-      <!-- ══ PANEL CONFIG ══ -->
+      <!-- TABLA EDITABLE -->
+      <div class="panel" id="panel-tabla">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="search" style="flex:1"><input type="text" id="tablaSearch" placeholder="Buscar..." oninput="drawTabla()" /></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="syncFromSheets()">⟳ Sync Sheets</button>
+            <a href="https://docs.google.com/spreadsheets/d/1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87/edit#gid=1488122141"
+               target="_blank" class="btn btn-ghost btn-sm" style="text-decoration:none">↗ Abrir Sheets</a>
+            <button class="btn btn-gold btn-sm" onclick="openNewLead()">+ Nuevo</button>
+          </div>
+        </div>
+        <div class="card" style="overflow-x:auto">
+          <table class="vtable" id="tablaLeads">
+            <thead><tr>
+              <th>Empresa</th>
+              <th>Contacto</th>
+              <th>WPP / Mail</th>
+              <th>Estado</th>
+              <th>Semáforo</th>
+              <th>Próxima fecha</th>
+              <th>Próximo paso</th>
+              <th>Acciones</th>
+            </tr></thead>
+            <tbody id="tablaBody"></tbody>
+          </table>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);text-align:center" id="tablaCount"></div>
+      </div>
+      <!-- CONFIG -->
       <div class="panel" id="panel-config">
         <div class="card">
-          <div class="card-header"><div class="card-title">Configuración</div></div>
+          <div class="card-h"><div class="card-title">Configuración</div></div>
           <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
             <div class="field">
-              <label>URL del Google Apps Script (para escribir en el Sheets)</label>
-              <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/..." />
+              <label>API Key de Anthropic</label>
+              <input type="password" id="cfg_key" placeholder="sk-ant-..." />
             </div>
-            <button class="btn btn-primary btn-sm" style="align-self:flex-start" onclick="saveScriptUrl()">Guardar URL</button>
-            <div id="scriptStatus" style="font-size:12px;color:var(--muted)"></div>
+            <div class="field">
+              <label>URL Google Apps Script (bidireccional con Sheets)</label>
+              <input type="text" id="cfg_script" placeholder="https://script.google.com/macros/s/..." />
+            </div>
+            <div class="field">
+              <label>ID de publicación CSV (opcional — para sync más rápido)</label>
+              <input type="text" id="cfg_csv_id" placeholder="2PACX-1v..." />
+              <span style="font-size:10px;color:var(--fog);margin-top:2px">
+                En Sheets: Archivo → Publicar en la web → CSV → copiá el ID largo de la URL
+              </span>
+            </div>
+            <button class="btn btn-gold btn-sm" style="align-self:flex-start" onclick="saveConfig()">Guardar</button>
+            <div id="cfgStatus" style="font-size:12px;color:var(--fog)"></div>
+            <div style="background:var(--ink3);border:1px solid var(--line);border-radius:8px;padding:14px;font-size:12px;color:var(--fog);line-height:1.7">
+              <strong style="color:var(--paper)">Abrir Sheets directo:</strong><br>
+              <a href="https://docs.google.com/spreadsheets/d/1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87/edit#gid=1488122141" target="_blank" style="color:var(--gold)">→ Leads 2026</a> &nbsp;
+              <a href="https://docs.google.com/spreadsheets/d/1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87/edit#gid=530322819" target="_blank" style="color:var(--gold)">→ Vistage 2026</a>
+            </div>
           </div>
         </div>
       </div>
 
-    </div><!-- /content -->
+    </div>
   </main>
-</div><!-- /shell -->
+</div>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- MODAL: PERFIL DEL LEAD                    -->
-<!-- ══════════════════════════════════════════ -->
-<div class="modal-overlay" id="modalPerfil">
-  <div class="modal" style="max-width:720px">
-    <div class="modal-header">
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <div style="font-family:'Playfair Display',serif;font-size:20px" id="pf_titulo">—</div>
-          <div id="pf_estado_chip"></div>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:3px" id="pf_subtitulo"></div>
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" id="pf_badges"></div>
+<!-- ═══════════════════════════════════════ -->
+<!-- MODAL: PERFIL                          -->
+<!-- ═══════════════════════════════════════ -->
+<div class="overlay" id="mPerfil">
+  <div class="modal">
+    <div class="modal-h">
+      <div class="modal-h-info">
+        <div class="modal-hname" id="pf_name">—</div>
+        <div class="modal-hsub" id="pf_sub"></div>
+        <div class="modal-hbadges" id="pf_badges"></div>
       </div>
-      <button class="modal-close" onclick="closeModal('modalPerfil')">×</button>
+      <button class="modal-close" onclick="closeModal('mPerfil')">×</button>
     </div>
 
-    <!-- SECCIÓN: CONTROLES DE FECHA/ESTADO -->
-    <div class="perfil-section" style="background:var(--s2);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <div style="font-size:11px;color:var(--muted)">Próxima acción:</div>
-      <input type="date" id="pf_fecha" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:monospace;font-size:12px;outline:none;cursor:pointer" />
-      <select id="pf_semaforo" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:'Syne',sans-serif;font-size:12px;outline:none">
-        <option value="🔴 Vencido">🔴 Urgente</option>
-        <option value="🟡 Hoy">🟡 Esta semana</option>
-        <option value="🟢 Ok">🟢 Al día</option>
-      </select>
-      <select id="pf_estado" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:'Syne',sans-serif;font-size:12px;outline:none">
-        <option value="1 - Nuevo">1 - Nuevo</option>
-        <option value="2 - Enviado">2 - Enviado</option>
-        <option value="6 - Proyecto En Tratativa">En Tratativa</option>
-        <option value="3 - En Pausa">En Pausa</option>
-        <option value="0 - Perdido">Perdido</option>
-      </select>
-      <button class="btn btn-green btn-sm" onclick="guardarCambiosLead()">✓ Guardar</button>
-    </div>
-
-    <!-- SECCIÓN: CONTEXTO AI -->
-    <div class="perfil-section" id="pf_ai_section">
-      <div class="section-label">Sugerencia IA</div>
-      <div class="loader" id="loaderAI"><div class="dots"><span></span><span></span><span></span></div> Analizando historial...</div>
-      <div class="ai-block" id="pf_ai_block" style="display:none">
-        <div class="ai-block-header">
-          <div class="ai-pulse"></div>
-          <div class="ai-block-label">Contexto + recomendación</div>
-        </div>
-        <div class="ai-block-body" id="pf_ai_body" style="border-bottom:1px solid rgba(155,114,224,.15)"></div>
-        <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--purple);letter-spacing:1px">MENSAJE SUGERIDO</div>
-          <button class="copy-btn" onclick="copiarMensajeAI()" style="border-color:rgba(155,114,224,.4);color:var(--purple)">📋 Copiar mensaje</button>
-        </div>
-        <div class="ai-block-body" id="pf_ai_msg" style="padding-top:0;color:var(--text);background:rgba(155,114,224,.05)"></div>
-      </div>
-    </div>
-
-    <!-- SECCIÓN: ACCIONES -->
-    <div class="perfil-section" style="background:var(--s2)">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="btn btn-primary btn-sm" onclick="toggleResponder()">✉️ Responder ahora</button>
-        <button class="btn btn-ghost btn-sm" onclick="toggleNota()">📝 Agregar nota</button>
-        <button class="btn btn-ghost btn-sm" onclick="refreshAI()">🤖 Re-analizar</button>
-      </div>
-
-      <!-- GENERADOR DE MENSAJE (dentro del perfil) -->
-      <div id="pf_responder" style="display:none;margin-top:14px;display:none;flex-direction:column;gap:10px">
-        <div class="canal-row" id="pf_canal_row">
-          <button class="canal-opt wpp active" onclick="selectCanal('wpp',this)">💬 WhatsApp</button>
-          <button class="canal-opt li" onclick="selectCanal('li',this)">💼 LinkedIn</button>
-          <button class="canal-opt mail" onclick="selectCanal('mail',this)">📧 Email</button>
-        </div>
-        <select id="pf_msg_tipo" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:7px;font-size:12px;outline:none;font-family:'Syne',sans-serif">
-          <option value="seguimiento al historial de conversación">Seguimiento (basado en historial)</option>
-          <option value="primer contacto frío">Primer contacto</option>
-          <option value="respuesta a lo que me dijeron">Responder mensaje recibido</option>
-          <option value="propuesta concreta">Propuesta / Cierre</option>
+    <!-- CONTROLES RÁPIDOS -->
+    <div class="msec" style="background:var(--ink3)">
+      <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:11px;color:var(--fog)">Próxima acción:</span>
+        <input type="date" class="qc-date" id="pf_fecha" />
+        <select class="qc-sel" id="pf_sem">
+          <option value="urg">🔴 Urgente</option>
+          <option value="hoy">🟡 Esta semana</option>
+          <option value="ok" selected>🟢 Al día</option>
         </select>
-        <div class="field">
-          <label>Contexto extra (pegá lo que te respondieron, algo nuevo...)</label>
-          <textarea id="pf_msg_ctx" rows="3" placeholder="Opcional — pegá respuesta recibida o info nueva"></textarea>
+        <select class="qc-sel" id="pf_estado">
+          <option value="nuevo">🆕 Nuevo</option>
+          <option value="enviado">✉️ Enviado</option>
+          <option value="tratativa">🤝 En Tratativa</option>
+          <option value="pausa">⏸ En Pausa</option>
+          <option value="perdido">✗ Perdido</option>
+        </select>
+        <button class="btn btn-sage btn-sm" onclick="saveLead()">✓ Guardar</button>
+      </div>
+    </div>
+
+    <!-- IA: SUGERENCIA -->
+    <div class="msec" id="pf_ai_sec">
+      <div class="msec-label">Sugerencia IA</div>
+      <div class="loader" id="aiLoader"><div class="dots"><span></span><span></span><span></span></div>Analizando historial...</div>
+      <div class="ai-wrap" id="pf_ai_wrap" style="display:none">
+        <div class="ai-head">
+          <div class="ai-dot"></div>
+          <div class="ai-label">Análisis + recomendación</div>
+          <div style="margin-left:auto"><button class="copy-btn" onclick="copyEl('pf_ai_ctx')">📋</button></div>
         </div>
-        <button class="btn btn-primary btn-sm" style="align-self:flex-start" onclick="generarMensajePerfil()">✨ Generar mensaje</button>
-        <div class="loader" id="loaderMsg"><div class="dots"><span></span><span></span><span></span></div> Generando...</div>
-        <div class="ai-block" id="pf_msg_block" style="display:none">
-          <div class="ai-block-header">
-            <div class="ai-pulse"></div>
-            <div class="ai-block-label">Mensaje listo</div>
-            <div style="margin-left:auto;display:flex;gap:6px">
-              <button class="copy-btn" onclick="copyElText('pf_msg_body')">📋 Copiar</button>
-            </div>
+        <div class="ai-body" id="pf_ai_ctx"></div>
+        <div class="ai-msg-sep">
+          <span>Mensaje sugerido</span>
+          <button class="copy-btn" onclick="copyMsgAI()">📋 Copiar y registrar</button>
+        </div>
+        <div class="ai-msg-body" id="pf_ai_msg"></div>
+      </div>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="msec" style="background:var(--ink3)">
+      <div class="action-tabs" style="margin-bottom:0" id="actionTabs">
+        <button class="btn btn-gold btn-sm" onclick="toggleSection('pfResponder','pfNota')">✉️ Responder</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleSection('pfNota','pfResponder')">📝 Nota</button>
+        <button class="btn btn-ghost btn-sm" onclick="reanalizar()">🔄 Re-analizar</button>
+      </div>
+
+      <!-- RESPONDER -->
+      <div id="pfResponder" style="display:none;flex-direction:column;gap:10px;margin-top:12px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div class="canal-row" id="canalRow">
+            <button class="canal-opt wpp on" onclick="setCanal('wpp',this)">💬 WhatsApp</button>
+            <button class="canal-opt li" onclick="setCanal('li',this)">💼 LinkedIn</button>
+            <button class="canal-opt mail" onclick="setCanal('mail',this)">📧 Email</button>
           </div>
-          <div class="ai-block-body" id="pf_msg_body"></div>
+          <select class="qc-sel" id="msg_tipo">
+            <option value="seguimiento según el historial">Seguimiento</option>
+            <option value="primer contacto frío">Primer contacto</option>
+            <option value="respuesta al mensaje recibido">Responder recibido</option>
+            <option value="propuesta concreta de servicio">Propuesta</option>
+          </select>
         </div>
-        <div id="pf_msg_post" style="display:none">
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px">
-            <span style="font-size:11px;color:var(--muted)">Próximo seguimiento:</span>
-            <select id="pf_dias" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:7px;font-size:12px;outline:none;font-family:'Syne',sans-serif">
-              <option value="2">2 días</option>
-              <option value="3" selected>3 días</option>
-              <option value="5">5 días</option>
-              <option value="7">7 días</option>
-              <option value="14">14 días</option>
+        <div class="field">
+          <label>Contexto / lo que te respondieron</label>
+          <textarea id="msg_ctx" rows="3" placeholder="Pegá la respuesta que recibiste, o contexto nuevo..."></textarea>
+        </div>
+        <button class="btn btn-gold btn-sm" style="align-self:flex-start" onclick="genMsg()">✨ Generar mensaje</button>
+        <div class="loader" id="msgLoader"><div class="dots"><span></span><span></span><span></span></div>Generando...</div>
+        <div class="ai-wrap" id="msgWrap" style="display:none">
+          <div class="ai-head">
+            <div class="ai-dot"></div>
+            <div class="ai-label">Mensaje listo</div>
+            <div style="margin-left:auto"><button class="copy-btn" onclick="copyEl('msgBody')">📋 Copiar</button></div>
+          </div>
+          <div class="ai-body" id="msgBody"></div>
+        </div>
+        <div id="msgPost" style="display:none;background:var(--ink4);border:1px solid var(--line);border-radius:8px;padding:11px;flex-direction:column;gap:8px">
+          <div style="font-size:11.5px;color:var(--fog)">¿Cuándo hacemos el próximo seguimiento?</div>
+          <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+            <select class="qc-sel" id="postDias">
+              <option value="2">En 2 días</option>
+              <option value="3" selected>En 3 días</option>
+              <option value="5">En 5 días</option>
+              <option value="7">En 7 días</option>
+              <option value="14">En 14 días</option>
             </select>
-            <button class="btn btn-green btn-sm" onclick="confirmarEnvio()">✓ Enviado — registrar</button>
+            <button class="btn btn-sage btn-sm" onclick="confirmarEnvio()">✓ Envié el mensaje</button>
           </div>
         </div>
       </div>
 
-      <!-- NOTA RÁPIDA -->
-      <div id="pf_nota" style="display:none;margin-top:14px;flex-direction:column;gap:8px">
-        <div style="display:flex;gap:6px">
-          <select id="nt_tipo" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none">
-            <option value="cliente">💬 Respondió el cliente</option>
-            <option value="comercial">✉️ Enviamos mensaje</option>
-            <option value="nota">📝 Nota interna</option>
+      <!-- NOTA -->
+      <div id="pfNota" style="display:none;flex-direction:column;gap:8px;margin-top:12px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <select class="qc-sel" id="nt_quien">
+            <option value="Cliente">💬 Respondió el cliente</option>
+            <option value="Comercial">✉️ Enviamos nosotros</option>
+            <option value="Nota">📝 Nota interna</option>
           </select>
-          <select id="nt_canal" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none">
+          <select class="qc-sel" id="nt_canal">
             <option value="wpp">WhatsApp</option>
             <option value="linkedin">LinkedIn</option>
             <option value="mail">Email</option>
@@ -525,1194 +630,1207 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
             <option value="nota">Nota</option>
           </select>
         </div>
-        <textarea id="nt_contenido" rows="3" placeholder="Pegá la conversación o escribí una nota..." style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:'Syne',sans-serif"></textarea>
-        <button class="btn btn-primary btn-sm" style="align-self:flex-start" onclick="guardarNota()">+ Guardar</button>
+        <textarea id="nt_txt" rows="3" class="field" placeholder="Pegá la conversación, lo que dijeron, o escribí una nota..." style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:8px 11px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical"></textarea>
+        <button class="btn btn-gold btn-sm" style="align-self:flex-start" onclick="saveNota()">+ Guardar nota</button>
       </div>
     </div>
 
-    <!-- SECCIÓN: HISTORIAL -->
-    <div class="perfil-section">
-      <div class="section-label">Historial de conversaciones</div>
-      <div id="pf_historial" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto"></div>
+    <!-- HISTORIAL -->
+    <div class="msec">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="msec-label" style="margin-bottom:0">Historial</div>
+        <span id="histCount" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--fog)"></span>
+      </div>
+      <div class="hist-feed" id="histFeed"></div>
     </div>
 
-  </div><!-- /modal -->
+  </div>
 </div>
 
+
 <!-- MODAL: NUEVO LEAD -->
-<div class="modal-overlay" id="modalNuevoLead">
-  <div class="modal" style="max-width:560px">
-    <div class="modal-header">
-      <div style="font-family:'Playfair Display',serif;font-size:18px">Nuevo Lead</div>
-      <button class="modal-close" onclick="closeModal('modalNuevoLead')">×</button>
+<div class="overlay" id="mNuevoLead">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-h">
+      <div class="modal-h-info"><div class="modal-hname" style="font-size:17px">Nuevo Lead</div></div>
+      <button class="modal-close" onclick="closeModal('mNuevoLead')">×</button>
     </div>
-    <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
-      <div class="form-grid">
-        <div class="field"><label>Empresa</label><input type="text" id="nl_empresa" /></div>
-        <div class="field"><label>Contacto</label><input type="text" id="nl_contacto" /></div>
-        <div class="field"><label>Cargo</label><input type="text" id="nl_cargo" /></div>
-        <div class="field"><label>Rubro</label><input type="text" id="nl_rubro" /></div>
-        <div class="field"><label>WhatsApp</label><input type="text" id="nl_wpp" /></div>
-        <div class="field"><label>Email</label><input type="text" id="nl_mail" /></div>
+    <div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px">
+      <div class="fg">
+        <div class="field"><label>Empresa *</label><input type="text" id="nl_empresa" placeholder="Nombre de la empresa" /></div>
+        <div class="field"><label>Contacto</label><input type="text" id="nl_contacto" placeholder="Nombre del contacto" /></div>
+        <div class="field"><label>Cargo</label><input type="text" id="nl_cargo" placeholder="CEO, Gerente..." /></div>
+        <div class="field"><label>Rubro</label><input type="text" id="nl_rubro" placeholder="Alimentos, Automotriz..." /></div>
+        <div class="field"><label>WhatsApp</label><input type="text" id="nl_wpp" placeholder="11-1234-5678" /></div>
+        <div class="field"><label>Email</label><input type="text" id="nl_mail" placeholder="nombre@empresa.com" /></div>
         <div class="field"><label>Origen</label>
-          <select id="nl_origen"><option>Vistage</option><option>LinkedIn</option><option>Referido</option><option>Expo/Feria</option></select>
+          <select id="nl_origen">
+            <option>Vistage</option><option>LinkedIn</option>
+            <option>Referido</option><option>Expo/Feria</option><option>Otro</option>
+          </select>
         </div>
-        <div class="field"><label>Estado</label>
-          <select id="nl_estado"><option value="1 - Nuevo">1 - Nuevo</option><option value="2 - Enviado">2 - Enviado</option></select>
+        <div class="field fw"><label>Próximo paso</label>
+          <textarea id="nl_paso" rows="2" placeholder="Qué hay que hacer con este contacto..."></textarea>
         </div>
-        <div class="field full"><label>Próximo paso / notas</label><textarea id="nl_paso" rows="2"></textarea></div>
       </div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
-        <button class="btn btn-ghost btn-sm" onclick="closeModal('modalNuevoLead')">Cancelar</button>
-        <button class="btn btn-primary btn-sm" onclick="guardarNuevoLead()">Guardar lead</button>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('mNuevoLead')">Cancelar</button>
+        <button class="btn btn-gold btn-sm" onclick="crearNuevoLead()">✓ Crear lead</button>
       </div>
     </div>
   </div>
 </div>
 
+<!-- MODAL: EDITOR DE LEAD (desde panel Sheets) -->
+<div class="overlay" id="mEditar">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-h">
+      <div class="modal-h-info">
+        <div class="modal-hname" style="font-size:16px">Editar Lead</div>
+        <div class="modal-hsub" id="ed_titulo"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('mEditar')">×</button>
+    </div>
+    <div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="ed_id" />
+      <div class="fg">
+        <div class="field"><label>Empresa</label><input type="text" id="ed_empresa" /></div>
+        <div class="field"><label>Contacto</label><input type="text" id="ed_contacto" /></div>
+        <div class="field"><label>Cargo</label><input type="text" id="ed_cargo" /></div>
+        <div class="field"><label>Rubro</label><input type="text" id="ed_rubro" /></div>
+        <div class="field"><label>WhatsApp</label><input type="text" id="ed_wpp" /></div>
+        <div class="field"><label>Email</label><input type="text" id="ed_mail" /></div>
+        <div class="field"><label>Próxima fecha</label><input type="date" id="ed_fecha" /></div>
+        <div class="field"><label>Semáforo</label>
+          <select id="ed_sem">
+            <option value="urg">🔴 Urgente</option>
+            <option value="hoy">🟡 Esta semana</option>
+            <option value="ok">🟢 Al día</option>
+          </select>
+        </div>
+        <div class="field"><label>Estado</label>
+          <select id="ed_estado">
+            <option value="nuevo">🆕 Nuevo</option>
+            <option value="enviado">✉️ Enviado</option>
+            <option value="tratativa">🤝 En Tratativa</option>
+            <option value="pausa">⏸ En Pausa</option>
+            <option value="perdido">✗ Perdido</option>
+          </select>
+        </div>
+        <div class="field fw"><label>Próximo paso</label>
+          <textarea id="ed_paso" rows="2"></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:space-between">
+        <button class="btn btn-rose btn-sm" onclick="eliminarLead()" style="background:transparent;border:1px solid var(--rose);color:var(--rose)">🗑 Eliminar</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="closeModal('mEditar')">Cancelar</button>
+          <button class="btn btn-gold btn-sm" onclick="guardarEdicion()">✓ Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFY -->
 <div class="notify" id="notify"></div>
 
 <script>
-// ════════════════════════════════════════════
-// CONFIG & ESTADO GLOBAL
-// ════════════════════════════════════════════
-const LEADS_CSV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSROJCqfeSILX3MWmwvpS6dcUKqWqP580naRZu_CjpVijSUSqZfre59Id0TQyyfOQ/pub?output=csv&gid=1488122141';
-const VISTAGE_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSROJCqfeSILX3MWmwvpS6dcUKqWqP580naRZu_CjpVijSUSqZfre59Id0TQyyfOQ/pub?output=csv&gid=530322819';
-
-const ENFOCO_CTX = `Sos el asistente comercial de Enfoco Films, productora audiovisual de Buenos Aires.
-SERVICIOS: video corporativo/institucional, streaming de eventos, publicidad, fotografía, animación.
+'use strict';
+// ══════════════════════════════════════════
+// CONSTANTES
+// ══════════════════════════════════════════
+const SHEET_ID   = '1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87';
+const GID_LEADS  = '1488122141';
+const GID_VISTAGE= '530322819';
+const CTX = `Sos el asistente comercial de Enfoco Films, productora audiovisual de Buenos Aires.
+SERVICIOS: video corporativo, streaming, publicidad, fotografía, animación.
 DIRECTOR: Dami Guelman, miembro Vistage G-308.
 CLIENTES REF: GS1, INTA, Amcor, Essilor Luxottica, BAT, CPACF.
-TONO: cercano, directo, argentino. Hablar de igual a igual. Sin protocolo.
-CANAL PREFERIDO: WhatsApp. Si no hay número → LinkedIn con objetivo de conseguir WPP.
-REGLAS: mencionar Vistage G-308 en primer contacto. Máx 5 líneas WPP/LinkedIn. Terminar con UNA sola pregunta.`;
+TONO: directo, argentino, de par a par. Sin protocolo.
+REGLA: mencionar Vistage G-308 en primer contacto. Máx 5 líneas WPP/LinkedIn. Terminar con UNA pregunta.`;
 
-let API_KEY = '';
-let SCRIPT_URL = '';
-let selectedCanal = 'wpp';
-let currentPerfilKey = null;
-let semanaOffset = 0; // 0 = semana actual, 1 = próxima, -1 = anterior
-let draggedLeadKey = null;
+// ══════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════
+let KEY = '', SCRIPT = '';
+let leads = {};      // { id: leadObj }
+let vistage = [];    // array raw
+let currentId = null;
+let canal = 'wpp';
+let weekOff = 0;
 
-// Store de leads en memoria (clave → objeto lead enriquecido)
-const store = {};
-let storeIdx = 0;
+// ══════════════════════════════════════════
+// LEAD OBJECT
+// ══════════════════════════════════════════
+function mkId() { return 'l' + Date.now() + Math.random().toString(36).slice(2,6); }
 
-function setLead(obj) {
-  // Si ya existe por empresa, actualizar
-  const existingKey = Object.keys(store).find(k => store[k].empresa === obj.empresa);
-  if (existingKey) {
-    // Preservar historial existente
-    const hist = store[existingKey].historial || [];
-    store[existingKey] = { ...store[existingKey], ...obj, historial: hist };
-    return existingKey;
-  }
-  const k = 'l' + (storeIdx++);
-  // Cargar historial de localStorage
-  obj.historial = cargarHistorialLocal(obj.empresa);
-  store[k] = obj;
-  return k;
-}
-
-function getLead(k) { return store[k] || null; }
-function getAllLeads() { return Object.entries(store).map(([k,v]) => ({...v, _key:k})); }
-
-// ════════════════════════════════════════════
-// HISTORIAL LOCAL
-// ════════════════════════════════════════════
-function histKey(empresa) {
-  return 'efcrm_hist_' + empresa.toLowerCase().replace(/[^a-z0-9]/g,'_').substring(0,40);
-}
-
-function cargarHistorialLocal(empresa) {
-  try {
-    const raw = localStorage.getItem(histKey(empresa));
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch(e) {
-    console.warn('Error cargando historial:', e);
-    return [];
-  }
-}
-
-function guardarHistorialLocal(empresa, historial) {
-  try {
-    localStorage.setItem(histKey(empresa), JSON.stringify(historial));
-    // Backup: guardar índice de empresas con historial
-    const idx = JSON.parse(localStorage.getItem('efcrm_hist_index') || '[]');
-    if (!idx.includes(empresa)) { idx.push(empresa); localStorage.setItem('efcrm_hist_index', JSON.stringify(idx)); }
-  } catch(e) {
-    console.warn('Error guardando historial:', e);
-  }
-}
-
-function agregarEntradaHistorial(empresa, entrada) {
-  const leads = getAllLeads();
-  const lead = leads.find(l => l.empresa === empresa);
-  const key = lead ? lead._key : null;
-  const hist = key ? (store[key].historial || []) : cargarHistorialLocal(empresa);
-  const nuevaEntrada = {
-    fecha:    entrada.fecha    || new Date().toLocaleString('es-AR'),
-    tipo:     entrada.tipo     || 'nota',
-    contenido:entrada.contenido|| '',
-    quien:    entrada.quien    || 'Comercial'
+function mkLead(d={}) {
+  return {
+    id:         d.id         || mkId(),
+    empresa:    d.empresa    || '',
+    contacto:   d.contacto   || '',
+    cargo:      d.cargo      || '',
+    rubro:      d.rubro      || '',
+    wpp:        d.wpp        || '',
+    mail:       d.mail       || '',
+    medio:      d.medio      || '',
+    estado:     d.estado     || 'nuevo',
+    semaforo:   d.semaforo   || 'ok',
+    proxFecha:  d.proxFecha  || '',   // YYYY-MM-DD siempre
+    proxPaso:   d.proxPaso   || '',
+    historial:  d.historial  || [],
+    creadoEn:   d.creadoEn   || Date.now(),
   };
-  hist.push(nuevaEntrada);
-  if (key) store[key].historial = hist;
-  guardarHistorialLocal(empresa, hist);
-  if (SCRIPT_URL) {
-    callScript('saveHistorial', { empresa, contacto: lead?.contacto||'', entrada: nuevaEntrada }).catch(()=>{});
-  }
 }
 
-// Al cargar leads, recuperar historial guardado
-function rehidratarHistoriales() {
-  const idx = JSON.parse(localStorage.getItem('efcrm_hist_index') || '[]');
-  getAllLeads().forEach(lead => {
-    const hist = cargarHistorialLocal(lead.empresa);
-    if (hist.length) store[lead._key].historial = hist;
+// ══════════════════════════════════════════
+// PERSISTENCIA LOCAL
+// ══════════════════════════════════════════
+function saveLocal() {
+  try { localStorage.setItem('efcrm_leads', JSON.stringify(leads)); } catch(e) {}
+}
+
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem('efcrm_leads');
+    if (raw) leads = JSON.parse(raw);
+  } catch(e) { leads = {}; }
+}
+
+function addHist(id, entry) {
+  if (!leads[id]) return;
+  leads[id].historial.push({
+    fecha:    new Date().toLocaleString('es-AR'),
+    tipo:     entry.tipo    || 'nota',
+    quien:    entry.quien   || 'Comercial',
+    contenido:entry.contenido || '',
   });
+  saveLocal();
+  // Sync a Sheets si hay script
+  if (SCRIPT) syncLeadToSheet(leads[id]);
 }
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════
 // SETUP
-// ════════════════════════════════════════════
-function saveSetup() {
-  const k = document.getElementById('setupKey').value.trim();
-  if (!k.startsWith('sk-ant-')) { showNotify('La key debe empezar con sk-ant-', 'error'); return; }
-  API_KEY = k;
-  localStorage.setItem('ef_key', k);
-  bootApp();
+// ══════════════════════════════════════════
+function doSetup() {
+  const k = document.getElementById('s_key').value.trim();
+  const s = document.getElementById('s_script').value.trim();
+  if (!k.startsWith('sk-ant-')) { toast('La key debe empezar con sk-ant-','err'); return; }
+  KEY = k; SCRIPT = s;
+  localStorage.setItem('efcrm_key', k);
+  if (s) localStorage.setItem('efcrm_script', s);
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('appShell').style.display = 'grid';
+  boot();
 }
 
 function checkSetup() {
-  const k = localStorage.getItem('ef_key');
-  if (k) { API_KEY = k; bootApp(); }
+  KEY    = localStorage.getItem('efcrm_key') || '';
+  SCRIPT = localStorage.getItem('efcrm_script') || '';
+  if (KEY) {
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('appShell').style.display = 'grid';
+    boot();
+  }
 }
 
-function bootApp() {
-  document.getElementById('setupOverlay').style.display = 'none';
-  document.getElementById('mainShell').style.display = 'grid';
-  SCRIPT_URL = localStorage.getItem('ef_script_url') || '';
-  if (SCRIPT_URL) document.getElementById('scriptUrl').value = SCRIPT_URL;
-  loadSheetData().then(() => rehidratarHistoriales());
-  setTimeout(initDrag, 100);
+function boot() {
+  loadLocal();
+  if (document.getElementById('cfg_key')) document.getElementById('cfg_key').value = KEY;
+  if (document.getElementById('cfg_script')) document.getElementById('cfg_script').value = SCRIPT;
+  loadConfigFields();
+  drawAll(); // Render inmediato con datos locales
+  syncFromSheets(true); // Luego sync async — drawAll() se llama de nuevo adentro
 }
 
-// ════════════════════════════════════════════
-// CARGA DE DATOS
-// ════════════════════════════════════════════
-async function loadSheetData() {
+// ══════════════════════════════════════════
+// SYNC BIDIRECCIONAL CON SHEETS
+// ══════════════════════════════════════════
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  dot.className = 'sync-dot' + (state==='ok'?' ok':state==='spin'?' spin':'');
+  lbl.textContent = msg;
+}
+
+// URL CSV pública configurable — se guarda en localStorage
+function getCsvUrl(gid) {
+  const custom = localStorage.getItem('efcrm_csv_id');
+  const baseId = custom || '2PACX-1vSROJCqfeSILX3MWmwvpS6dcUKqWqP580naRZu_CjpVijSUSqZfre59Id0TQyyfOQ';
+  return `https://docs.google.com/spreadsheets/d/e/${baseId}/pub?output=csv&gid=${gid}&t=${Date.now()}`;
+}
+
+// Fallback: export directo con SHEET_ID (no requiere "publicar en la web")
+function getExportUrl(gid) {
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}&t=${Date.now()}`;
+}
+
+async function fetchCsv(gid) {
+  // Lee el buffer crudo y decodifica correctamente (Google Sheets a veces entrega Latin-1)
+  async function decodeBuf(resp) {
+    const buf = await resp.arrayBuffer();
+    // Intentar UTF-8 primero
+    try {
+      const t = new TextDecoder('utf-8', {fatal:true}).decode(buf);
+      if (!t.trim().startsWith('<')) return t;
+    } catch(e) {}
+    // Fallback Latin-1
+    const t2 = new TextDecoder('latin1').decode(buf);
+    return t2.trim().startsWith('<') ? null : t2;
+  }
+
+  // Intento 1: URL publicada configurada
   try {
-    const [lr, vr] = await Promise.all([fetch(LEADS_CSV), fetch(VISTAGE_CSV)]);
-    if (lr.ok) {
-      const rows = parseCSV(await lr.text()).filter(r => {
-        const e = (r[0]||'').trim();
-        return e && e !== 'Empresa' && !e.startsWith('💼') && !e.startsWith('🔥') && !e.startsWith('26/');
-      });
-      rows.forEach(r => {
-        setLead({
-          empresa:    r[0]||'', contacto: r[1]||'', cargo: r[2]||'',
-          wpp:        r[3]||'', mail:     r[4]||'', medio: r[5]||'',
-          rubro:      r[6]||'', estado:   r[8]||'',
-          proxAccion: r[9]||'', semaforo: r[10]||'', proxPaso: r[11]||r[6]||'',
-        });
-      });
-    }
-    // Vistage: guardar por separado
-    if (vr.ok) {
-      const vrows = parseCSV(await vr.text()).filter(r => {
-        const n = (r[2]||'').trim();
-        return n && n !== 'Nombre' && n.length < 60 && !n.startsWith('🏆');
-      });
-      window._vistageRows = vrows;
-    }
-    renderAll();
-    showNotify('Planilla sincronizada ✓', 'success');
-  } catch(e) {
-    loadFallback();
-  }
-}
-
-function parseCSV(text) {
-  return text.split('\n').map(line => {
-    const row = []; let inQ = false, cur = '';
-    for (const c of line) {
-      if (c === '"') { inQ = !inQ; continue; }
-      if (c === ',' && !inQ) { row.push(cur.trim()); cur = ''; continue; }
-      cur += c;
-    }
-    row.push(cur.trim());
-    return row;
-  });
-}
-
-function loadFallback() {
-  const fallback = [
-    {empresa:'Dianddi Orax',contacto:'Axel Dillon',cargo:'',wpp:'11-6374-9826',mail:'',medio:'Vistage',rubro:'',estado:'2 - Enviado',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'escribimos por wpp reunion semana de marzo'},
-    {empresa:'LEFER SRL',contacto:'Fernando Morreale',cargo:'',wpp:'',mail:'fernandomorreale@hotmail.com',medio:'Vistage',rubro:'Automotriz',estado:'2 - Enviado',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'LE MANDE POR LINKEDIN PARA REUNION'},
-    {empresa:'Yellow & Co',contacto:'Vistoria Compagno',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'',estado:'1 - Nuevo',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'Nos respondio que nos escribe cuando necesite'},
-    {empresa:'MC Servicios',contacto:'Cynthi Othatceguy',cargo:'',wpp:'',mail:'cynthia@mcservicios.org',medio:'Vistage',rubro:'',estado:'1 - Nuevo',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'PEDIR REUNION PARA VIERNES POR LINKEDIN'},
-    {empresa:'AWD Agency',contacto:'Juan Elliot',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'Agencia',estado:'1 - Nuevo',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'Coordinar por mail una reunion'},
-    {empresa:'Bien Buenos Aires',contacto:'Nacho Perez Vidal',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'Agencia',estado:'1 - Nuevo',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'Coordinar por mail una reunion'},
-    {empresa:'Rotundo Media',contacto:'Macarena Baez',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'Agencia',estado:'1 - Nuevo',proxAccion:hoy(0),semaforo:'🟡 Hoy',proxPaso:'Hacer seguimiento por Whatapp para reunion'},
-    {empresa:'FontanaSisti',contacto:'Soledad Fontana',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'Agencia',estado:'6 - Proyecto En Tratativa',proxAccion:hoy(6),semaforo:'🟢 Ok',proxPaso:'REUNION 4-3-26'},
-    {empresa:'TORKY',contacto:'Juan Ignacio Guajardo',cargo:'',wpp:'',mail:'torkymobility@gmail.com',medio:'Vistage',rubro:'',estado:'2 - Enviado',proxAccion:hoy(5),semaforo:'🟢 Ok',proxPaso:'Le hice el seguimiento, si no responde bajarlo a 0%'},
-    {empresa:'AUDIO BUENOS AIRES',contacto:'Leonardo Nadur',cargo:'',wpp:'',mail:'lnadur@buenosaires-sa.com.ar',medio:'Vistage',rubro:'',estado:'2 - Enviado',proxAccion:hoy(5),semaforo:'🟢 Ok',proxPaso:'Le mande mail personalizado'},
-    {empresa:'Siglo XXI Editores',contacto:'Sofia Miranda',cargo:'',wpp:'',mail:'',medio:'Feria del Libro',rubro:'Editorial',estado:'2 - Enviado',proxAccion:hoy(4),semaforo:'🟢 Ok',proxPaso:'Marcelo Mingiano nos paso el contacto'},
-    {empresa:'STARRETT',contacto:'Aurelio Soares',cargo:'',wpp:'',mail:'',medio:'Podcast',rubro:'Industrial',estado:'1 - Nuevo',proxAccion:hoy(3),semaforo:'🟢 Ok',proxPaso:'Envie via Linkedin para 3D de Productos'},
-    {empresa:'INTEGRALIM',contacto:'Bruno Sechet',cargo:'',wpp:'',mail:'',medio:'Podcast',rubro:'Alimentos',estado:'1 - Nuevo',proxAccion:hoy(3),semaforo:'🟢 Ok',proxPaso:'Proponerle Podcast o Workshops'},
-    {empresa:'VERALIMENT',contacto:'Andres Garcia',cargo:'',wpp:'',mail:'',medio:'Podcast',rubro:'Alimentos',estado:'1 - Nuevo',proxAccion:hoy(3),semaforo:'🟢 Ok',proxPaso:'venderle tutorial, proponerle Podcast'},
-    {empresa:'Fidegroup SA',contacto:'Federico Marini',cargo:'',wpp:'',mail:'',medio:'Vistage',rubro:'Alimentos',estado:'1 - Nuevo',proxAccion:hoy(19),semaforo:'🟢 Ok',proxPaso:'Dijo que ahora no pero mas adelante reunirnos'},
-  ];
-  fallback.forEach(l => setLead(l));
-  window._vistageRows = [];
-  renderAll();
-}
-
-function hoy(addDays=0) {
-  const d = new Date(); d.setDate(d.getDate()+addDays);
-  return d.toISOString().split('T')[0];
-}
-
-// ════════════════════════════════════════════
-// RENDER SEMANA
-// ════════════════════════════════════════════
-function renderAll() {
-  renderSemana();
-  renderLeads();
-  renderVistage();
-}
-
-function renderSemana(filtro='') {
-  const hoyDate = new Date(); hoyDate.setHours(0,0,0,0);
-  const dow = hoyDate.getDay();
-  const lunes = new Date(hoyDate);
-  lunes.setDate(hoyDate.getDate() - (dow===0?6:dow-1) + semanaOffset*7);
-  lunes.setHours(0,0,0,0);
-
-  const DIAS = ['Lun','Mar','Mié','Jue','Vie'];
-  const dias = Array.from({length:5}, (_,i) => {
-    const d = new Date(lunes); d.setDate(lunes.getDate()+i); return d;
-  });
-
-  // Guardar fechas en columnas para que onDrop las lea
-  dias.forEach((d,i) => {
-    const col = document.getElementById('wc'+i);
-    if (col) col.dataset.fecha = d.toISOString().split('T')[0];
-  });
-  const sfCol = document.getElementById('wc5');
-  if (sfCol) sfCol.dataset.fecha = 'sin-fecha';
-
-  // Label navegación
-  const lunesLabel = lunes.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
-  const viernesLabel = dias[4].toLocaleDateString('es-AR',{day:'numeric',month:'short'});
-  const esEsta = semanaOffset === 0;
-  document.getElementById('semLabel').textContent =
-    (esEsta ? '— SEMANA ACTUAL — ' : '') + lunesLabel + ' – ' + viernesLabel;
-  document.getElementById('semLabel').style.color = esEsta ? 'var(--gold)' : 'var(--muted)';
-  const hoyBtn = document.getElementById('semHoyBtn');
-  if (hoyBtn) hoyBtn.style.display = esEsta ? 'none' : '';
-
-  // Headers
-  const headersEl = document.getElementById('semHeaders');
-  headersEl.innerHTML = dias.map((d,i) => {
-    const esHoy = d.getTime()===hoyDate.getTime();
-    const dd = String(d.getDate()).padStart(2,'0');
-    const mm = String(d.getMonth()+1).padStart(2,'0');
-    return `<div class="week-day-label${esHoy?' today':''}">${DIAS[i]}<br><span style="font-size:11px">${dd}/${mm}</span></div>`;
-  }).join('') + '<div class="week-day-label" style="color:var(--muted2)">Sin fecha</div>';
-
-  // Actualizar clase today-col
-  dias.forEach((d,i) => {
-    const col = document.getElementById('wc'+i);
-    if (!col) return;
-    col.classList.toggle('today-col', d.getTime()===hoyDate.getTime());
-  });
-
-  // Agrupar leads
-  const leads = getAllLeads().filter(l => !filtro || matchFiltro(l,filtro));
-  const porDia = Array.from({length:5}, ()=>[]);
-  const sinFecha = [];
-
-  leads.forEach(lead => {
-    const pa = parseFechaStr(lead.proxAccion);
-    if (!pa) { sinFecha.push(lead); return; }
-    pa.setHours(0,0,0,0);
-    let ok = false;
-    for (let i=0;i<5;i++) {
-      if (pa.getTime()===dias[i].getTime()) { porDia[i].push(lead); ok=true; break; }
-    }
-    if (!ok) sinFecha.push(lead);
-  });
-
-  // Renderizar contenido de cada columna
-  for (let i=0;i<5;i++) {
-    const col = document.getElementById('wc'+i);
-    if (!col) continue;
-    col.innerHTML = porDia[i].length
-      ? porDia[i].map(l => pillHTML(l)).join('')
-      : '<div style="text-align:center;padding:14px 0;color:var(--muted2);font-size:10px;border:1px dashed var(--border);border-radius:6px;margin:2px">Libre</div>';
-  }
-  const sf = document.getElementById('wc5');
-  if (sf) sf.innerHTML = sinFecha.length
-    ? sinFecha.map(l => pillHTML(l, true)).join('')
-    : '<div style="text-align:center;padding:14px 0;color:var(--muted2);font-size:10px">—</div>';
-}
-
-function pillHTML(lead, sinFecha=false) {
-  const cls = semClass(lead.semaforo);
-  return `<div class="lead-pill ${sinFecha?'neutral':cls}"
-    draggable="true"
-    data-key="${lead._key}"
-    data-empresa="${(lead.empresa||'').replace(/"/g,'&quot;')}">
-    <div class="pill-empresa">${lead.empresa}</div>
-    <div class="pill-contacto">${lead.contacto}</div>
-    <div class="pill-canal" style="color:${sinFecha?'var(--muted2)':canalColor(lead)}">${sinFecha?'Sin agenda':canalIcono(lead)}</div>
-  </div>`;
-}
-
-
-function cambiarSemana(dir) { semanaOffset += dir; renderSemana(document.querySelector('#panel-semana .search-bar input')?.value||''); }
-function irSemanaActual() { semanaOffset = 0; renderSemana(); }
-
-// ── DRAG & DROP via event delegation ────
-let dragKey = null;
-let dragCounter = 0; // counter global para dragleave
-
-// Registrar listeners una vez en initDrag (llamado en bootApp)
-function initDrag() {
-  const grid = document.getElementById('semGrid');
-  if (!grid) return;
-
-  grid.addEventListener('dragstart', e => {
-    const pill = e.target.closest('[data-key]');
-    if (!pill) return;
-    dragKey = pill.dataset.key;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', dragKey);
-    pill.style.opacity = '0.35';
-    isDragging = true;
-  });
-
-  grid.addEventListener('dragend', e => {
-    const pill = e.target.closest('[data-key]');
-    if (pill) pill.style.opacity = '';
-    document.querySelectorAll('.week-col').forEach(c => c.classList.remove('drag-over'));
-    setTimeout(() => { isDragging = false; dragKey = null; }, 80);
-  });
-
-  grid.addEventListener('dragenter', e => {
-    const col = e.target.closest('.week-col');
-    if (!col || !dragKey) return;
-    e.preventDefault();
-    col.classList.add('drag-over');
-  });
-
-  grid.addEventListener('dragover', e => {
-    const col = e.target.closest('.week-col');
-    if (!col || !dragKey) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  });
-
-  grid.addEventListener('dragleave', e => {
-    const col = e.target.closest('.week-col');
-    if (!col) return;
-    // Solo quitar highlight si el mouse salió realmente de la columna
-    const rect = col.getBoundingClientRect();
-    const x = e.clientX, y = e.clientY;
-    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-      col.classList.remove('drag-over');
-    }
-  });
-
-  grid.addEventListener('drop', e => {
-    e.preventDefault();
-    e.stopPropagation();
-    const col = e.target.closest('.week-col');
-    if (!col) return;
-    col.classList.remove('drag-over');
-
-    const key = e.dataTransfer.getData('text/plain') || dragKey;
-    if (!key) return;
-    const lead = getLead(key);
-    if (!lead) return;
-
-    const fechaISO = col.dataset.fecha || 'sin-fecha';
-
-    if (fechaISO === 'sin-fecha') {
-      store[key].proxAccion = '';
-      store[key].semaforo = '🟢 Ok';
-    } else {
-      store[key].proxAccion = fechaISO;
-      const hoy0 = new Date(); hoy0.setHours(0,0,0,0);
-      const drop0 = new Date(fechaISO+'T12:00:00'); drop0.setHours(0,0,0,0);
-      const diff = Math.round((drop0-hoy0)/86400000);
-      store[key].semaforo = diff<0 ? '🔴 Vencido' : diff<=2 ? '🟡 Hoy' : '🟢 Ok';
-    }
-
-    if (SCRIPT_URL && fechaISO!=='sin-fecha') {
-      const [y,m,d] = fechaISO.split('-');
-      callScript('updateLead',{empresa:lead.empresa,proxAccion:d+'/'+m+'/'+y,semaforo:store[key].semaforo}).catch(()=>{});
-    }
-
-    const label = fechaISO==='sin-fecha'
-      ? 'sin fecha'
-      : new Date(fechaISO+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
-    showNotify(lead.empresa+' → '+label, 'success');
-
-    const filtro = document.getElementById('semBuscador')?.value||'';
-    renderSemana(filtro);
-    renderLeads();
-  });
-
-  // Click delegation para pills
-  grid.addEventListener('click', e => {
-    if (isDragging) return;
-    const pill = e.target.closest('[data-key]');
-    if (!pill) return;
-    abrirPerfil(pill.dataset.key);
-  });
-}
-
-
-function pilClick(event, key) {
-  if (isDragging) return;
-  abrirPerfil(key);
-}
-
-function filtrarSemana(v) { renderSemana(v); }
-
-function parseFechaStr(str) {
-  if (!str) return null;
-  str = str.trim();
-  // YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return new Date(str.split(' ')[0]);
-  // DD/MM/YYYY
-  if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) {
-    const [d,m,y] = str.split('/'); return new Date(+y, +m-1, +d);
-  }
+    const r = await fetch(getCsvUrl(gid), {cache:'no-store'});
+    if (r.ok) { const t = await decodeBuf(r); if (t) return t; }
+  } catch(e1) {}
+  // Intento 2: export directo
+  try {
+    const r2 = await fetch(getExportUrl(gid), {cache:'no-store'});
+    if (r2.ok) { const t = await decodeBuf(r2); if (t) return t; }
+  } catch(e2) {}
   return null;
 }
 
-function semClass(sem) {
-  if (!sem) return 'ok';
-  if (sem.includes('🔴') || sem.toLowerCase().includes('vencido')) return 'urgent';
-  if (sem.includes('🟡') || sem.toLowerCase().includes('hoy')) return 'today-p';
+async function syncFromSheets(silent=false) {
+  if (!silent) setSyncStatus('spin','Sincronizando...');
+
+  try {
+    const [leadsText, vistageText] = await Promise.all([
+      fetchCsv(GID_LEADS),
+      fetchCsv(GID_VISTAGE)
+    ]);
+
+    if (!leadsText && !vistageText) {
+      throw new Error('No se pudo leer el Sheets');
+    }
+
+    if (leadsText) mergeLeadsCSV(leadsText);
+    if (vistageText) {
+      vistage = parseCsv(vistageText).filter(r => {
+        const n = (r[2]||'').trim();
+        return n && n !== 'Nombre' && n !== 'Nombre completo' && !n.startsWith('🏆') && r.some(c => c.trim());
+      });
+    }
+
+    saveLocal();
+    drawAll();
+    setSyncStatus('ok', 'Sincronizado · ' + new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}));
+    if (!silent) toast('Sheets sincronizado ✓','ok');
+  } catch(e) {
+    setSyncStatus('ok', 'Local');
+    if (!silent) toast('Sin conexión al Sheets — verificá la config','info');
+    drawAll();
+  }
+}
+
+function mergeLeadsCSV(csv) {
+  // Merge inteligente: actualiza campos del Sheets pero preserva historial local
+  const rows = parseCsv(csv).filter(r=>{
+    const e=(r[0]||'').trim();
+    return e && e!=='Empresa' && !e.startsWith('💼') && !e.startsWith('🔥') && !e.startsWith('26/');
+  });
+
+  const seen = new Set();
+  rows.forEach(r => {
+    const empresa = (r[0]||'').trim();
+    const contacto= (r[1]||'').trim();
+    if (!empresa) return;
+
+    // Buscar lead existente por empresa
+    const existing = Object.values(leads).find(l => l.empresa===empresa);
+    const id = existing ? existing.id : mkId();
+
+    const fechaRaw = (r[9]||'').trim();
+    const fechaISO = parseFechaToISO(fechaRaw);
+    const semRaw   = (r[10]||'').trim();
+
+    // Merge: Sheets gana en campos estructurales, local gana en historial y edits recientes
+    // Mapeo confirmado: Empresa,Contacto,Cargo,Teléfono,Email,Medio,Rubro,Prioridad,Estado,FechaAcción,Semáforo,Notas
+    const sheetData = {
+      empresa, contacto,
+      cargo:    (r[2]||'').trim(),
+      wpp:      (r[3]||'').replace(/[^0-9\-\+ ]/g,'').trim(), // limpiar teléfono
+      mail:     (r[4]||'').trim(),
+      medio:    (r[5]||'').trim(),
+      rubro:    (r[6]||'').trim(),
+      // r[7] = Prioridad (numérico, ignoramos)
+      estado:   estadoFromStr(r[8]||''),
+      semaforo: semFromStr(semRaw),
+      proxFecha:fechaISO,
+      proxPaso: (r[11]||'').trim(),
+    };
+    // Si el lead fue editado localmente en los últimos 5 min, preservar sus datos
+    const editedRecently = existing && (Date.now() - (existing._lastEdit||0)) < 5*60*1000;
+    leads[id] = mkLead({
+      id,
+      ...sheetData,
+      // Preservar siempre: historial, creadoEn, _lastEdit
+      historial: existing ? existing.historial : [],
+      creadoEn:  existing ? existing.creadoEn  : Date.now(),
+      _lastEdit: existing ? existing._lastEdit  : null,
+      // Si fue editado reciente, preservar estado/semáforo/fecha local
+      ...(editedRecently ? {
+        estado:    existing.estado,
+        semaforo:  existing.semaforo,
+        proxFecha: existing.proxFecha,
+      } : {}),
+    });
+    seen.add(id);
+  });
+}
+
+// Escribir un lead al Sheets via Apps Script
+async function syncLeadToSheet(lead) {
+  if (!SCRIPT) return;
+  try {
+    await callScript('updateLead', {
+      empresa:    lead.empresa,
+      proxAccion: fmtFechaAR(lead.proxFecha),
+      semaforo:   semToStr(lead.semaforo),
+      estado:     estadoToStr(lead.estado),
+      wpp:        lead.wpp,
+      mail:       lead.mail,
+      proxPaso:   lead.proxPaso,
+    });
+  } catch(e) { console.warn('Sync to sheet:', e); }
+}
+
+// ══════════════════════════════════════════
+// PARSERS
+// ══════════════════════════════════════════
+function parseCsv(text) {
+  return text.split('\n').map(line => {
+    const row=[]; let q=false, cur='';
+    for (const c of line) {
+      if (c==='"'){q=!q;continue}
+      if (c===','&&!q){row.push(cur.trim());cur='';continue}
+      cur+=c;
+    }
+    row.push(cur.trim()); return row;
+  });
+}
+
+function parseFechaToISO(str) {
+  if (!str) return '';
+  str = str.trim();
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.substring(0,10);
+  // D/M/YYYY o DD/MM/YYYY (Google Sheets formato AR)
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
+    const parts = str.split('/');
+    const d = parts[0], m = parts[1], y = parts[2].split(' ')[0]; // trim tiempo si hay
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  // M/D/YYYY (formato US que a veces manda Google)
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
+    // Igual que arriba — el orden lo inferimos por el contexto
+    const parts = str.split('/');
+    const d = parts[0], m = parts[1], y = parts[2].split(' ')[0];
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  return '';
+}
+
+function fmtFechaAR(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function fmtFechaDisplay(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso+'T12:00:00');
+  return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+function estadoFromStr(s) {
+  if (!s) return 'nuevo';
+  s = s.toLowerCase();
+  if (s.includes('tratativa')) return 'tratativa';
+  if (s.includes('enviado'))   return 'enviado';
+  if (s.includes('pausa'))     return 'pausa';
+  if (s.includes('perdido') || s.includes('0 -')) return 'perdido';
+  return 'nuevo';
+}
+
+function estadoToStr(s) {
+  const m = {nuevo:'1 - Nuevo',enviado:'2 - Enviado',tratativa:'6 - Proyecto En Tratativa',pausa:'3 - En Pausa',perdido:'0 - Perdido'};
+  return m[s] || s;
+}
+
+function semFromStr(s) {
+  if (!s) return 'ok';
+  const sl = s.toLowerCase();
+  // Emojis correctos + versión corrupta latin1 + texto
+  if (s.includes('🔴') || s.includes('ðŸ"´') || sl.includes('vencid') || sl.includes('urgente')) return 'urg';
+  if (s.includes('🟡') || s.includes('ðŸŸ¡') || sl.includes('hoy')    || sl.includes('semana'))  return 'hoy';
+  if (s.includes('🟢') || s.includes('ðŸŸ¢') || sl.includes('al día') || sl.includes('ok'))      return 'ok';
   return 'ok';
 }
 
-function canalIcono(lead) {
-  if (lead.wpp && lead.wpp !== 'nan') return '💬 WPP';
-  if (lead.mail && lead.mail !== 'nan') return '📧 Mail';
-  return '💼 LinkedIn';
+function semToStr(s) {
+  return {urg:'🔴 Vencido',hoy:'🟡 Hoy',ok:'🟢 Ok'}[s] || s;
 }
 
-function canalColor(lead) {
-  if (lead.wpp && lead.wpp !== 'nan') return 'var(--green)';
-  if (lead.mail && lead.mail !== 'nan') return 'var(--gold)';
-  return 'var(--blue)';
+function semColor(s) {
+  return {urg:'var(--rose)',hoy:'var(--amber)',ok:'var(--sage)'}[s]||'var(--fog)';
 }
 
-function matchFiltro(lead, filtro) {
-  const f = filtro.toLowerCase();
-  return (lead.empresa||'').toLowerCase().includes(f) || (lead.contacto||'').toLowerCase().includes(f);
-}
-
-// ════════════════════════════════════════════
-// RENDER LEADS CARDS
-// ════════════════════════════════════════════
-function renderLeads(filtro='') {
-  const grid = document.getElementById('leadsGrid');
-  const leads = getAllLeads().filter(l => !filtro || matchFiltro(l,filtro));
-
-  if (!leads.length) {
-    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div>Sin leads cargados</div></div>`;
-    return;
-  }
-
-  // Ordenar: urgente > hoy > ok > sin semáforo
-  const order = l => {
-    const s = l.semaforo||'';
-    if (s.includes('🔴')) return 0;
-    if (s.includes('🟡')) return 1;
-    if (s.includes('🟢')) return 2;
-    return 3;
+function estadoChip(s) {
+  const map = {
+    nuevo:    ['c-sky','🆕 Nuevo'],
+    enviado:  ['c-gold','✉️ Enviado'],
+    tratativa:['c-sage','🤝 Tratativa'],
+    pausa:    ['c-fog','⏸ Pausa'],
+    perdido:  ['c-rose','✗ Perdido'],
   };
-  leads.sort((a,b) => order(a)-order(b));
+  const [cls,lbl] = map[s] || ['c-fog',s];
+  return `<span class="chip ${cls}">${lbl}</span>`;
+}
 
-  grid.innerHTML = leads.map(lead => {
-    const cls = semClass(lead.semaforo);
-    const clsMap = {urgent:'urgent', 'today-p':'today-c', ok:'ok'};
-    const cardCls = clsMap[cls]||'neutral';
-    const hist = lead.historial||[];
-    const hasWpp = lead.wpp && lead.wpp !== 'nan';
-    const hasMail = lead.mail && lead.mail !== 'nan';
+function canalInfo(lead) {
+  if (lead.wpp && lead.wpp!=='nan') return {ico:'💬',label:lead.wpp,cls:'b-wpp',key:'wpp',color:'var(--sage)'};
+  if (lead.mail&&lead.mail!=='nan') return {ico:'📧',label:lead.mail,cls:'b-mail',key:'mail',color:'var(--gold)'};
+  return {ico:'💼',label:'Solo LinkedIn',cls:'b-li',key:'li',color:'var(--sky)'};
+}
 
-    return `<div class="lead-card ${cardCls}" onclick="abrirPerfil('${lead._key}')">
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function addDaysISO(iso, n) {
+  const base = iso ? new Date(iso+'T12:00:00') : new Date();
+  base.setDate(base.getDate() + n);
+  const y = base.getFullYear();
+  const m = String(base.getMonth()+1).padStart(2,'0');
+  const d = String(base.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function drawAll() {
+  drawWeek();
+  drawLeads();
+  drawVistage();
+  // Solo re-render tabla si está visible (no llamar siempre — es costoso)
+  if (document.getElementById('panel-tabla')?.classList.contains('on')) drawTabla();
+}
+
+// ── SEMANA ────────────────────────────────
+function drawWeek() {
+  const q = (document.getElementById('semSearch')?.value||'').toLowerCase();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = today.getDay();
+  const lunes = new Date(today);
+  lunes.setDate(today.getDate() - (dow===0?6:dow-1) + weekOff*7);
+  lunes.setHours(12,0,0,0);
+
+  const dias = Array.from({length:5},(_,i)=>{
+    const d=new Date(lunes); d.setDate(lunes.getDate()+i); d.setHours(12,0,0,0); return d;
+  });
+
+  // Guardar fechas en columnas
+  dias.forEach((d,i)=>{
+    const col=document.getElementById('wc'+i);
+    if(col) col.dataset.fecha = d.toISOString().split('T')[0];
+  });
+  const sf=document.getElementById('wc5');
+  if(sf) sf.dataset.fecha='sin-fecha';
+
+  // Navegación label
+  const L=lunes.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+  const V=dias[4].toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+  const esEsta=weekOff===0;
+  document.getElementById('weekLabel').textContent = (esEsta?'SEMANA ACTUAL · ':'')+L+' – '+V;
+  document.getElementById('weekLabel').style.color = esEsta?'var(--gold)':'var(--fog2)';
+  const hoyBtn=document.getElementById('todayBtn');
+  if(hoyBtn) hoyBtn.style.display=esEsta?'none':'';
+
+  // Headers
+  const DIAS=['Lun','Mar','Mié','Jue','Vie'];
+  const heads=document.getElementById('weekHeads');
+  if(heads) heads.innerHTML = dias.map((d,i)=>{
+    const esH=d.toISOString().split('T')[0]===todayISO();
+    const dd=String(d.getDate()).padStart(2,'0');
+    const mm=String(d.getMonth()+1).padStart(2,'0');
+    return `<div class="wday-head${esH?' today':''}">${DIAS[i]}<br><span style="font-size:10px">${dd}/${mm}</span></div>`;
+  }).join('')+'<div class="wday-head" style="color:var(--fog2)">Sin fecha</div>';
+
+  // Agrupar
+  const all = Object.values(leads).filter(l=>!q||l.empresa.toLowerCase().includes(q)||l.contacto.toLowerCase().includes(q));
+  const porDia=Array.from({length:5},()=>[]);
+  const sinF=[];
+  const datesISO=dias.map(d=>d.toISOString().split('T')[0]);
+
+  all.forEach(l=>{
+    const pf=l.proxFecha;
+    if(!pf){sinF.push(l);return;}
+    const idx=datesISO.indexOf(pf);
+    if(idx>=0){porDia[idx].push(l);}
+    else{sinF.push(l);}
+  });
+
+  // Render columnas — solo innerHTML, no tocar el div raíz
+  for(let i=0;i<5;i++){
+    const col=document.getElementById('wc'+i);
+    if(!col)continue;
+    const esH=datesISO[i]===todayISO();
+    col.className='wcol'+(esH?' today':'');
+    col.innerHTML=porDia[i].length
+      ? porDia[i].map(l=>pillHTML(l)).join('')
+      : '<div class="wcol-empty">Libre</div>';
+  }
+  const sfCol=document.getElementById('wc5');
+  if(sfCol) sfCol.innerHTML=sinF.length
+    ? sinF.map(l=>pillHTML(l,true)).join('')
+    : '<div class="wcol-empty">—</div>';
+
+  // Nota de semana
+  const tot=all.length;
+  const urg=all.filter(l=>l.semaforo==='urg').length;
+  const note=document.getElementById('weekNote');
+  if(note) note.textContent= tot?`${tot} leads · ${urg} urgentes`:'' ;
+}
+
+function pillHTML(l, sf=false) {
+  const ci=canalInfo(l);
+  return `<div class="pill ${sf ? l.semaforo||'ok' : l.semaforo||'ok'}" data-id="${l.id}" onclick="abrirPerfil('${l.id}')">
+    <div class="pill-emp">${l.empresa}</div>
+    <div class="pill-con">${l.contacto}</div>
+    <div class="pill-ch" style="color:${sf?'var(--fog)':ci.color}">${ci.ico} ${sf?'Sin fecha':ci.label||ci.key}</div>
+  </div>`;
+}
+
+// ── LEADS GRID ────────────────────────────
+function drawLeads() {
+  const q=(document.getElementById('leadsSearch')?.value||'').toLowerCase();
+  const grid=document.getElementById('leadsGrid');
+  if(!grid)return;
+  const all=Object.values(leads).filter(l=>!q||l.empresa.toLowerCase().includes(q)||l.contacto.toLowerCase().includes(q));
+  const ord={urg:0,hoy:1,ok:2};
+  all.sort((a,b)=>(ord[a.semaforo]??3)-(ord[b.semaforo]??3));
+
+  if(!all.length){grid.innerHTML='<div class="empty"><div class="empty-ico">📭</div>Sin leads</div>';return;}
+  grid.innerHTML=all.map(l=>{
+    const ci=canalInfo(l);
+    const histN=l.historial.length;
+    return `<div class="lcard ${l.semaforo||'neu'}" onclick="abrirPerfil('${l.id}')">
       <div class="lc-top">
-        <div>
-          <div class="lc-empresa">${lead.empresa}</div>
-          <div class="lc-contacto">${lead.contacto}</div>
-          ${lead.cargo ? `<div class="lc-cargo">${lead.cargo}</div>` : ''}
-        </div>
-        ${estadoChip(lead.estado)}
+        <div><div class="lc-name">${l.empresa}</div><div class="lc-who">${l.contacto}${l.cargo?' · '+l.cargo:''}</div></div>
+        ${estadoChip(l.estado)}
       </div>
       <div class="lc-contacts">
-        ${hasWpp  ? `<span class="lc-badge badge-wpp">💬 ${lead.wpp}</span>` : ''}
-        ${hasMail ? `<span class="lc-badge badge-mail">📧 ${lead.mail}</span>` : ''}
-        ${!hasWpp && !hasMail ? `<span class="lc-badge badge-li">💼 LinkedIn</span>` : ''}
+        ${l.wpp&&l.wpp!=='nan'?`<span class="lc-badge b-wpp">💬 ${l.wpp}</span>`:''}
+        ${l.mail&&l.mail!=='nan'?`<span class="lc-badge b-mail">📧 ${l.mail}</span>`:''}
+        ${!l.wpp&&!l.mail?`<span class="lc-badge b-li">💼 LinkedIn</span>`:''}
+        ${l.rubro?`<span class="lc-badge" style="background:var(--ink4);color:var(--fog);border:1px solid var(--line)">${l.rubro}</span>`:''}
       </div>
-      ${lead.proxPaso ? `<div class="lc-paso">${lead.proxPaso}</div>` : ''}
-      <div class="lc-bottom">
-        <span class="lc-fecha">${formatFecha(lead.proxAccion)}</span>
-        ${hist.length ? `<span class="hist-count">📋 ${hist.length} entradas</span>` : ''}
+      ${l.proxPaso?`<div class="lc-paso">${l.proxPaso}</div>`:''}
+      <div class="lc-foot">
+        <span class="lc-fecha" style="color:${semColor(l.semaforo)}">${fmtFechaDisplay(l.proxFecha)}</span>
+        ${histN?`<span class="lc-hist">📋 ${histN}</span>`:''}
       </div>
     </div>`;
   }).join('');
 }
 
-function filtrarLeads(v) { renderLeads(v); }
-
-function formatFecha(str) {
-  if (!str) return '—';
-  const d = parseFechaStr(str);
-  if (!d) return str;
-  return d.toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric'});
+// ── VISTAGE ───────────────────────────────
+function drawVistage() {
+  const q=(document.getElementById('vSearch')?.value||'').toLowerCase();
+  const tbody=document.getElementById('vBody');
+  if(!tbody)return;
+  const rows=(vistage||[]).filter(r=>!q||(r[2]||'').toLowerCase().includes(q)||(r[0]||'').toLowerCase().includes(q));
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--fog)">Sin datos</td></tr>';return;}
+  tbody.innerHTML=rows.map((r,i)=>{
+    const hasWpp=(r[7]||'').trim();
+    const hasMail=(r[8]||'').trim();
+    return `<tr onclick="abrirPerfilVistage(${i})">
+      <td><div style="font-weight:600;font-size:12.5px">${r[2]||''}</div><div style="font-size:11px;color:var(--fog)">${r[0]||''}</div></td>
+      <td style="color:var(--fog);font-size:11.5px">${r[4]||'—'}</td>
+      <td>${estadoChip(estadoFromStr(r[5]||''))}</td>
+      <td>
+        ${hasWpp?`<span class="lc-badge b-wpp">💬 ${hasWpp}</span>`:''}
+        ${hasMail?`<span class="lc-badge b-mail">📧 ${hasMail}</span>`:''}
+        ${!hasWpp&&!hasMail?`<span class="lc-badge b-li">Solo LinkedIn</span>`:''}
+      </td>
+      <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();moverALeads(${i})">→ Lead</button></td>
+    </tr>`;
+  }).join('');
 }
 
-function estadoChip(e) {
-  if (!e) return '';
-  if (e.includes('Tratativa')) return `<span class="chip chip-green">🤝</span>`;
-  if (e.includes('Enviado'))   return `<span class="chip chip-gold">✉️</span>`;
-  if (e.includes('Nuevo'))     return `<span class="chip chip-blue">🆕</span>`;
-  if (e.includes('Pausa'))     return `<span class="chip chip-muted">⏸</span>`;
-  if (e.includes('Perdido'))   return `<span class="chip chip-red">✗</span>`;
-  return `<span class="chip chip-muted">${e.substring(0,8)}</span>`;
-}
+// ══════════════════════════════════════════
+// PERFIL
+// ══════════════════════════════════════════
+function abrirPerfil(id) {
+  const l=leads[id]; if(!l)return;
+  currentId=id;
 
-// ════════════════════════════════════════════
-// RENDER VISTAGE
-// ════════════════════════════════════════════
-function renderVistage(filtro='') {
-  const tbody = document.getElementById('vistageBody');
-  const rows = (window._vistageRows||[]).filter(r => {
-    if (!filtro) return true;
-    const f = filtro.toLowerCase();
-    return (r[0]||'').toLowerCase().includes(f) || (r[2]||'').toLowerCase().includes(f);
-  });
+  document.getElementById('pf_name').textContent=l.empresa;
+  document.getElementById('pf_sub').textContent=[l.contacto,l.cargo,l.rubro].filter(Boolean).join(' · ');
 
-  if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--muted)">Sin datos Vistage</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = rows.map(r => `<tr onclick="abrirPerfilVistage(${JSON.stringify([r[0],r[2],r[4],r[5],r[6]]).replace(/"/g,'&quot;')})">
-    <td>
-      <div style="font-weight:700;font-size:13px">${r[2]||''}</div>
-      <div style="font-size:11px;color:var(--muted)">${r[0]||''}</div>
-    </td>
-    <td style="font-size:12px;color:var(--muted)">${r[4]||'—'}</td>
-    <td>${estadoChip(r[5]||'')}</td>
-    <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">${(r[6]||'').split(' ')[0]||'—'}</td>
-    <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();moverALeads('${encodeURIComponent(r[0]||'')}','${encodeURIComponent(r[2]||'')}','${encodeURIComponent(r[4]||'')}')">→ A Leads</button></td>
-  </tr>`).join('');
-}
-
-function filtrarVistage(v) { renderVistage(v); }
-
-function abrirPerfilVistage(data) {
-  const [company, nombre, rubro, estado, ultimoContacto] = data;
-  const key = setLead({
-    empresa: company || nombre,
-    contacto: nombre,
-    cargo: '', wpp:'', mail:'', medio:'Vistage', rubro,
-    estado: estado||'0 - Enviado Linkedin',
-    proxAccion:'', semaforo:'🟢 Ok', proxPaso:''
-  });
-  abrirPerfil(key);
-}
-
-function moverALeads(companyEnc, nombreEnc, rubroEnc) {
-  const company = decodeURIComponent(companyEnc);
-  const nombre  = decodeURIComponent(nombreEnc);
-  const rubro   = decodeURIComponent(rubroEnc);
-  const key = setLead({
-    empresa: company||nombre, contacto: nombre,
-    cargo:'', wpp:'', mail:'', medio:'Vistage', rubro,
-    estado:'1 - Nuevo', proxAccion: hoy(0), semaforo:'🟡 Hoy', proxPaso:'Respondió en Vistage'
-  });
-  renderLeads();
-  showNotify(`${nombre} movido a Leads ✓`, 'success');
-  abrirPerfil(key);
-}
-
-// ════════════════════════════════════════════
-// PERFIL DEL LEAD
-// ════════════════════════════════════════════
-function abrirPerfil(key) {
-  const lead = getLead(key);
-  if (!lead) return;
-  currentPerfilKey = key;
-
-  // Header
-  document.getElementById('pf_titulo').textContent = lead.empresa;
-  document.getElementById('pf_subtitulo').textContent =
-    [lead.contacto, lead.cargo, lead.rubro].filter(Boolean).join(' · ');
-  document.getElementById('pf_estado_chip').innerHTML = estadoChipFull(lead.estado);
-
-  // Badges de contacto
-  const hasWpp  = lead.wpp && lead.wpp !== 'nan';
-  const hasMail = lead.mail && lead.mail !== 'nan';
-  document.getElementById('pf_badges').innerHTML = [
-    hasWpp  ? `<span class="lc-badge badge-wpp">💬 ${lead.wpp}</span>` : '',
-    hasMail ? `<span class="lc-badge badge-mail">📧 ${lead.mail}</span>` : '',
-    !hasWpp&&!hasMail ? `<span class="lc-badge badge-li">💼 Solo LinkedIn</span>` : '',
-    lead.medio ? `<span class="lc-badge" style="background:var(--s3);color:var(--muted);border:1px solid var(--border)">📌 ${lead.medio}</span>` : '',
+  const ci=canalInfo(l);
+  document.getElementById('pf_badges').innerHTML=[
+    l.wpp&&l.wpp!=='nan'?`<span class="chip b-wpp">💬 ${l.wpp}</span>`:'',
+    l.mail&&l.mail!=='nan'?`<span class="chip b-mail">📧 ${l.mail}</span>`:'',
+    !l.wpp&&!l.mail?`<span class="chip b-li">💼 LinkedIn</span>`:'',
+    estadoChip(l.estado),
   ].join('');
 
-  // Fecha — sugerir +3 días si está vacía
-  let fechaISO = '';
-  if (lead.proxAccion) {
-    const d = parseFechaStr(lead.proxAccion);
-    if (d) fechaISO = d.toISOString().split('T')[0];
-  }
-  if (!fechaISO) {
-    // Sugerir +3 días
-    const sugerida = new Date(); sugerida.setDate(sugerida.getDate()+3);
-    fechaISO = sugerida.toISOString().split('T')[0];
-  }
-  document.getElementById('pf_fecha').value = fechaISO;
-
-  // Semáforo y estado
-  const semSel = document.getElementById('pf_semaforo');
-  if (lead.semaforo?.includes('🔴')) semSel.value = '🔴 Vencido';
-  else if (lead.semaforo?.includes('🟡')) semSel.value = '🟡 Hoy';
-  else semSel.value = '🟢 Ok';
-
-  const estSel = document.getElementById('pf_estado');
-  const estados = ['1 - Nuevo','2 - Enviado','6 - Proyecto En Tratativa','3 - En Pausa','0 - Perdido'];
-  const estMatch = estados.find(e => lead.estado && lead.estado.includes(e.split(' - ')[1]?.split(' ')[0]||'X'));
-  if (lead.estado) {
-    // Match por valor exacto o parcial
-    const opt = Array.from(estSel.options).find(o => lead.estado.includes(o.value.split(' - ')[1]?.split(' ')[0]||'XXX'));
-    if (opt) estSel.value = opt.value; else estSel.value = '1 - Nuevo';
-  }
+  // Fecha — si está vacía sugerir +3
+  document.getElementById('pf_fecha').value = l.proxFecha || addDaysISO(todayISO(),3);
+  document.getElementById('pf_sem').value   = l.semaforo||'ok';
+  document.getElementById('pf_estado').value= l.estado||'nuevo';
 
   // Auto-seleccionar canal
-  if (hasWpp) selectCanal('wpp', document.querySelector('.canal-opt.wpp'));
-  else if (hasMail) selectCanal('mail', document.querySelector('.canal-opt.mail'));
-  else selectCanal('li', document.querySelector('.canal-opt.li'));
+  setCanal(ci.key, document.querySelector('.canal-opt.'+ci.key));
 
   // Resetear secciones
-  document.getElementById('pf_responder').style.display = 'none';
-  document.getElementById('pf_nota').style.display = 'none';
-  document.getElementById('pf_msg_block').style.display = 'none';
-  document.getElementById('pf_msg_post').style.display = 'none';
+  document.getElementById('pfResponder').style.display='none';
+  document.getElementById('pfNota').style.display='none';
+  document.getElementById('msgWrap').style.display='none';
+  document.getElementById('msgPost').style.display='none';
+  document.getElementById('msg_ctx').value='';
 
-  // Historial
-  renderHistorialPerfil(lead);
-
-  openModal('modalPerfil');
-
-  // Generar sugerencia AI
-  generarSugerenciaAI(lead);
+  drawHistorial(l);
+  openModal('mPerfil');
+  genSugerencia(l);
 }
 
-function estadoChipFull(e) {
-  if (!e) return '';
-  if (e.includes('Tratativa')) return `<span class="chip chip-green">🤝 En Tratativa</span>`;
-  if (e.includes('Enviado'))   return `<span class="chip chip-gold">✉️ Enviado</span>`;
-  if (e.includes('Nuevo'))     return `<span class="chip chip-blue">🆕 Nuevo</span>`;
-  if (e.includes('Pausa'))     return `<span class="chip chip-muted">⏸ En Pausa</span>`;
-  if (e.includes('Perdido'))   return `<span class="chip chip-red">✗ Perdido</span>`;
-  return `<span class="chip chip-muted">${e}</span>`;
+function abrirPerfilVistage(i) {
+  const r=vistage[i]; if(!r)return;
+  // Crear lead temporal desde fila Vistage
+  const id=mkId();
+  leads[id]=mkLead({
+    id,empresa:r[0]||r[2]||'',contacto:r[2]||'',cargo:r[3]||'',
+    wpp:(r[7]||'').trim(),mail:(r[8]||'').trim(),
+    medio:'Vistage',rubro:(r[4]||'').trim(),
+    estado:estadoFromStr(r[5]||''),
+    proxFecha:parseFechaToISO(r[6]||''),
+  });
+  saveLocal();
+  drawLeads();
+  abrirPerfil(id);
 }
 
-function renderHistorialPerfil(lead) {
-  const container = document.getElementById('pf_historial');
-  const hist = lead.historial || [];
-  if (!hist.length) {
-    container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Sin historial. Registrá la primera interacción.</div>`;
+function moverALeads(i) {
+  const r=vistage[i]; if(!r)return;
+  const id=mkId();
+  leads[id]=mkLead({
+    id,empresa:r[0]||r[2]||'',contacto:r[2]||'',
+    wpp:(r[7]||'').trim(),mail:(r[8]||'').trim(),
+    medio:'Vistage',rubro:(r[4]||'').trim(),
+    estado:'nuevo',semaforo:'hoy',
+    proxFecha:addDaysISO(todayISO(),0),
+    proxPaso:'Respondió en Vistage'
+  });
+  saveLocal();
+  drawAll();
+  toast(`${leads[id].empresa} → Leads ✓`,'ok');
+}
+
+function drawHistorial(l) {
+  const feed=document.getElementById('histFeed');
+  const count=document.getElementById('histCount');
+  const h=l.historial||[];
+  count.textContent=h.length?h.length+' entradas':'';
+  if(!h.length){
+    feed.innerHTML='<div style="text-align:center;padding:18px;color:var(--fog);font-size:12px">Sin historial aún.</div>';
     return;
   }
-  container.innerHTML = [...hist].reverse().map(h => {
-    const isCliente = h.quien === 'Cliente';
-    const isCom = h.quien === 'Comercial';
-    const isNota = h.tipo === 'nota';
-    const cls = isCliente ? 'cliente' : isCom ? 'comercial' : 'nota';
-    const tipoLabel = {wpp:'💬 WhatsApp', mail:'📧 Email', linkedin:'💼 LinkedIn', reunion:'🤝 Reunión', nota:'📝 Nota'}[h.tipo] || h.tipo;
-    const colorTipo = {wpp:'var(--green)', mail:'var(--gold)', linkedin:'var(--blue)', reunion:'var(--purple)', nota:'var(--gold)'}[h.tipo] || 'var(--muted)';
-    return `<div class="hist-item ${cls}">
-      <div class="hist-meta">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span class="hist-tipo" style="color:${colorTipo}">${tipoLabel}</span>
-          <span style="font-size:10px;font-weight:700;color:${isCliente?'var(--green)':isCom?'var(--blue)':'var(--muted)'}">${h.quien||''}</span>
-        </div>
-        <span class="hist-fecha">${h.fecha||''}</span>
+  const canalLabel={wpp:'💬 WhatsApp',linkedin:'💼 LinkedIn',mail:'📧 Email',reunion:'🤝 Reunión',nota:'📝 Nota'};
+  const quienCls={Cliente:'cli',Comercial:'com',Nota:'not'};
+  feed.innerHTML=[...h].reverse().map(e=>`
+    <div class="hitem ${quienCls[e.quien]||'not'}">
+      <div class="hitem-meta">
+        <span class="hitem-tipo" style="color:${e.quien==='Cliente'?'var(--sage)':e.quien==='Comercial'?'var(--sky)':'var(--gold)'}">${canalLabel[e.tipo]||e.tipo}</span>
+        <span class="hitem-fecha">${e.fecha||''}</span>
       </div>
-      <div class="hist-contenido">${h.contenido||''}</div>
-    </div>`;
-  }).join('');
+      <div class="hitem-quien" style="color:${e.quien==='Cliente'?'var(--sage)':e.quien==='Comercial'?'var(--sky)':'var(--gold)'}">${e.quien||''}</div>
+      <div class="hitem-txt">${(e.contenido||'').replace(/</g,'&lt;')}</div>
+    </div>`).join('');
 }
 
-// ════════════════════════════════════════════
-// SUGERENCIA AI (al abrir perfil)
-// ════════════════════════════════════════════
-async function generarSugerenciaAI(lead) {
-  document.getElementById('pf_ai_block').style.display = 'none';
-  document.getElementById('loaderAI').classList.add('on');
-
-  const hist = (lead.historial||[]).slice(-3);
-  const histText = hist.length
-    ? hist.map(h => `[${h.quien||'?'} - ${h.tipo}] ${h.contenido}`).join('\n')
-    : `Último paso registrado: ${lead.proxPaso||'ninguno'}`;
-
-  const fechaSugerida = (() => {
-    const d = new Date(); d.setDate(d.getDate()+3);
-    return d.toLocaleDateString('es-AR');
-  })();
-
-  const canal = (lead.wpp && lead.wpp!=='nan') ? 'WhatsApp' : (lead.mail && lead.mail!=='nan') ? 'email' : 'LinkedIn';
-
-  const prompt = ENFOCO_CTX + `
-
-LEAD: ${lead.empresa} / ${lead.contacto}
-${lead.rubro ? `Rubro: ${lead.rubro}` : ''}
-${lead.wpp && lead.wpp!=='nan' ? `WhatsApp: ${lead.wpp}` : lead.mail && lead.mail!=='nan' ? `Email: ${lead.mail}` : 'Solo LinkedIn'}
-Estado: ${lead.estado||'—'}
-
-ÚLTIMAS INTERACCIONES:
-${histText}
-
-Respondé en este formato EXACTO:
-TEMA: [de qué vienen hablando, o qué propusimos — 1 línea]
-SUGERENCIA: [qué hacer ahora y por qué canal — 1 línea]
-CUÁNDO: [${fechaSugerida}]
-MENSAJE:
-[el mensaje listo para copiar y enviar por ${canal}, máx 5 líneas, tono argentino directo]`;
-
-  try {
-    const r = await callClaude(prompt);
-    // Separar contexto del mensaje
-    const msgMatch = r.match(/MENSAJE:\s*([\s\S]+)/i);
-    const contexto = msgMatch ? r.substring(0, r.indexOf(msgMatch[0])).trim() : r;
-    const mensaje  = msgMatch ? msgMatch[1].trim() : '';
-    document.getElementById('pf_ai_body').textContent = contexto;
-    document.getElementById('pf_ai_msg').textContent  = mensaje;
-    document.getElementById('pf_ai_block').style.display = 'block';
-  } catch(e) {
-    document.getElementById('pf_ai_body').textContent = 'Error: ' + e.message;
-    document.getElementById('pf_ai_msg').textContent  = '';
-    document.getElementById('pf_ai_block').style.display = 'block';
-  } finally {
-    document.getElementById('loaderAI').classList.remove('on');
-  }
+// ══════════════════════════════════════════
+// GUARDAR LEAD
+// ══════════════════════════════════════════
+function saveLead() {
+  if(!currentId||!leads[currentId])return;
+  const l=leads[currentId];
+  l.proxFecha  = document.getElementById('pf_fecha').value;
+  l.semaforo   = document.getElementById('pf_sem').value;
+  l.estado     = document.getElementById('pf_estado').value;
+  l._lastEdit  = Date.now();
+  saveLocal();
+  if(SCRIPT) syncLeadToSheet(l);
+  drawAll();
+  toast('✓ Guardado','ok');
+  // Actualizar badges en el modal sin cerrarlo
+  document.getElementById('pf_badges').innerHTML=[
+    l.wpp&&l.wpp!=='nan'?`<span class="chip b-wpp">💬 ${l.wpp}</span>`:'',
+    l.mail&&l.mail!=='nan'?`<span class="chip b-mail">📧 ${l.mail}</span>`:'',
+    !l.wpp&&!l.mail?`<span class="chip b-li">💼 LinkedIn</span>`:'',
+    estadoChip(l.estado),
+  ].join('');
 }
 
-async function refreshAI() {
-  const lead = getLead(currentPerfilKey);
-  if (lead) generarSugerenciaAI(lead);
-}
-
-// ════════════════════════════════════════════
-// GENERADOR DE MENSAJE DENTRO DEL PERFIL
-// ════════════════════════════════════════════
-function toggleResponder() {
-  const el = document.getElementById('pf_responder');
-  const visible = el.style.display === 'flex';
-  el.style.display = visible ? 'none' : 'flex';
-  el.style.flexDirection = 'column';
-  document.getElementById('pf_nota').style.display = 'none';
-}
-
-function toggleNota() {
-  const el = document.getElementById('pf_nota');
-  const visible = el.style.display === 'flex';
-  el.style.display = visible ? 'none' : 'flex';
-  el.style.flexDirection = 'column';
-  document.getElementById('pf_responder').style.display = 'none';
-}
-
-async function generarMensajePerfil() {
-  const lead = getLead(currentPerfilKey);
-  if (!lead) return;
-
-  const tipo = document.getElementById('pf_msg_tipo').value;
-  const ctx  = document.getElementById('pf_msg_ctx').value.trim();
-  const canalNombre = selectedCanal === 'wpp' ? 'WhatsApp' : selectedCanal === 'li' ? 'LinkedIn' : 'Email';
-
-  const hist = (lead.historial||[]).slice(-3);
-  const histText = hist.map(h => `[${h.quien} - ${h.tipo}]: ${h.contenido}`).join('\n') || lead.proxPaso || 'sin historial previo';
-
-  const prompt = ENFOCO_CTX + `
-
-Generame un mensaje de ${canalNombre} para:
-Empresa: ${lead.empresa}
-Contacto: ${lead.contacto}
-${lead.cargo ? `Cargo: ${lead.cargo}` : ''}
-${lead.rubro ? `Rubro: ${lead.rubro}` : ''}
-Tipo: ${tipo}
-${lead.wpp && lead.wpp!=='nan' ? `WhatsApp: ${lead.wpp}` : lead.mail && lead.mail!=='nan' ? `Email: ${lead.mail}` : 'Sin contacto directo — solo LinkedIn'}
-
-HISTORIAL RECIENTE:
-${histText}
-${ctx ? `\nINFO NUEVA / RESPUESTA RECIBIDA:\n${ctx}` : ''}
-
-Escribí SOLO el mensaje listo para copiar. Sin comillas ni explicaciones previas.${canalNombre==='Email' ? ' Primera línea: Asunto: ...' : ''}`;
-
-  document.getElementById('loaderMsg').classList.add('on');
-  document.getElementById('pf_msg_block').style.display = 'none';
-  document.getElementById('pf_msg_post').style.display = 'none';
-
-  try {
-    const r = await callClaude(prompt);
-    document.getElementById('pf_msg_body').textContent = r;
-    document.getElementById('pf_msg_block').style.display = 'block';
-    document.getElementById('pf_msg_post').style.display = 'block';
-
-    // Auto-guardar en historial como mensaje generado
-    agregarEntradaHistorial(lead.empresa, {
-      tipo: selectedCanal,
-      quien: 'Comercial',
-      contenido: `[GENERADO - sin confirmar envío]\n${r}`
-    });
-  } catch(e) { showNotify('Error: ' + e.message, 'error'); }
-  finally { document.getElementById('loaderMsg').classList.remove('on'); }
+function saveNota() {
+  if(!currentId)return;
+  const txt=document.getElementById('nt_txt').value.trim();
+  if(!txt){toast('Escribí algo primero','err');return;}
+  addHist(currentId,{
+    tipo:  document.getElementById('nt_canal').value,
+    quien: document.getElementById('nt_quien').value,
+    contenido:txt
+  });
+  document.getElementById('nt_txt').value='';
+  drawHistorial(leads[currentId]);
+  drawLeads();
+  toast('Guardado ✓','ok');
 }
 
 function confirmarEnvio() {
-  const lead = getLead(currentPerfilKey);
-  if (!lead) return;
-  const dias = parseInt(document.getElementById('pf_dias').value);
-  const nueva = new Date(); nueva.setDate(nueva.getDate()+dias);
-  const fechaISO = nueva.toISOString().split('T')[0];
-  const msg = document.getElementById('pf_msg_body').textContent;
-
-  // Actualizar historial — marcar como enviado
-  const hist = lead.historial||[];
-  // Reemplazar el último entry "GENERADO" con confirmado
-  const lastIdx = hist.map(h=>h.contenido).lastIndexOf(hist.filter(h=>h.contenido?.startsWith('[GENERADO')).slice(-1)[0]?.contenido);
-  if (lastIdx >= 0) {
-    hist[lastIdx].contenido = msg;
-    hist[lastIdx].quien = 'Comercial';
-    guardarHistorialLocal(lead.empresa, hist);
-  }
-
-  // Actualizar fecha en store
-  store[currentPerfilKey].proxAccion = fechaISO;
-
-  // Sync Sheets
-  if (SCRIPT_URL) {
-    callScript('updateLead', {
-      empresa: lead.empresa,
-      proxAccion: nueva.toLocaleDateString('es-AR'),
-      semaforo: '🟢 Ok',
-    }).catch(()=>{});
-  }
-
-  document.getElementById('pf_msg_post').style.display = 'none';
-  showNotify(`✓ Registrado. Próximo: ${nueva.toLocaleDateString('es-AR')}`, 'success');
-  renderHistorialPerfil(getLead(currentPerfilKey));
-  renderAll();
+  if(!currentId)return;
+  const dias=parseInt(document.getElementById('postDias').value);
+  const msg=document.getElementById('msgBody').textContent;
+  // Guardar msg en historial como enviado
+  addHist(currentId,{tipo:canal,quien:'Comercial',contenido:msg});
+  // Actualizar fecha próxima
+  const l=leads[currentId];
+  l.proxFecha=addDaysISO(todayISO(),dias);
+  l.semaforo='ok';
+  l.estado='enviado';
+  saveLocal();
+  if(SCRIPT) syncLeadToSheet(l);
+  document.getElementById('msgPost').style.display='none';
+  document.getElementById('pfResponder').style.display='none';
+  drawHistorial(l);
+  drawAll();
+  toast(`✓ Próximo seguimiento: ${fmtFechaDisplay(l.proxFecha)}`,'ok');
 }
 
-// ════════════════════════════════════════════
-// GUARDAR NOTA
-// ════════════════════════════════════════════
-function guardarNota() {
-  const lead = getLead(currentPerfilKey);
-  if (!lead) return;
-  const tipo     = document.getElementById('nt_tipo').value; // cliente|comercial|nota
-  const canal    = document.getElementById('nt_canal').value;
-  const contenido= document.getElementById('nt_contenido').value.trim();
-  if (!contenido) { showNotify('Escribí algo primero', 'error'); return; }
-
-  const quien = tipo === 'cliente' ? 'Cliente' : tipo === 'comercial' ? 'Comercial' : 'Nota';
-  agregarEntradaHistorial(lead.empresa, { tipo: canal, quien, contenido });
-
-  document.getElementById('nt_contenido').value = '';
-  renderHistorialPerfil(getLead(currentPerfilKey));
-  renderLeads();
-  renderSemana();
-  showNotify('Guardado ✓', 'success');
+// ══════════════════════════════════════════
+// NUEVO LEAD
+// ══════════════════════════════════════════
+function openNewLead() {
+  openModal('mNuevoLead');
 }
 
-// ════════════════════════════════════════════
-// GUARDAR CAMBIOS DEL LEAD
-// ════════════════════════════════════════════
-async function guardarCambiosLead() {
-  const lead = getLead(currentPerfilKey);
-  if (!lead) return;
-
-  const fechaVal  = document.getElementById('pf_fecha').value;
-  const semaforo  = document.getElementById('pf_semaforo').value;
-  const estado    = document.getElementById('pf_estado').value;
-
-  let fechaFmt = '';
-  if (fechaVal) {
-    const [y,m,d] = fechaVal.split('-');
-    fechaFmt = `${d}/${m}/${y}`;
-  }
-
-  store[currentPerfilKey].proxAccion = fechaVal || lead.proxAccion;
-  store[currentPerfilKey].semaforo   = semaforo;
-  store[currentPerfilKey].estado     = estado;
-
-  if (SCRIPT_URL) {
-    try {
-      await callScript('updateLead', { empresa: lead.empresa, proxAccion: fechaFmt, semaforo, estado });
-      showNotify('✓ Guardado en Sheets', 'success');
-    } catch(e) {
-      showNotify('Guardado local (Sheets: ' + e.message + ')', 'error');
-    }
-  } else {
-    showNotify('✓ Actualizado', 'success');
-  }
-
-  renderAll();
-  closeModal('modalPerfil');
+function crearNuevoLead() {
+  const empresa  = document.getElementById('nl_empresa').value.trim();
+  const contacto = document.getElementById('nl_contacto').value.trim();
+  if (!empresa) { toast('Completá la empresa','err'); return; }
+  const id = mkId();
+  leads[id] = mkLead({
+    id,
+    empresa,
+    contacto,
+    cargo:     document.getElementById('nl_cargo').value.trim(),
+    wpp:       document.getElementById('nl_wpp').value.trim(),
+    mail:      document.getElementById('nl_mail').value.trim(),
+    rubro:     document.getElementById('nl_rubro').value.trim(),
+    medio:     document.getElementById('nl_origen').value,
+    estado:    'nuevo',
+    semaforo:  'hoy',
+    proxFecha: addDaysISO(todayISO(), 0),
+    proxPaso:  document.getElementById('nl_paso').value.trim(),
+  });
+  leads[id]._lastEdit = Date.now();
+  saveLocal();
+  closeModal('mNuevoLead');
+  ['nl_empresa','nl_contacto','nl_cargo','nl_wpp','nl_mail','nl_rubro','nl_paso']
+    .forEach(id => document.getElementById(id).value='');
+  drawAll();
+  abrirPerfil(id);
+  toast(`${empresa} agregado ✓`,'ok');
 }
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════
 // CARGAR VISTAGE DESDE LINKEDIN
-// ════════════════════════════════════════════
-async function analizarLinkedIn() {
-  const texto = document.getElementById('liTexto').value.trim();
-  const rubro = document.getElementById('liRubro').value.trim();
-  const url   = document.getElementById('liUrl').value.trim();
-  if (!texto && !url) { showNotify('Pegá texto del perfil o la URL', 'error'); return; }
+// ══════════════════════════════════════════
+async function analizarLI() {
+  const txt=document.getElementById('li_texto').value.trim();
+  const url=document.getElementById('li_url').value.trim();
+  const rub=document.getElementById('li_rubro').value.trim();
+  if(!txt&&!url){toast('Pegá texto del perfil','err');return;}
 
-  const prompt = ENFOCO_CTX + `
+  const prompt=CTX+`\n\nPerfil LinkedIn:\n${txt||url}\nRubro: ${rub||'?'}\n\nExtraé la info y generá un mensaje de primer contacto.\nRespondé EXACTAMENTE:\nNOMBRE: [nombre]\nEMPRESA: [empresa]\nCARGO: [cargo]\nRUBRO: [rubro]\nMENSAJE:\n[mensaje, máx 5 líneas, mencioná Vistage G-308]`;
 
-Perfil a analizar:
-${texto || 'URL: ' + url}
-Rubro adicional: ${rubro||'desconocido'}
-
-Extraé la info y generá un primer mensaje de LinkedIn.
-Respondé EXACTAMENTE en este formato:
-NOMBRE: [nombre completo]
-EMPRESA: [empresa]
-CARGO: [cargo]
-RUBRO: [rubro]
-MENSAJE:
-[mensaje de primer contacto, máx 5 líneas, mencioná Vistage G-308]`;
-
-  document.getElementById('loaderLi').classList.add('on');
-  document.getElementById('liFormContainer').style.display = 'none';
-
+  document.getElementById('liLoader').classList.add('on');
+  document.getElementById('liForm').style.display='none';
   try {
-    const r = await callClaude(prompt);
-    const get = (field) => (r.match(new RegExp(field+':\\s*(.+)','i'))||[])[1]?.trim()||'';
-    const msgMatch = r.match(/MENSAJE:\s*([\s\S]+)/i);
-
-    document.getElementById('vi_nombre').value  = get('NOMBRE');
-    document.getElementById('vi_company').value = get('EMPRESA');
-    document.getElementById('vi_cargo').value   = get('CARGO');
-    document.getElementById('vi_rubro').value   = get('RUBRO') || rubro;
-    document.getElementById('vi_msg').value     = msgMatch ? msgMatch[1].trim() : '';
-    document.getElementById('liFormContainer').style.display = 'flex';
-  } catch(e) { showNotify('Error: ' + e.message, 'error'); }
-  finally { document.getElementById('loaderLi').classList.remove('on'); }
+    const r=await aiCall(prompt);
+    const g=f=>((r.match(new RegExp(f+':\\s*(.+)','i'))||[])[1]||'').trim();
+    const msgM=r.match(/MENSAJE:\s*([\s\S]+)/i);
+    document.getElementById('li_nombre').value=g('NOMBRE');
+    document.getElementById('li_empresa').value=g('EMPRESA');
+    document.getElementById('li_cargo').value=g('CARGO');
+    document.getElementById('li_rub2').value=g('RUBRO')||rub;
+    document.getElementById('li_msg').value=msgM?msgM[1].trim():'';
+    document.getElementById('liForm').style.display='flex';
+  } catch(e){toast('Error: '+e.message,'err');}
+  finally{document.getElementById('liLoader').classList.remove('on');}
 }
 
 function guardarVistage() {
-  const nombre  = document.getElementById('vi_nombre').value.trim();
-  const company = document.getElementById('vi_company').value.trim();
-  const msg     = document.getElementById('vi_msg').value.trim();
-  if (!nombre && !company) { showNotify('Completá al menos nombre o empresa', 'error'); return; }
-
-  const row = [company,'',nombre,'',document.getElementById('vi_rubro').value,'0 - Enviado Linkedin',
-    new Date().toLocaleDateString('es-AR'),'','','','',''];
-  if (!window._vistageRows) window._vistageRows = [];
-  window._vistageRows.unshift(row);
-  renderVistage();
-
-  // Guardar en historial local
-  if (msg) {
-    agregarEntradaHistorial(company||nombre, {tipo:'linkedin', quien:'Comercial', contenido: msg});
+  const nombre=document.getElementById('li_nombre').value.trim();
+  const empresa=document.getElementById('li_empresa').value.trim();
+  if(!nombre&&!empresa){toast('Completá nombre o empresa','err');return;}
+  // Agregar a vistage local
+  const msg=document.getElementById('li_msg').value.trim();
+  const row=[empresa,'',nombre,document.getElementById('li_cargo').value,'',
+    document.getElementById('li_rub2').value,'0 - Enviado Linkedin',
+    new Date().toLocaleDateString('es-AR'),'','',''];
+  if(!vistage) vistage=[];
+  vistage.unshift(row);
+  // Guardar historial del primer mensaje
+  if(msg){
+    const id=mkId();
+    leads[id]=mkLead({id,empresa:empresa||(nombre+' (LinkedIn)'),contacto:nombre,cargo:document.getElementById('li_cargo').value,rubro:document.getElementById('li_rub2').value,medio:'Vistage',estado:'enviado',semaforo:'ok',proxFecha:addDaysISO(todayISO(),7)});
+    leads[id]._lastEdit=Date.now();
+    addHist(id,{tipo:'linkedin',quien:'Comercial',contenido:msg});
   }
-
-  if (SCRIPT_URL) {
-    callScript('addVistage', {company, nombre, rubro:document.getElementById('vi_rubro').value, primerMensaje:msg}).catch(()=>{});
-  }
-
-  showNotify(`✓ ${nombre||company} guardado en Vistage`, 'success');
-  ['liTexto','liUrl','liRubro','vi_nombre','vi_company','vi_cargo','vi_rubro','vi_msg'].forEach(id =>
-    document.getElementById(id).value = '');
-  document.getElementById('liFormContainer').style.display = 'none';
+  if(SCRIPT) callScript('addVistage',{company:empresa,nombre,rubro:document.getElementById('li_rub2').value,primerMensaje:msg}).catch(()=>{});
+  drawVistage();
+  toast(`${nombre||empresa} guardado en Vistage ✓`,'ok');
+  ['li_texto','li_url','li_rubro','li_nombre','li_empresa','li_cargo','li_rub2','li_msg'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('liForm').style.display='none';
 }
 
-// ════════════════════════════════════════════
-// NUEVO LEAD MANUAL
-// ════════════════════════════════════════════
-function guardarNuevoLead() {
-  const empresa = document.getElementById('nl_empresa').value.trim();
-  if (!empresa) { showNotify('Completá la empresa', 'error'); return; }
+// ══════════════════════════════════════════
+// IA
+// ══════════════════════════════════════════
+async function genSugerencia(l) {
+  document.getElementById('pf_ai_wrap').style.display='none';
+  document.getElementById('aiLoader').classList.add('on');
 
-  setLead({
-    empresa, contacto: document.getElementById('nl_contacto').value,
-    cargo: document.getElementById('nl_cargo').value,
-    rubro: document.getElementById('nl_rubro').value,
-    wpp:   document.getElementById('nl_wpp').value,
-    mail:  document.getElementById('nl_mail').value,
-    medio: document.getElementById('nl_origen').value,
-    estado: document.getElementById('nl_estado').value,
-    proxAccion: hoy(0), semaforo:'🟡 Hoy',
-    proxPaso: document.getElementById('nl_paso').value,
-  });
+  const hist=(l.historial||[]).slice(-4);
+  const histTxt=hist.length
+    ? hist.map(h=>`[${h.quien} via ${h.tipo}]: ${h.contenido}`).join('\n')
+    : `Último paso: ${l.proxPaso||'ninguno'}`;
+  const ci=canalInfo(l);
+  const sugeridaFecha=fmtFechaDisplay(addDaysISO(todayISO(),3));
 
-  renderAll();
-  closeModal('modalNuevoLead');
-  showNotify(`✓ ${empresa} agregado`, 'success');
-  ['nl_empresa','nl_contacto','nl_cargo','nl_rubro','nl_wpp','nl_mail','nl_paso'].forEach(id =>
-    document.getElementById(id).value = '');
-}
+  const prompt=CTX+`\n\nLEAD: ${l.empresa} / ${l.contacto}\n${l.rubro?'Rubro: '+l.rubro:''}\nCanal disponible: ${ci.ico} ${ci.key==='wpp'?'WhatsApp ('+ci.label+')':ci.key==='mail'?'Email ('+ci.label+')':'Solo LinkedIn'}\nEstado: ${estadoToStr(l.estado)}\n\nÚLTIMAS INTERACCIONES:\n${histTxt}\n\nRespondé en este formato EXACTO:\nTEMA: [qué venimos hablando — 1 línea]\nSUGERENCIA: [qué hacer ahora y por qué canal — 1 línea]\nCUÁNDO: [${sugeridaFecha}]\nMENSAJE:\n[el mensaje listo para enviar por ${ci.key==='wpp'?'WhatsApp':ci.key==='mail'?'Email':'LinkedIn'}, máx 5 líneas, tono argentino directo]`;
 
-function copiarMensajeAI() {
-  const msg = document.getElementById('pf_ai_msg').textContent.trim();
-  if (!msg) { showNotify('No hay mensaje para copiar', 'error'); return; }
-  navigator.clipboard.writeText(msg).then(() => {
-    showNotify('✓ Mensaje copiado', 'success');
-    // Auto-guardar en historial como mensaje generado por IA
-    const lead = getLead(currentPerfilKey);
-    if (lead) {
-      agregarEntradaHistorial(lead.empresa, {
-        tipo: (lead.wpp && lead.wpp!=='nan') ? 'wpp' : (lead.mail && lead.mail!=='nan') ? 'mail' : 'linkedin',
-        quien: 'Comercial',
-        contenido: '[IA] ' + msg
-      });
-      renderHistorialPerfil(getLead(currentPerfilKey));
-    }
-  });
-}
-
-// ════════════════════════════════════════════
-// CLAUDE API
-// ════════════════════════════════════════════
-async function callClaude(prompt) {
-  const HEADERS = {
-    'Content-Type': 'application/json',
-    'x-api-key': API_KEY,
-    'anthropic-version': '2023-06-01',
-    'anthropic-dangerous-direct-browser-access': 'true'
-  };
-  const BODY = JSON.stringify({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1000,
-    messages: [{ role:'user', content: prompt }]
-  });
-
-  // Intentar directo con el header correcto
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', headers: HEADERS, body: BODY
-    });
-    if (res.ok) { const d = await res.json(); return d.content[0].text; }
-    const err = await res.json().catch(()=>({}));
-    if (res.status === 401) throw new Error('API Key inválida — verificá en ⚙️ Configuración');
-    throw new Error(err.error?.message || 'Error API ' + res.status);
-  } catch(fetchErr) {
-    // Si sigue fallando por red, intentar proxy como fallback
-    if (fetchErr.message.startsWith('API Key') || fetchErr.message.startsWith('Error API')) throw fetchErr;
-    try {
-      const res2 = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.anthropic.com/v1/messages'), {
-        method: 'POST', headers: HEADERS, body: BODY
-      });
-      if (!res2.ok) { const e = await res2.json().catch(()=>({})); throw new Error(e.error?.message||'Error proxy'); }
-      const d2 = await res2.json(); return d2.content[0].text;
-    } catch(proxyErr) {
-      throw new Error('Sin conexión a la IA: ' + proxyErr.message);
-    }
-  }
+    const r=await aiCall(prompt);
+    const msgM=r.match(/MENSAJE:\s*([\s\S]+)/i);
+    const ctx=msgM?r.substring(0,r.indexOf(msgM[0])).trim():r;
+    document.getElementById('pf_ai_ctx').textContent=ctx;
+    document.getElementById('pf_ai_msg').textContent=msgM?msgM[1].trim():'';
+    document.getElementById('pf_ai_wrap').style.display='block';
+  } catch(e){
+    document.getElementById('pf_ai_ctx').textContent='Error: '+e.message;
+    document.getElementById('pf_ai_wrap').style.display='block';
+  } finally { document.getElementById('aiLoader').classList.remove('on'); }
 }
 
-// ════════════════════════════════════════════
-// GOOGLE APPS SCRIPT
-// ════════════════════════════════════════════
-async function callScript(action, body={}) {
-  if (!SCRIPT_URL) throw new Error('Script URL no configurada');
-  const res = await fetch(SCRIPT_URL + '?action=' + action, {
+function reanalizar() { const l=leads[currentId]; if(l) genSugerencia(l); }
+
+function copyMsgAI() {
+  const msg=document.getElementById('pf_ai_msg').textContent.trim();
+  if(!msg){toast('No hay mensaje','err');return;}
+  navigator.clipboard.writeText(msg).then(()=>{
+    toast('✓ Copiado','ok');
+    if(currentId) addHist(currentId,{tipo:canal,quien:'Comercial',contenido:'[IA sugerido] '+msg});
+    drawHistorial(leads[currentId]);
+  });
+}
+
+async function genMsg() {
+  if(!currentId)return;
+  const l=leads[currentId];
+  const tipo=document.getElementById('msg_tipo').value;
+  const ctx=document.getElementById('msg_ctx').value.trim();
+  const ci=canalInfo(l);
+  const canalNombre=canal==='wpp'?'WhatsApp':canal==='li'?'LinkedIn':'Email';
+
+  const hist=(l.historial||[]).slice(-3).map(h=>`[${h.quien} via ${h.tipo}]: ${h.contenido}`).join('\n')||l.proxPaso||'sin historial';
+
+  const prompt=CTX+`\n\nGenerame un mensaje de ${canalNombre} para:\nEmpresa: ${l.empresa}\nContacto: ${l.contacto}${l.cargo?' ('+l.cargo+')':''}\n${l.rubro?'Rubro: '+l.rubro:''}\n${l.wpp&&l.wpp!=='nan'?'WhatsApp: '+l.wpp:l.mail&&l.mail!=='nan'?'Email: '+l.mail:'Sin contacto directo — solo LinkedIn'}\n\nTipo de mensaje: ${tipo}\nHistorial:\n${hist}\n${ctx?'\nINFO NUEVA / RESPUESTA RECIBIDA:\n'+ctx:''}\n\nEscribí SOLO el mensaje. Sin comillas ni explicaciones.${canal==='mail'?'\nPrimera línea: Asunto: ...':''}`;
+
+  document.getElementById('msgLoader').classList.add('on');
+  document.getElementById('msgWrap').style.display='none';
+  document.getElementById('msgPost').style.display='none';
+
+  try {
+    const r=await aiCall(prompt);
+    document.getElementById('msgBody').textContent=r;
+    document.getElementById('msgWrap').style.display='block';
+    document.getElementById('msgPost').style.display='flex';
+    document.getElementById('msgPost').style.flexDirection='column';
+    // Auto-guardar como borrador
+    addHist(currentId,{tipo:canal,quien:'Comercial',contenido:'[BORRADOR] '+r});
+    drawHistorial(l);
+  } catch(e){toast('Error IA: '+e.message,'err');}
+  finally{document.getElementById('msgLoader').classList.remove('on');}
+}
+
+// ══════════════════════════════════════════
+// ANTHROPIC API
+// ══════════════════════════════════════════
+async function aiCall(prompt) {
+  if(!KEY) throw new Error('Configurá la API Key en ⚙️ Config');
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    body: JSON.stringify({action,...body}),
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':KEY,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-haiku-4-5-20251001',
+      max_tokens:1000,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  if(!res.ok){
+    const e=await res.json().catch(()=>({}));
+    if(res.status===401) throw new Error('API Key inválida');
+    throw new Error(e.error?.message||'Error '+res.status);
+  }
+  const d=await res.json();
+  return d.content[0].text;
+}
+
+// ══════════════════════════════════════════
+// APPS SCRIPT
+// ══════════════════════════════════════════
+async function callScript(action, body={}) {
+  if(!SCRIPT) throw new Error('Script URL no configurada');
+  const res=await fetch(SCRIPT+'?action='+action,{
+    method:'POST',body:JSON.stringify({action,...body}),
     headers:{'Content-Type':'application/json'}
   });
-  const d = await res.json();
-  if (d.error) throw new Error(d.error);
+  const d=await res.json();
+  if(d.error) throw new Error(d.error);
   return d;
 }
 
-function saveScriptUrl() {
-  const url = document.getElementById('scriptUrl').value.trim();
-  if (!url.startsWith('https://script.google.com')) {
-    showNotify('URL inválida', 'error'); return;
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+function saveConfig() {
+  const k  = document.getElementById('cfg_key').value.trim();
+  const s  = document.getElementById('cfg_script').value.trim();
+  const csv= document.getElementById('cfg_csv_id')?.value.trim();
+  if(k)  { KEY=k;    localStorage.setItem('efcrm_key',k); }
+  if(s)  { SCRIPT=s; localStorage.setItem('efcrm_script',s); }
+  if(csv){ localStorage.setItem('efcrm_csv_id', csv); }
+  document.getElementById('cfgStatus').innerHTML='<span style="color:var(--sage)">✓ Guardado</span>';
+  toast('Configuración guardada ✓','ok');
+  // Intentar sync de inmediato con la nueva config
+  syncFromSheets(false);
+}
+
+// Cargar config guardada en los campos
+function loadConfigFields() {
+  const csvId = localStorage.getItem('efcrm_csv_id');
+  if(csvId && document.getElementById('cfg_csv_id')) {
+    document.getElementById('cfg_csv_id').value = csvId;
   }
-  SCRIPT_URL = url;
-  localStorage.setItem('ef_script_url', url);
-  document.getElementById('scriptStatus').innerHTML = '<span style="color:var(--green)">✓ Guardada</span>';
-  showNotify('URL guardada ✓', 'success');
 }
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════
 // UI HELPERS
-// ════════════════════════════════════════════
-function cambiarHojaSheets(hoja) {
-  const gids = {
-    leads:   '1488122141',
-    vistage: '530322819'
-  };
-  const gid = gids[hoja] || gids.leads;
-  document.getElementById('sheetsFrame').src =
-    'https://docs.google.com/spreadsheets/d/1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87/edit?usp=sharing&rm=minimal&gid=' + gid;
-  // Resaltar tab activo
-  document.getElementById('tab-leads-sh').style.color = hoja==='leads' ? 'var(--gold)' : '';
-  document.getElementById('tab-leads-sh').style.borderColor = hoja==='leads' ? 'var(--gold)' : '';
-  document.getElementById('tab-vistage-sh').style.color = hoja==='vistage' ? 'var(--gold)' : '';
-  document.getElementById('tab-vistage-sh').style.borderColor = hoja==='vistage' ? 'var(--gold)' : '';
+// ══════════════════════════════════════════
+function goPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-link').forEach(b=>b.classList.remove('on'));
+  document.getElementById('panel-'+name)?.classList.add('on');
+  if(btn) btn.classList.add('on');
+  if(name==='tabla') drawTabla();
+  const titles={semana:'Plan <em>Semanal</em>',leads:'<em>Leads</em> 2026',vistage:'<em>Vistage</em> 2026',nuevo:'Cargar desde <em>LinkedIn</em>',tabla:'<em>Tabla</em> — Edición rápida',config:'<em>Configuración</em>'};
+  document.getElementById('pgTitle').innerHTML=titles[name]||name;
 }
 
-function showPanel(name, btn) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
-  if (btn) btn.classList.add('active');
-  const titles = {
-    semana:'Plan <em>Semanal</em>', leads:'<em>Leads</em> 2026',
-    vistage:'<em>Vistage</em> 2026', cargar:'Cargar desde <em>LinkedIn</em>',
-    sheets:'Editar <em>Planilla</em>', config:'<em>Configuración</em>'
-  };
-  document.getElementById('pageTitle').innerHTML = titles[name]||name;
+function openModal(id){document.getElementById(id)?.classList.add('on');}
+function closeModal(id){document.getElementById(id)?.classList.remove('on');}
+
+function setCanal(c, el) {
+  canal=c;
+  document.querySelectorAll('.canal-opt').forEach(b=>b.classList.remove('on'));
+  if(el) el.classList.add('on');
 }
 
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function selectCanal(c, el) {
-  selectedCanal = c;
-  document.querySelectorAll('#pf_canal_row .canal-opt').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
+function toggleSection(show, hide) {
+  const s=document.getElementById(show);
+  const h=document.getElementById(hide);
+  const visible=s.style.display==='flex';
+  if(h) h.style.display='none';
+  s.style.display=visible?'none':'flex';
+  s.style.flexDirection='column';
 }
 
-function copyElText(id) {
-  const text = document.getElementById(id).textContent;
-  navigator.clipboard.writeText(text).then(() => showNotify('✓ Copiado', 'success'));
+function copyEl(id) {
+  navigator.clipboard.writeText(document.getElementById(id).textContent.trim())
+    .then(()=>toast('✓ Copiado','ok'));
 }
 
-function showNotify(msg, type='success') {
-  const n = document.getElementById('notify');
-  n.textContent = msg; n.className = `notify show ${type}`;
-  setTimeout(() => n.classList.remove('show'), 3000);
+function toast(msg, type='ok') {
+  const n=document.getElementById('notify');
+  n.textContent=msg; n.className='notify on '+type;
+  clearTimeout(n._t);
+  n._t=setTimeout(()=>n.classList.remove('on'),3000);
 }
 
-// Cerrar modal al clickear overlay
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
-});
+// Cerrar overlay al click en fondo
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('on');}));
 
-// ════════════════════════════════════════════
+
+// ══════════════════════════════════════════
+// TABLA EDITABLE
+// ══════════════════════════════════════════
+function drawTabla() {
+  const q = (document.getElementById('tablaSearch')?.value||'').toLowerCase();
+  const tbody = document.getElementById('tablaBody');
+  const count = document.getElementById('tablaCount');
+  if (!tbody) return;
+
+  const all = Object.values(leads)
+    .filter(l => !q || l.empresa.toLowerCase().includes(q) || l.contacto.toLowerCase().includes(q))
+    .sort((a,b) => {
+      const ord={urg:0,hoy:1,ok:2};
+      return (ord[a.semaforo]??3)-(ord[b.semaforo]??3);
+    });
+
+  if (count) count.textContent = all.length + ' leads';
+
+  if (!all.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--fog)">Sin leads</td></tr>';
+    return;
+  }
+
+  const semEmoji = {urg:'🔴',hoy:'🟡',ok:'🟢'};
+  tbody.innerHTML = all.map(l => `
+    <tr>
+      <td style="font-weight:600;font-size:12.5px;max-width:140px">
+        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.empresa}</div>
+      </td>
+      <td style="font-size:12px;color:var(--fog2);max-width:120px">
+        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.contacto}</div>
+        ${l.cargo?`<div style="font-size:10px;color:var(--fog)">${l.cargo}</div>`:''}
+      </td>
+      <td style="font-size:11px">
+        ${l.wpp&&l.wpp!=='nan'?`<div style="color:var(--sage)">💬 ${l.wpp}</div>`:''}
+        ${l.mail&&l.mail!=='nan'?`<div style="color:var(--gold)">📧 ${l.mail}</div>`:''}
+        ${!l.wpp&&!l.mail?`<div style="color:var(--sky)">💼 LinkedIn</div>`:''}
+      </td>
+      <td>
+        <select onchange="quickUpdate('${l.id}','estado',this.value)"
+          style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:4px 6px;border-radius:6px;font-size:11px;outline:none">
+          <option value="nuevo"     ${l.estado==='nuevo'?'selected':''}>🆕 Nuevo</option>
+          <option value="enviado"   ${l.estado==='enviado'?'selected':''}>✉️ Enviado</option>
+          <option value="tratativa" ${l.estado==='tratativa'?'selected':''}>🤝 Tratativa</option>
+          <option value="pausa"     ${l.estado==='pausa'?'selected':''}>⏸ Pausa</option>
+          <option value="perdido"   ${l.estado==='perdido'?'selected':''}>✗ Perdido</option>
+        </select>
+      </td>
+      <td>
+        <select onchange="quickUpdate('${l.id}','semaforo',this.value)"
+          style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:4px 6px;border-radius:6px;font-size:11px;outline:none">
+          <option value="urg" ${l.semaforo==='urg'?'selected':''}>🔴 Urgente</option>
+          <option value="hoy" ${l.semaforo==='hoy'?'selected':''}>🟡 Esta semana</option>
+          <option value="ok"  ${l.semaforo==='ok'?'selected':''}>🟢 Al día</option>
+        </select>
+      </td>
+      <td>
+        <input type="date" value="${l.proxFecha||''}"
+          onchange="quickUpdate('${l.id}','proxFecha',this.value)"
+          style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:4px 7px;border-radius:6px;font-family:'DM Mono',monospace;font-size:11px;outline:none" />
+      </td>
+      <td style="max-width:200px">
+        <input type="text" value="${(l.proxPaso||'').replace(/"/g,'&quot;')}"
+          onchange="quickUpdate('${l.id}','proxPaso',this.value)"
+          placeholder="Próximo paso..."
+          style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:4px 7px;border-radius:6px;font-size:11px;outline:none;width:100%" />
+      </td>
+      <td>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-ghost btn-sm" onclick="abrirEdicion('${l.id}')" title="Editar">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="abrirPerfil('${l.id}')" title="Perfil">👤</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+// Edición inline directa desde la tabla
+function quickUpdate(id, campo, valor) {
+  if (!leads[id]) return;
+  leads[id][campo] = valor;
+  leads[id]._lastEdit = Date.now();
+  saveLocal();
+  if (SCRIPT) syncLeadToSheet(leads[id]);
+  drawWeek();
+  drawLeads();
+  toast('✓ Actualizado','ok');
+}
+
+// Abrir modal editor completo
+function abrirEdicion(id) {
+  const l = leads[id]; if(!l) return;
+  document.getElementById('ed_id').value       = id;
+  document.getElementById('ed_titulo').textContent = l.empresa + (l.contacto?' · '+l.contacto:'');
+  document.getElementById('ed_empresa').value  = l.empresa;
+  document.getElementById('ed_contacto').value = l.contacto;
+  document.getElementById('ed_cargo').value    = l.cargo||'';
+  document.getElementById('ed_rubro').value    = l.rubro||'';
+  document.getElementById('ed_wpp').value      = l.wpp&&l.wpp!=='nan'?l.wpp:'';
+  document.getElementById('ed_mail').value     = l.mail&&l.mail!=='nan'?l.mail:'';
+  document.getElementById('ed_fecha').value    = l.proxFecha||'';
+  document.getElementById('ed_sem').value      = l.semaforo||'ok';
+  document.getElementById('ed_estado').value   = l.estado||'nuevo';
+  document.getElementById('ed_paso').value     = l.proxPaso||'';
+  openModal('mEditar');
+}
+
+function guardarEdicion() {
+  const id = document.getElementById('ed_id').value;
+  if (!leads[id]) return;
+  const l = leads[id];
+  l.empresa   = document.getElementById('ed_empresa').value.trim() || l.empresa;
+  l.contacto  = document.getElementById('ed_contacto').value.trim();
+  l.cargo     = document.getElementById('ed_cargo').value.trim();
+  l.rubro     = document.getElementById('ed_rubro').value.trim();
+  l.wpp       = document.getElementById('ed_wpp').value.trim();
+  l.mail      = document.getElementById('ed_mail').value.trim();
+  l.proxFecha = document.getElementById('ed_fecha').value;
+  l.semaforo  = document.getElementById('ed_sem').value;
+  l.estado    = document.getElementById('ed_estado').value;
+  l.proxPaso  = document.getElementById('ed_paso').value.trim();
+  l._lastEdit = Date.now();
+  saveLocal();
+  if (SCRIPT) syncLeadToSheet(l);
+  closeModal('mEditar');
+  drawAll();
+  drawTabla();
+  toast('✓ Lead actualizado','ok');
+}
+
+function eliminarLead() {
+  const id = document.getElementById('ed_id').value;
+  if (!leads[id]) return;
+  const nombre = leads[id].empresa;
+  if (!confirm(`¿Eliminás a ${nombre}? Esta acción no se puede deshacer.`)) return;
+  delete leads[id];
+  saveLocal();
+  closeModal('mEditar');
+  drawAll();
+  drawTabla();
+  toast(`${nombre} eliminado`,'info');
+}
+
+// Llamar drawTabla cuando se abre ese panel
+// ══════════════════════════════════════════
 // ARRANQUE
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════
 window.onload = checkSetup;
 </script>
 </body>
