@@ -909,6 +909,8 @@ function mkLead(d={}) {
     proxPaso:   d.proxPaso   || '',
     historial:  d.historial  || [],
     creadoEn:   d.creadoEn   || Date.now(),
+    _editados:  d._editados  || [],   // campos editados manualmente — el Sheets no los pisa
+    _lastEdit:  d._lastEdit  || null,
   };
 }
 
@@ -1091,21 +1093,22 @@ function mergeLeadsCSV(csv) {
       proxFecha:fechaISO,
       proxPaso: (r[10]||'').trim(),           // col K = Próximo Paso
     };
-    // Si el lead fue editado localmente en los últimos 5 min, preservar sus datos
-    const editedRecently = existing && (Date.now() - (existing._lastEdit||0)) < 5*60*1000;
+    // Merge inteligente: el Sheets actualiza campos NO editados manualmente
+    // Los campos en _editados son intocables — el usuario los gestiona desde la app
+    const editados = existing ? (existing._editados || []) : [];
+    const merged = { ...sheetData };
+    editados.forEach(campo => {
+      if (existing && existing[campo] !== undefined) {
+        merged[campo] = existing[campo]; // preservar valor local
+      }
+    });
     leads[id] = mkLead({
       id,
-      ...sheetData,
-      // Preservar siempre: historial, creadoEn, _lastEdit
+      ...merged,
       historial: existing ? existing.historial : [],
       creadoEn:  existing ? existing.creadoEn  : Date.now(),
       _lastEdit: existing ? existing._lastEdit  : null,
-      // Si fue editado reciente, preservar estado/semáforo/fecha local
-      ...(editedRecently ? {
-        estado:    existing.estado,
-        semaforo:  existing.semaforo,
-        proxFecha: existing.proxFecha,
-      } : {}),
+      _editados: editados, // preservar qué campos fueron editados
     });
     seen.add(id);
   });
@@ -1506,6 +1509,8 @@ function saveLead() {
   l.semaforo   = document.getElementById('pf_sem').value;
   l.estado     = document.getElementById('pf_estado').value;
   l._lastEdit  = Date.now();
+  // Marcar estos campos como editados manualmente — el Sheets no los va a pisar
+  l._editados  = [...new Set([...(l._editados||[]), 'proxFecha','semaforo','estado'])];
   saveLocal();
   if(SCRIPT) syncLeadToSheet(l);
   drawAll();
@@ -1545,6 +1550,7 @@ function confirmarEnvio() {
   l.proxFecha=addDaysISO(todayISO(),dias);
   l.semaforo='ok';
   l.estado='enviado';
+  l._editados=[...new Set([...(l._editados||[]),'proxFecha','semaforo','estado'])];
   saveLocal();
   if(SCRIPT) syncLeadToSheet(l);
   document.getElementById('msgPost').style.display='none';
@@ -1842,6 +1848,17 @@ function limpiarCache() {
   syncFromSheets(false);
 }
 
+// Resetear un lead al estado del Sheets (suelta todos sus campos editados)
+function resetLead(id) {
+  if (!leads[id]) return;
+  if (!confirm(`¿Sincronizar "${leads[id].empresa}" desde el Sheets?\nSe van a pisar la fecha y estado locales con los del Sheets.`)) return;
+  leads[id]._editados = [];
+  leads[id]._lastEdit = null;
+  saveLocal();
+  syncFromSheets(false);
+  toast('Sincronizando desde Sheets...', 'info');
+}
+
 // Cargar config guardada en los campos
 function loadConfigFields() {
   const csvId = localStorage.getItem('efcrm_csv_id');
@@ -1984,6 +2001,7 @@ function quickUpdate(id, campo, valor) {
   }
   leads[id][campo] = valor;
   leads[id]._lastEdit = Date.now();
+  leads[id]._editados = [...new Set([...(leads[id]._editados||[]), campo])];
   saveLocal();
   if (SCRIPT) syncLeadToSheet(leads[id]);
   drawAll(); // drawAll en vez de solo drawWeek+drawLeads — garantiza que la semana se actualiza
@@ -2023,6 +2041,7 @@ function guardarEdicion() {
   l.estado    = document.getElementById('ed_estado').value;
   l.proxPaso  = document.getElementById('ed_paso').value.trim();
   l._lastEdit = Date.now();
+  l._editados = [...new Set([...(l._editados||[]), 'proxFecha','semaforo','estado','proxPaso','empresa','contacto','wpp','mail','cargo','rubro'])];
   saveLocal();
   if (SCRIPT) syncLeadToSheet(l);
   closeModal('mEditar');
