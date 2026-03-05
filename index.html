@@ -2,8 +2,14 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Enfoco CRM v2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Enfoco CRM</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Enfoco CRM">
+<meta name="theme-color" content="#0d0d0f">
+<link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ── TOKENS ── */
@@ -306,6 +312,132 @@ body::before{
 /* empty */
 .empty{text-align:center;padding:36px 20px;color:var(--fog)}
 .empty-ico{font-size:28px;margin-bottom:8px}
+
+/* ══════════════════════════════════════
+   RESPONSIVE / MOBILE
+══════════════════════════════════════ */
+
+/* Bottom nav mobile */
+.mobile-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:var(--ink2);border-top:1px solid var(--line);
+  padding:0 0 env(safe-area-inset-bottom);
+}
+.mobile-nav-inner{display:flex;justify-content:space-around;align-items:center;padding:6px 0}
+.mnav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:none;border:none;color:var(--fog);cursor:pointer;
+  padding:6px 14px;border-radius:10px;transition:all .14s;min-width:52px;
+}
+.mnav-btn .mico{font-size:20px;line-height:1}
+.mnav-btn .mlbl{font-size:9px;font-family:'DM Mono',monospace;letter-spacing:.5px;text-transform:uppercase}
+.mnav-btn.on{color:var(--gold)}
+.mnav-btn.on .mico{transform:scale(1.12)}
+
+/* FAB — botón flotante rápido */
+.fab{
+  display:none;position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));right:18px;
+  width:50px;height:50px;border-radius:50%;background:var(--gold);border:none;
+  color:var(--ink);font-size:22px;cursor:pointer;z-index:99;
+  box-shadow:0 4px 16px rgba(232,184,75,.35);transition:transform .15s;
+}
+.fab:active{transform:scale(.93)}
+
+@media (max-width: 700px) {
+
+  /* Layout — ocultar sidebar, mostrar mobile nav */
+  .app{grid-template-columns:1fr !important}
+  .nav{display:none !important}
+  .mobile-nav{display:block}
+  .fab{display:flex;align-items:center;justify-content:center}
+
+  /* Topbar más compacta */
+  .topbar{padding:12px 16px}
+  .topbar-title{font-size:16px}
+  .topbar-right .btn span:not(.ico){display:none} /* ocultar texto, solo icono */
+  .topbar-right{gap:5px}
+
+  /* Content con padding para la nav bottom */
+  .content{
+    padding:14px 14px calc(80px + env(safe-area-inset-bottom));
+  }
+
+  /* SEMANA — scroll horizontal entre días */
+  #weekHeads{
+    display:flex !important;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    gap:10px !important;
+    padding-bottom:4px;
+    scrollbar-width:none;
+  }
+  #weekHeads::-webkit-scrollbar{display:none}
+  #weekHeads .wday-head{
+    min-width:calc(85vw - 28px);
+    scroll-snap-align:center;
+    flex-shrink:0;
+  }
+  /* Columnas días — una a la vez con scroll */
+  .week-cols{
+    display:flex !important;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    gap:10px !important;
+    padding-bottom:8px;
+    scrollbar-width:none;
+  }
+  .week-cols::-webkit-scrollbar{display:none}
+  .wcol{
+    min-width:calc(85vw - 28px) !important;
+    scroll-snap-align:center;
+    flex-shrink:0;
+  }
+
+  /* Pills más grandes en mobile */
+  .pill{padding:11px 14px;border-radius:12px}
+  .pill-name{font-size:13.5px}
+  .pill-sub{font-size:11.5px}
+
+  /* Modales — full screen */
+  .overlay{align-items:flex-end;padding:0}
+  .modal{
+    width:100% !important;max-width:100% !important;
+    border-radius:18px 18px 0 0 !important;
+    max-height:92dvh;overflow-y:auto;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+
+  /* Leads — cards verticales */
+  .lcard{padding:14px}
+  .lcard-body{flex-direction:column;gap:8px}
+
+  /* Tabla — scroll horizontal */
+  #tablaWrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tabla-table{min-width:700px}
+
+  /* Campos más grandes para touch */
+  input[type=text],input[type=email],input[type=password],input[type=date],select,textarea{
+    font-size:16px !important; /* evita zoom en iOS */
+    padding:10px 13px !important;
+  }
+
+  /* Chips / badges más fáciles de tocar */
+  .chip{padding:6px 11px;font-size:11.5px}
+
+  /* Botones acción perfil */
+  .canal-opts{gap:6px}
+  .canal-opt{padding:8px 12px;font-size:12px}
+
+  /* Historial más legible */
+  .hist-entry{padding:12px 14px}
+  .hist-msg{font-size:13px;line-height:1.6}
+
+  /* Setup screen */
+  .setup-box{margin:20px;padding:24px}
+}
+
 </style>
 </head>
 <body>
@@ -382,7 +514,7 @@ body::before{
         <!-- Headers fijos -->
         <div id="weekHeads" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px"></div>
         <!-- Columnas fijas — NUNCA se recrean, solo se actualiza innerHTML -->
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;align-items:start">
+        <div class="week-cols" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;align-items:start">
           <div class="wcol" id="wc0"></div>
           <div class="wcol" id="wc1"></div>
           <div class="wcol" id="wc2"></div>
@@ -2297,5 +2429,41 @@ function getTonoActivo() {
 // ══════════════════════════════════════════
 window.onload = checkSetup;
 </script>
+
+<!-- MOBILE BOTTOM NAV -->
+<div class="mobile-nav" id="mobileNav">
+  <div class="mobile-nav-inner">
+    <button class="mnav-btn on" id="mn_semana" onclick="goPanel('semana',this);syncMobileNav('semana')">
+      <span class="mico">📅</span><span class="mlbl">Semana</span>
+    </button>
+    <button class="mnav-btn" id="mn_leads" onclick="goPanel('leads',this);syncMobileNav('leads')">
+      <span class="mico">💼</span><span class="mlbl">Leads</span>
+    </button>
+    <button class="mnav-btn" id="mn_tono" onclick="goPanel('tono',this);syncMobileNav('tono')">
+      <span class="mico">🎙️</span><span class="mlbl">Tono</span>
+    </button>
+    <button class="mnav-btn" id="mn_config" onclick="goPanel('config',this);syncMobileNav('config')">
+      <span class="mico">⚙️</span><span class="mlbl">Config</span>
+    </button>
+  </div>
+</div>
+
+<!-- FAB — abrir nuevo lead rápido -->
+<button class="fab" onclick="openNewLead()" title="Nuevo lead">＋</button>
+
+<script>
+function syncMobileNav(name) {
+  document.querySelectorAll('.mnav-btn').forEach(b => b.classList.remove('on'));
+  const btn = document.getElementById('mn_' + name);
+  if (btn) btn.classList.add('on');
+}
+
+// Sincronizar mobile nav cuando se cambia panel desde sidebar
+const _goPanelOrig = goPanel;
+// Patchear goPanel para que también sincronice mobile nav
+const _goPanel = goPanel;
+window.addEventListener('DOMContentLoaded', () => {});
+</script>
+
 </body>
 </html>
