@@ -554,7 +554,7 @@ body::before{
       <div class="ai-wrap" id="pf_ai_wrap" style="display:none">
         <div class="ai-head">
           <div class="ai-dot"></div>
-          <div class="ai-label">Análisis + recomendación</div>
+          <div class="ai-label">Análisis · Ángulo · Mensaje</div>
           <div style="margin-left:auto"><button class="copy-btn" onclick="copyEl('pf_ai_ctx')">📋</button></div>
         </div>
         <div class="ai-body" id="pf_ai_ctx"></div>
@@ -747,12 +747,43 @@ body::before{
 const SHEET_ID   = '1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87';
 const GID_LEADS  = '1488122141';
 const GID_VISTAGE= '530322819';
-const CTX = `Sos el asistente comercial de Enfoco Films, productora audiovisual de Buenos Aires.
-SERVICIOS: video corporativo, streaming, publicidad, fotografía, animación.
-DIRECTOR: Dami Guelman, miembro Vistage G-308.
-CLIENTES REF: GS1, INTA, Amcor, Essilor Luxottica, BAT, CPACF.
-TONO: directo, argentino, de par a par. Sin protocolo.
-REGLA: mencionar Vistage G-308 en primer contacto. Máx 5 líneas WPP/LinkedIn. Terminar con UNA pregunta.`;
+const CTX = `Sos el asistente comercial de Enfoco Films.
+
+SOBRE ENFOCO FILMS:
+Somos una productora audiovisual con base en Buenos Aires, fundada y dirigida por Dami Guelman. Producimos contenido audiovisual para empresas que quieren comunicar con impacto real: desde videos institucionales y campañas de publicidad hasta transmisiones en vivo, cobertura de eventos y contenido para redes. Trabajamos con marcas que valoran la calidad y la narrativa, no solo el formato.
+
+TRABAJOS Y CLIENTES DE REFERENCIA:
+- GS1 Argentina: video institucional y contenido para eventos
+- INTA: producción de serie documental y cobertura de campo
+- Amcor: video corporativo y animación de producto
+- Essilor Luxottica: campaña publicitaria y fotografía de producto
+- BAT (British American Tobacco): contenido interno y eventos
+- CPACF: streaming de congresos y video institucional
+- Expoagro: cobertura de streaming en vivo del evento
+- Automechanika: cobertura audiovisual de stand y feria
+
+SERVICIOS CONCRETOS QUE OFRECEMOS:
+1. Video corporativo / institucional — para presentaciones, web, inversores
+2. Publicidad y contenido para redes — reels, spots, campañas
+3. Streaming y transmisión en vivo — eventos, lanzamientos, congresos
+4. Fotografía corporativa y de producto
+5. Animación y motion graphics
+6. Cobertura de eventos y ferias
+7. Podcast en formato video (presencial o virtual)
+8. Workshops y tutoriales en formato video
+
+DAMI GUELMAN — DIRECTOR:
+Miembro activo de Vistage G-308 (grupo de CEOs y empresarios). Esto es clave para el primer contacto con otros miembros Vistage: somos pares, no proveedores.
+
+TONO Y ESTILO:
+Profesional pero cercano. No usamos jerga de agencia ni frases vacías como "potenciar tu marca" o "llevar tu comunicación al siguiente nivel". Hablamos claro, de lo concreto, como lo haría alguien que sabe del negocio. Podemos ser directos y frescos sin ser informales al extremo. Nunca sonar como un bot o un template genérico.
+
+REGLAS OPERATIVAS:
+- En primer contacto con Vistage: mencionar que Dami es del G-308, de par a par
+- Mensajes de WhatsApp/LinkedIn: máximo 5 líneas, terminar con UNA sola pregunta concreta
+- Emails: pueden ser más largos, siempre con asunto claro en la primera línea
+- Nunca prometer plazos ni precios en el mensaje
+- El objetivo siempre es lograr UNA reunión o llamada, no cerrar por mensaje`;
 
 // ══════════════════════════════════════════
 // ESTADO GLOBAL
@@ -1029,20 +1060,21 @@ function parseCsv(text) {
 
 function parseFechaToISO(str) {
   if (!str) return '';
-  str = str.trim();
-  // YYYY-MM-DD
+  str = str.trim().replace(/\r/g,'');
+  // Ya es YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.substring(0,10);
-  // D/M/YYYY o DD/MM/YYYY (Google Sheets formato AR)
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
-    const parts = str.split('/');
-    const d = parts[0], m = parts[1], y = parts[2].split(' ')[0]; // trim tiempo si hay
+  // DD/MM/YYYY o D/M/YYYY (formato AR del Sheets)
+  const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (slashMatch) {
+    let [,d,m,y] = slashMatch;
+    if (y.length===2) y='20'+y;
     return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
   }
-  // M/D/YYYY (formato US que a veces manda Google)
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
-    // Igual que arriba — el orden lo inferimos por el contexto
-    const parts = str.split('/');
-    const d = parts[0], m = parts[1], y = parts[2].split(' ')[0];
+  // DD-MM-YYYY o D-M-YY
+  const dashMatch = str.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})/);
+  if (dashMatch) {
+    let [,d,m,y] = dashMatch;
+    if (y.length===2) y='20'+y;
     return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
   }
   return '';
@@ -1376,7 +1408,7 @@ function drawHistorial(l) {
 function saveLead() {
   if(!currentId||!leads[currentId])return;
   const l=leads[currentId];
-  l.proxFecha  = document.getElementById('pf_fecha').value;
+  l.proxFecha  = (document.getElementById('pf_fecha').value||'').trim();
   l.semaforo   = document.getElementById('pf_sem').value;
   l.estado     = document.getElementById('pf_estado').value;
   l._lastEdit  = Date.now();
@@ -1530,15 +1562,47 @@ async function genSugerencia(l) {
   const ci=canalInfo(l);
   const sugeridaFecha=fmtFechaDisplay(addDaysISO(todayISO(),3));
 
-  const prompt=CTX+`\n\nLEAD: ${l.empresa} / ${l.contacto}\n${l.rubro?'Rubro: '+l.rubro:''}\nCanal disponible: ${ci.ico} ${ci.key==='wpp'?'WhatsApp ('+ci.label+')':ci.key==='mail'?'Email ('+ci.label+')':'Solo LinkedIn'}\nEstado: ${estadoToStr(l.estado)}\n\nÚLTIMAS INTERACCIONES:\n${histTxt}\n\nRespondé en este formato EXACTO:\nTEMA: [qué venimos hablando — 1 línea]\nSUGERENCIA: [qué hacer ahora y por qué canal — 1 línea]\nCUÁNDO: [${sugeridaFecha}]\nMENSAJE:\n[el mensaje listo para enviar por ${ci.key==='wpp'?'WhatsApp':ci.key==='mail'?'Email':'LinkedIn'}, máx 5 líneas, tono argentino directo]`;
+  const prompt=CTX+`\n\nLEAD A ANALIZAR:
+Empresa: ${l.empresa}
+Contacto: ${l.contacto}${l.cargo?' — '+l.cargo:''}
+Rubro/Industria: ${l.rubro||'No especificado'}
+Canal disponible: ${ci.key==='wpp'?'WhatsApp '+ci.label:ci.key==='mail'?'Email '+ci.label:'Solo LinkedIn'}
+Estado actual: ${estadoToStr(l.estado)}
+Próximo paso anotado: ${l.proxPaso||'ninguno'}
+
+ÚLTIMAS INTERACCIONES:
+${histTxt}
+
+Analizá este lead pensando en qué puede necesitar su empresa y qué le podemos ofrecer nosotros concretamente.
+
+Respondé en este formato EXACTO (sin títulos extra, sin markdown):
+ANÁLISIS: [En 2-3 líneas: qué hace su empresa, qué necesidades audiovisuales probables tiene, y cuál de nuestros servicios encaja mejor. Sé específico, no genérico.]
+ÁNGULO: [La propuesta concreta que tiene más chances — en 1 línea. Ej: "Video institucional para su proceso de ventas B2B" o "Cobertura de su próximo evento con streaming"]
+SIGUIENTE PASO: [qué hacer ahora, por qué canal, en 1 línea]
+CUÁNDO: [${sugeridaFecha}]
+MENSAJE:
+[Mensaje listo para enviar por ${ci.key==='wpp'?'WhatsApp':ci.key==='mail'?'Email':'LinkedIn'}. Máx 5 líneas. Que suene a Dami, no a una agencia. Terminar con UNA pregunta concreta.]`;
 
   try {
     const r=await aiCall(prompt);
-    const msgM=r.match(/MENSAJE:\s*([\s\S]+)/i);
-    const ctx=msgM?r.substring(0,r.indexOf(msgM[0])).trim():r;
-    document.getElementById('pf_ai_ctx').textContent=ctx;
-    document.getElementById('pf_ai_msg').textContent=msgM?msgM[1].trim():'';
-    document.getElementById('pf_ai_wrap').style.display='block';
+    const msgM = r.match(/MENSAJE:\s*([\s\S]+)/i);
+    // Extraer secciones del análisis
+    const analisisM = r.match(/ANÁLISIS:\s*([^\n]+(?:\n[^\n]+)*?)(?=\nÁNGULO:|\nSIGUIENTE|\nCUÁNDO:|\nMENSAJE:|$)/i);
+    const anguloM   = r.match(/ÁNGULO:\s*(.+)/i);
+    const pasoM     = r.match(/SIGUIENTE PASO:\s*(.+)/i);
+    const cuandoM   = r.match(/CUÁNDO:\s*(.+)/i);
+
+    // Armar el bloque de análisis
+    let ctxHtml = '';
+    if (analisisM) ctxHtml += analisisM[1].trim();
+    if (anguloM)   ctxHtml += '\n\n💡 ' + anguloM[1].trim();
+    if (pasoM)     ctxHtml += '\n⚡ ' + pasoM[1].trim();
+    if (cuandoM)   ctxHtml += '\n📅 ' + cuandoM[1].trim();
+    if (!ctxHtml)  ctxHtml = r.replace(/MENSAJE:[\s\S]*/i,'').trim();
+
+    document.getElementById('pf_ai_ctx').textContent = ctxHtml;
+    document.getElementById('pf_ai_msg').textContent = msgM ? msgM[1].trim() : '';
+    document.getElementById('pf_ai_wrap').style.display = 'block';
   } catch(e){
     const esKey = !KEY || e.message.includes('Key') || e.message.includes('401');
     document.getElementById('pf_ai_ctx').textContent = esKey
@@ -1816,12 +1880,16 @@ function drawTabla() {
 // Edición inline directa desde la tabla
 function quickUpdate(id, campo, valor) {
   if (!leads[id]) return;
+  // Normalizar fecha a YYYY-MM-DD siempre
+  if (campo === 'proxFecha') {
+    valor = parseFechaToISO(valor) || valor;  // HTML date input ya viene YYYY-MM-DD, igual normalizar
+    valor = valor.trim();
+  }
   leads[id][campo] = valor;
   leads[id]._lastEdit = Date.now();
   saveLocal();
   if (SCRIPT) syncLeadToSheet(leads[id]);
-  drawWeek();
-  drawLeads();
+  drawAll(); // drawAll en vez de solo drawWeek+drawLeads — garantiza que la semana se actualiza
   toast('✓ Actualizado','ok');
 }
 
@@ -1853,7 +1921,7 @@ function guardarEdicion() {
   l.rubro     = document.getElementById('ed_rubro').value.trim();
   l.wpp       = document.getElementById('ed_wpp').value.trim();
   l.mail      = document.getElementById('ed_mail').value.trim();
-  l.proxFecha = document.getElementById('ed_fecha').value;
+  l.proxFecha = (document.getElementById('ed_fecha').value||'').trim();
   l.semaforo  = document.getElementById('ed_sem').value;
   l.estado    = document.getElementById('ed_estado').value;
   l.proxPaso  = document.getElementById('ed_paso').value.trim();
