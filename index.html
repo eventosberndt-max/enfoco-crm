@@ -199,6 +199,9 @@ body::before{
 .lc-contacts{display:flex;gap:5px;flex-wrap:wrap;margin:7px 0}
 .lc-badge{font-family:'DM Mono',monospace;font-size:9.5px;padding:2px 7px;border-radius:5px}
 .b-wpp{background:var(--sage-dim);color:var(--sage);border:1px solid rgba(93,184,122,.2)}
+.b-wpp:hover,.b-mail:hover,.b-li:hover{cursor:pointer;filter:brightness(1.2)}
+.badge-edit-wrap{display:inline-flex;align-items:center;gap:5px;background:var(--ink3);border:1px solid var(--gold);border-radius:20px;padding:2px 8px 2px 4px;animation:pop .12s ease}
+.badge-edit-input{background:none;border:none;outline:none;color:var(--paper);font-size:11px;font-family:'DM Mono',monospace;width:160px}
 .b-mail{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(232,184,75,.2)}
 .b-li{background:var(--sky-dim);color:var(--sky);border:1px solid rgba(90,143,212,.2)}
 .lc-paso{font-size:11px;color:var(--fog);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -377,15 +380,14 @@ body::before{
           <button class="btn btn-ghost btn-sm" id="todayBtn" style="display:none;font-size:11px" onclick="weekOff=0;drawWeek()">Hoy</button>
         </div>
         <!-- Headers fijos -->
-        <div id="weekHeads" style="display:grid;grid-template-columns:repeat(5,1fr) 150px;gap:8px"></div>
+        <div id="weekHeads" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px"></div>
         <!-- Columnas fijas — NUNCA se recrean, solo se actualiza innerHTML -->
-        <div style="display:grid;grid-template-columns:repeat(5,1fr) 150px;gap:8px;align-items:start">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;align-items:start">
           <div class="wcol" id="wc0"></div>
           <div class="wcol" id="wc1"></div>
           <div class="wcol" id="wc2"></div>
           <div class="wcol" id="wc3"></div>
           <div class="wcol" id="wc4"></div>
-          <div class="wcol sf" id="wc5"></div>
         </div>
         <div id="weekNote" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);text-align:center"></div>
       </div>
@@ -1283,9 +1285,6 @@ function drawWeek() {
     const col=document.getElementById('wc'+i);
     if(col) col.dataset.fecha = d.toISOString().split('T')[0];
   });
-  const sf=document.getElementById('wc5');
-  if(sf) sf.dataset.fecha='sin-fecha';
-
   // Navegación label
   const L=lunes.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
   const V=dias[4].toLocaleDateString('es-AR',{day:'numeric',month:'short'});
@@ -1303,20 +1302,19 @@ function drawWeek() {
     const dd=String(d.getDate()).padStart(2,'0');
     const mm=String(d.getMonth()+1).padStart(2,'0');
     return `<div class="wday-head${esH?' today':''}">${DIAS[i]}<br><span style="font-size:10px">${dd}/${mm}</span></div>`;
-  }).join('')+'<div class="wday-head" style="color:var(--fog2)">Sin fecha</div>';
+  }).join('');
 
   // Agrupar
   const all = Object.values(leads).filter(l=>!q||l.empresa.toLowerCase().includes(q)||l.contacto.toLowerCase().includes(q));
   const porDia=Array.from({length:5},()=>[]);
-  const sinF=[];
   const datesISO=dias.map(d=>d.toISOString().split('T')[0]);
 
   all.forEach(l=>{
     const pf=l.proxFecha;
-    if(!pf){sinF.push(l);return;}
+    if(!pf) return;  // sin fecha: no aparece en ninguna columna
     const idx=datesISO.indexOf(pf);
-    if(idx>=0){porDia[idx].push(l);}
-    else{sinF.push(l);}
+    if(idx>=0) porDia[idx].push(l);
+    // leads de otras semanas no se muestran — aparecen en la semana correcta al navegar
   });
 
   // Render columnas — solo innerHTML, no tocar el div raíz
@@ -1329,10 +1327,7 @@ function drawWeek() {
       ? porDia[i].map(l=>pillHTML(l)).join('')
       : '<div class="wcol-empty">Libre</div>';
   }
-  const sfCol=document.getElementById('wc5');
-  if(sfCol) sfCol.innerHTML=sinF.length
-    ? sinF.map(l=>pillHTML(l,true)).join('')
-    : '<div class="wcol-empty">—</div>';
+
 
   // Nota de semana
   const tot=all.length;
@@ -1346,7 +1341,7 @@ function pillHTML(l, sf=false) {
   return `<div class="pill ${sf ? l.semaforo||'ok' : l.semaforo||'ok'}" data-id="${l.id}" onclick="abrirPerfil('${l.id}')">
     <div class="pill-emp">${l.empresa}</div>
     <div class="pill-con">${l.contacto}</div>
-    <div class="pill-ch" style="color:${sf?'var(--fog)':ci.color}">${ci.ico} ${sf?'Sin fecha':ci.label||ci.key}</div>
+    <div class="pill-ch" style="color:${ci.color}">${ci.ico} ${ci.label||ci.key}</div>
   </div>`;
 }
 
@@ -1418,12 +1413,7 @@ function abrirPerfil(id) {
   document.getElementById('pf_sub').textContent=[l.contacto,l.cargo,l.rubro].filter(Boolean).join(' · ');
 
   const ci=canalInfo(l);
-  document.getElementById('pf_badges').innerHTML=[
-    l.wpp&&l.wpp!=='nan'?`<span class="chip b-wpp">💬 ${l.wpp}</span>`:'',
-    l.mail&&l.mail!=='nan'?`<span class="chip b-mail">📧 ${l.mail}</span>`:'',
-    !l.wpp&&!l.mail?`<span class="chip b-li">💼 LinkedIn</span>`:'',
-    estadoChip(l.estado),
-  ].join('');
+  renderBadgesPerfil(l);
 
   // Fecha — si está vacía sugerir +3
   document.getElementById('pf_fecha').value = l.proxFecha || addDaysISO(todayISO(),3);
@@ -1516,12 +1506,7 @@ function saveLead() {
   drawAll();
   toast('✓ Guardado','ok');
   // Actualizar badges en el modal sin cerrarlo
-  document.getElementById('pf_badges').innerHTML=[
-    l.wpp&&l.wpp!=='nan'?`<span class="chip b-wpp">💬 ${l.wpp}</span>`:'',
-    l.mail&&l.mail!=='nan'?`<span class="chip b-mail">📧 ${l.mail}</span>`:'',
-    !l.wpp&&!l.mail?`<span class="chip b-li">💼 LinkedIn</span>`:'',
-    estadoChip(l.estado),
-  ].join('');
+  renderBadgesPerfil(l);
 }
 
 function saveNota() {
@@ -2064,6 +2049,74 @@ function eliminarLead() {
 }
 
 // Llamar drawTabla cuando se abre ese panel
+
+
+// ══════════════════════════════════════════
+// BADGES EDITABLES EN PERFIL
+// ══════════════════════════════════════════
+function renderBadgesPerfil(l) {
+  const cont = document.getElementById('pf_badges');
+  const wpp  = l.wpp  && l.wpp!=='nan'  ? l.wpp  : '';
+  const mail = l.mail && l.mail!=='nan' ? l.mail : '';
+  const li   = l.observacion || '';   // LinkedIn URL si está
+
+  cont.innerHTML = [
+    wpp  ? `<span class="chip b-wpp"  title="Click para editar" onclick="editContacto('wpp','${wpp.replace(/'/g,"\'")}')">💬 ${wpp}</span>`
+         : `<span class="chip b-wpp"  style="opacity:.5;border-style:dashed" title="Agregar WhatsApp" onclick="editContacto('wpp','')">💬 + WPP</span>`,
+    mail ? `<span class="chip b-mail" title="Click para editar" onclick="editContacto('mail','${mail.replace(/'/g,"\'")}')">📧 ${mail}</span>`
+         : `<span class="chip b-mail" style="opacity:.5;border-style:dashed" title="Agregar email" onclick="editContacto('mail','')">📧 + Mail</span>`,
+    li   ? `<span class="chip b-li"   title="Click para editar" onclick="editContacto('li','${li.replace(/'/g,"\'")}')">💼 LinkedIn ✎</span>`
+         : `<span class="chip b-li"   style="opacity:.5;border-style:dashed" title="Agregar LinkedIn URL" onclick="editContacto('li','')">💼 + LinkedIn</span>`,
+    estadoChip(l.estado),
+  ].join(' ');
+}
+
+function editContacto(campo, valorActual) {
+  const cont   = document.getElementById('pf_badges');
+  const l      = leads[currentId]; if (!l) return;
+  const labels = {wpp:'💬 WhatsApp', mail:'📧 Email', li:'💼 LinkedIn URL'};
+  const placeholders = {wpp:'11-1234-5678', mail:'nombre@empresa.com', li:'linkedin.com/in/...'};
+
+  // Reemplazar el chip por un mini-input inline
+  const wrapId = 'badge_edit_' + campo;
+  const chips  = cont.querySelectorAll('.chip');
+  const idx    = {wpp:0, mail:1, li:2}[campo];
+  if (chips[idx]) {
+    chips[idx].outerHTML = `
+      <span class="badge-edit-wrap" id="${wrapId}">
+        <input class="badge-edit-input" id="bei_${campo}"
+          type="${campo==='mail'?'email':'text'}"
+          value="${valorActual.replace(/"/g,'&quot;')}"
+          placeholder="${placeholders[campo]}"
+          onkeydown="if(event.key==='Enter')guardarContacto('${campo}');if(event.key==='Escape')renderBadgesPerfil(leads[currentId])"
+          onblur="setTimeout(()=>guardarContacto('${campo}'),150)"
+        />
+        <button onclick="guardarContacto('${campo}')" style="background:var(--gold);border:none;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;cursor:pointer;color:var(--ink)">✓</button>
+      </span>`;
+    setTimeout(() => {
+      const inp = document.getElementById('bei_' + campo);
+      if (inp) { inp.focus(); inp.select(); }
+    }, 50);
+  }
+}
+
+function guardarContacto(campo) {
+  const inp = document.getElementById('bei_' + campo);
+  if (!inp) return;
+  const valor = inp.value.trim();
+  const l = leads[currentId]; if (!l) return;
+
+  if (campo === 'wpp')  l.wpp  = valor;
+  if (campo === 'mail') l.mail = valor;
+  if (campo === 'li')   l.observacion = valor;  // guarda URL en observación
+
+  l._lastEdit = Date.now();
+  saveLocal();
+  if (SCRIPT) syncLeadToSheet(l);
+  renderBadgesPerfil(l);
+  drawLeads();
+  toast(valor ? '✓ Guardado' : 'Campo eliminado', 'ok');
+}
 
 // ══════════════════════════════════════════
 // TONO IA
