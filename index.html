@@ -495,6 +495,10 @@ body::before{
             </div>
             <button class="btn btn-gold btn-sm" style="align-self:flex-start" onclick="saveConfig()">Guardar</button>
             <div id="cfgStatus" style="font-size:12px;color:var(--fog)"></div>
+            <div style="margin-top:8px;padding-top:12px;border-top:1px solid var(--line)">
+              <div style="font-size:11px;color:var(--fog);margin-bottom:8px">Si los leads no se actualizan correctamente, limpiá el caché local y volvé a sincronizar.</div>
+              <button class="btn btn-ghost btn-sm" onclick="limpiarCache()" style="border-color:var(--rose);color:var(--rose)">🗑 Limpiar caché y re-sincronizar</button>
+            </div>
             <div style="background:var(--ink3);border:1px solid var(--line);border-radius:8px;padding:14px;font-size:12px;color:var(--fog);line-height:1.7">
               <strong style="color:var(--paper)">Abrir Sheets directo:</strong><br>
               <a href="https://docs.google.com/spreadsheets/d/1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87/edit#gid=1488122141" target="_blank" style="color:var(--gold)">→ Leads 2026</a> &nbsp;
@@ -927,10 +931,14 @@ async function syncFromSheets(silent=false) {
 }
 
 function mergeLeadsCSV(csv) {
-  // Merge inteligente: actualiza campos del Sheets pero preserva historial local
+  // Estructura REAL del Sheets (confirmada visualmente):
+  // r[0]=Empresa  r[1]=Contacto   r[2]=Teléfono   r[3]=Email
+  // r[4]=Medio    r[5]=Prioridad  r[6]=Estado      r[7]=Fecha de envío
+  // r[8]=Próxima Acción (FECHA)   r[9]=Semáforo    r[10]=Próximo Paso
+  // r[11]=Observación
   const rows = parseCsv(csv).filter(r=>{
     const e=(r[0]||'').trim();
-    return e && e!=='Empresa' && !e.startsWith('💼') && !e.startsWith('🔥') && !e.startsWith('26/');
+    return e && e!=='Empresa' && !e.startsWith('💼') && !e.startsWith('🔥');
   });
 
   const seen = new Set();
@@ -939,28 +947,24 @@ function mergeLeadsCSV(csv) {
     const contacto= (r[1]||'').trim();
     if (!empresa) return;
 
-    // Buscar lead existente por empresa
     const existing = Object.values(leads).find(l => l.empresa===empresa);
     const id = existing ? existing.id : mkId();
 
-    const fechaRaw = (r[9]||'').trim();
+    const fechaRaw = (r[8]||'').trim();   // col I = Próxima Acción
     const fechaISO = parseFechaToISO(fechaRaw);
-    const semRaw   = (r[10]||'').trim();
+    const semRaw   = (r[9]||'').trim();   // col J = Semáforo
 
-    // Merge: Sheets gana en campos estructurales, local gana en historial y edits recientes
-    // Mapeo confirmado: Empresa,Contacto,Cargo,Teléfono,Email,Medio,Rubro,Prioridad,Estado,FechaAcción,Semáforo,Notas
     const sheetData = {
       empresa, contacto,
-      cargo:    (r[2]||'').trim(),
-      wpp:      (r[3]||'').replace(/[^0-9\-\+ ]/g,'').trim(), // limpiar teléfono
-      mail:     (r[4]||'').trim(),
-      medio:    (r[5]||'').trim(),
-      rubro:    (r[6]||'').trim(),
-      // r[7] = Prioridad (numérico, ignoramos)
-      estado:   estadoFromStr(r[8]||''),
+      cargo:    '',                           // no existe en este Sheets
+      wpp:      (r[2]||'').trim(),            // col C = Teléfono
+      mail:     (r[3]||'').trim(),            // col D = Email
+      medio:    (r[4]||'').trim(),            // col E = Medio
+      rubro:    '',                           // no existe en este Sheets
+      estado:   estadoFromStr(r[6]||''),      // col G = Estado
       semaforo: semFromStr(semRaw),
       proxFecha:fechaISO,
-      proxPaso: (r[11]||'').trim(),
+      proxPaso: (r[10]||'').trim(),           // col K = Próximo Paso
     };
     // Si el lead fue editado localmente en los últimos 5 min, preservar sus datos
     const editedRecently = existing && (Date.now() - (existing._lastEdit||0)) < 5*60*1000;
@@ -979,6 +983,16 @@ function mergeLeadsCSV(csv) {
       } : {}),
     });
     seen.add(id);
+  });
+
+  // Eliminar leads viejos que ya no están en el Sheets
+  // (excepto los creados localmente en las últimas 2 horas)
+  Object.keys(leads).forEach(lid => {
+    if (!seen.has(lid)) {
+      const creadoHace = Date.now() - (leads[lid].creadoEn || 0);
+      const esNuevoLocal = creadoHace < 2 * 60 * 60 * 1000;
+      if (!esNuevoLocal) delete leads[lid];
+    }
   });
 }
 
@@ -1657,6 +1671,14 @@ function saveConfig() {
   document.getElementById('cfgStatus').innerHTML='<span style="color:var(--sage)">✓ Guardado</span>';
   toast('Configuración guardada ✓','ok');
   // Intentar sync de inmediato con la nueva config
+  syncFromSheets(false);
+}
+
+function limpiarCache() {
+  if (!confirm('¿Limpiar todos los datos locales y re-sincronizar desde Sheets?\nEl historial de conversaciones guardado localmente se perderá.')) return;
+  leads = {};
+  localStorage.removeItem('efcrm_leads');
+  toast('Caché limpiado — sincronizando...', 'info');
   syncFromSheets(false);
 }
 
