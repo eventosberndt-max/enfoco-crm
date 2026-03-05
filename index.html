@@ -1526,7 +1526,10 @@ async function genSugerencia(l) {
     document.getElementById('pf_ai_msg').textContent=msgM?msgM[1].trim():'';
     document.getElementById('pf_ai_wrap').style.display='block';
   } catch(e){
-    document.getElementById('pf_ai_ctx').textContent='Error: '+e.message;
+    const esKey = !KEY || e.message.includes('Key') || e.message.includes('401');
+    document.getElementById('pf_ai_ctx').textContent = esKey
+      ? '⚙️ Falta la API Key — andá a Config y pegá tu sk-ant-...'
+      : '⚠️ ' + e.message + '\n\nApretá 🔄 Re-analizar para reintentar.';
     document.getElementById('pf_ai_wrap').style.display='block';
   } finally { document.getElementById('aiLoader').classList.remove('on'); }
 }
@@ -1575,29 +1578,56 @@ async function genMsg() {
 // ══════════════════════════════════════════
 // ANTHROPIC API
 // ══════════════════════════════════════════
-async function aiCall(prompt) {
+async function aiCall(prompt, retries=3) {
   if(!KEY) throw new Error('Configurá la API Key en ⚙️ Config');
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':KEY,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
-    },
-    body:JSON.stringify({
-      model:'claude-haiku-4-5-20251001',
-      max_tokens:1000,
-      messages:[{role:'user',content:prompt}]
-    })
-  });
-  if(!res.ok){
-    const e=await res.json().catch(()=>({}));
-    if(res.status===401) throw new Error('API Key inválida');
-    throw new Error(e.error?.message||'Error '+res.status);
+
+  for (let intento = 1; intento <= retries; intento++) {
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1000,
+          messages: [{role:'user', content:prompt}]
+        })
+      });
+
+      // Overloaded (529) o rate limit (429) → esperar y reintentar
+      if (res.status === 529 || res.status === 429) {
+        if (intento < retries) {
+          toast(`API ocupada — reintentando (${intento}/${retries})...`, 'info');
+          await new Promise(r => setTimeout(r, 2000 * intento));
+          continue;
+        }
+        throw new Error('API sobrecargada. Intentá de nuevo en unos segundos.');
+      }
+
+      if (!res.ok) {
+        const e = await res.json().catch(()=>({}));
+        if (res.status === 401) throw new Error('API Key inválida — verificá en ⚙️ Config');
+        if (res.status === 400) throw new Error('Error en el request: ' + (e.error?.message||''));
+        throw new Error(e.error?.message || 'Error ' + res.status);
+      }
+
+      const d = await res.json();
+      return d.content[0].text;
+
+    } catch(e) {
+      if (intento === retries) throw e;
+      // Error de red → reintentar
+      if (e.name === 'TypeError') {
+        await new Promise(r => setTimeout(r, 1500));
+        continue;
+      }
+      throw e;
+    }
   }
-  const d=await res.json();
-  return d.content[0].text;
 }
 
 // ══════════════════════════════════════════
