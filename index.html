@@ -314,176 +314,174 @@ body::before{
 .empty-ico{font-size:28px;margin-bottom:8px}
 
 
+
 /* ══════════════════════════════════════
-   MOBILE — diseño tipo app nativa
+   MOBILE — estilo Google Calendar / iOS
 ══════════════════════════════════════ */
+.mobile-nav { display: none; }
+.fab { display: none; }
+
 @media (max-width: 768px) {
 
-  /* ── Layout: ocultar sidebar completamente ── */
+  /* Layout */
   .app { grid-template-columns: 1fr !important; }
   .nav { display: none !important; }
+  body { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
 
-  /* ── Body scroll fix ── */
-  body { overflow-x: hidden; }
-
-  /* ── Topbar compacta ── */
+  /* Topbar */
   .topbar {
-    padding: 10px 14px;
+    padding: 10px 14px 10px;
     position: sticky; top: 0; z-index: 50;
+    background: var(--ink);
+    border-bottom: 1px solid var(--line);
   }
-  .topbar-title { font-size: 15px; }
-  .topbar-right { gap: 6px; }
-  .topbar-right .btn { padding: 6px 10px; font-size: 11px; }
+  .topbar-title { font-size: 16px; }
+  .topbar-right .btn { padding: 7px 11px; font-size: 11.5px; }
 
-  /* ── Content: espacio para bottom nav ── */
-  .content {
-    padding: 12px 12px calc(74px + env(safe-area-inset-bottom)) !important;
-  }
+  /* Content */
+  .content { padding: 12px 12px calc(72px + env(safe-area-inset-bottom)) !important; }
 
-  /* ── BOTTOM NAV ── */
+  /* ── BOTTOM NAV — estilo iOS ── */
   .mobile-nav {
     display: block !important;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    z-index: 200;
-    background: var(--ink2);
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
+    background: rgba(13,13,15,.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid var(--line);
     padding-bottom: env(safe-area-inset-bottom);
   }
   .mobile-nav-inner {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    padding: 8px 0 4px;
+    display: flex; justify-content: space-around; align-items: flex-end;
+    padding: 8px 8px 4px;
   }
   .mnav-btn {
     display: flex; flex-direction: column; align-items: center; gap: 3px;
-    background: none; border: none; color: var(--fog2);
-    cursor: pointer; padding: 4px 16px; border-radius: 10px;
-    transition: color .12s; -webkit-tap-highlight-color: transparent;
+    background: none; border: none; color: var(--fog);
+    cursor: pointer; padding: 5px 12px; min-width: 60px;
+    -webkit-tap-highlight-color: transparent; transition: transform .1s;
   }
-  .mnav-btn .mico { font-size: 22px; line-height: 1; }
-  .mnav-btn .mlbl { font-size: 9px; font-family: 'DM Mono', monospace; letter-spacing: .3px; text-transform: uppercase; }
+  .mnav-btn:active { transform: scale(.9); }
+  .mnav-btn .mico { font-size: 24px; line-height: 1.1; }
+  .mnav-btn .mlbl {
+    font-size: 9px; font-family: 'DM Mono', monospace;
+    letter-spacing: .2px; text-transform: uppercase; margin-top: 1px;
+  }
   .mnav-btn.on { color: var(--gold); }
 
-  /* ── FAB ── */
+  /* ── FAB — botón circular dorado ── */
   .fab {
-    display: flex !important;
-    align-items: center; justify-content: center;
+    display: flex !important; align-items: center; justify-content: center;
     position: fixed;
-    bottom: calc(68px + env(safe-area-inset-bottom));
-    right: 16px;
-    width: 52px; height: 52px;
-    border-radius: 50%;
-    background: var(--gold);
-    color: var(--ink);
-    font-size: 26px; font-weight: 300;
-    border: none; cursor: pointer;
-    z-index: 199;
-    box-shadow: 0 4px 20px rgba(232,184,75,.4);
+    bottom: calc(74px + env(safe-area-inset-bottom));
+    right: 18px;
+    width: 54px; height: 54px; border-radius: 50%;
+    background: var(--gold); color: var(--ink);
+    font-size: 28px; line-height: 1;
+    border: none; cursor: pointer; z-index: 299;
+    box-shadow: 0 6px 24px rgba(232,184,75,.45);
     -webkit-tap-highlight-color: transparent;
+    transition: transform .12s;
   }
+  .fab:active { transform: scale(.91); }
 
-  /* ── SEMANA: un día a la vez, swipe ── */
+  /* ── SEMANA estilo Google Calendar ── */
+  /* Barra de días scrollable horizontal */
   #weekHeads {
     display: flex !important;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    gap: 8px;
+    gap: 6px; padding: 4px 2px 8px;
   }
   #weekHeads::-webkit-scrollbar { display: none; }
   #weekHeads .wday-head {
-    flex: 0 0 calc(100vw - 40px);
-    scroll-snap-align: center;
+    flex: 0 0 calc(20vw - 8px);
+    scroll-snap-align: start;
     text-align: center;
-    padding: 10px;
-    border-radius: 10px;
-    background: var(--ink3);
-    border: 1px solid var(--line);
+    padding: 8px 4px;
+    border-radius: 12px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background .15s;
+    border: 1px solid transparent;
   }
   #weekHeads .wday-head.today {
     background: var(--gold-dim);
     border-color: rgba(232,184,75,.3);
     color: var(--gold);
   }
-
+  /* Columnas — una visible a la vez, swipe */
   .week-cols {
     display: flex !important;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    gap: 8px;
+    gap: 10px;
   }
   .week-cols::-webkit-scrollbar { display: none; }
   .wcol {
-    flex: 0 0 calc(100vw - 40px) !important;
+    flex: 0 0 calc(100vw - 28px) !important;
     min-width: 0 !important;
     scroll-snap-align: center;
-    border-radius: 12px;
+    padding: 10px;
+    border-radius: 14px;
     background: var(--ink3);
     border: 1px solid var(--line);
-    padding: 10px;
-    min-height: 80px;
+    min-height: 100px;
   }
-  .wcol.today { border-color: rgba(232,184,75,.25); background: rgba(232,184,75,.04); }
+  .wcol.today { border-color: rgba(232,184,75,.3); background: rgba(232,184,75,.04); }
 
-  /* Pills más grandes y fáciles de tocar */
-  .pill {
-    padding: 12px 14px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-  }
-  .pill-name { font-size: 14px; }
+  /* Pills más grandes y cómodas */
+  .pill { padding: 13px 14px; border-radius: 13px; margin-bottom: 8px; cursor: pointer; }
+  .pill-name { font-size: 14.5px; }
   .pill-sub { font-size: 12px; }
+  .pill-ch { font-size: 12px; margin-top: 5px; }
 
-  /* ── MODALES: sheet desde abajo ── */
+  /* ── MODALES — sheet nativa desde abajo ── */
   .overlay {
     align-items: flex-end !important;
     padding: 0 !important;
+    background: rgba(0,0,0,.5);
   }
   .modal {
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 20px 20px 0 0 !important;
-    max-height: 93dvh;
-    overflow-y: auto;
+    width: 100% !important; max-width: 100% !important;
+    border-radius: 22px 22px 0 0 !important;
+    max-height: 94dvh; overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: env(safe-area-inset-bottom) !important;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
   }
-  /* Handle bar arriba del modal */
   .modal::before {
     content: '';
-    display: block;
-    width: 36px; height: 4px;
-    background: var(--line);
-    border-radius: 2px;
-    margin: 10px auto 0;
+    display: block; width: 40px; height: 5px;
+    background: var(--line); border-radius: 3px;
+    margin: 12px auto 0; flex-shrink: 0;
   }
+  .modal-h { padding: 14px 18px 12px; }
+  .modal-hname { font-size: 18px; }
 
-  /* ── Leads: cards más compactas ── */
-  .lcard { padding: 13px 14px; border-radius: 12px; }
-  .lcard-name { font-size: 14px; }
-  .lcard-sub { font-size: 11.5px; }
+  /* Leads lista */
+  .lcard { padding: 13px 14px; border-radius: 13px; }
 
-  /* ── Inputs sin zoom en iOS ── */
-  input, select, textarea {
-    font-size: 16px !important;
-  }
+  /* Inputs sin zoom iOS */
+  input, select, textarea { font-size: 16px !important; }
   input[type=date] { font-size: 14px !important; }
 
-  /* ── Botones más grandes para touch ── */
-  .btn { min-height: 36px; }
-  .canal-opt { padding: 9px 13px; font-size: 12px; }
+  /* Chips más fáciles de tocar */
+  .chip { padding: 6px 12px; font-size: 12px; }
+  .btn { min-height: 38px; }
 
-  /* ── Tabla: scroll horizontal ── */
+  /* Tabla scroll */
   #tablaWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .tabla-table { min-width: 680px; }
+  .tabla-table { min-width: 700px; }
 
-  /* ── Setup ── */
-  .setup-box { margin: 16px; padding: 22px 18px; }
+  /* Cards (Leads view) */
+  #panel-leads .lcard-body { flex-wrap: wrap; }
+
+  /* Setup */
+  .setup-box { margin: 20px 16px; padding: 24px 18px; }
 }
 
 </style>
@@ -1275,22 +1273,27 @@ function mergeLeadsCSV(csv) {
       proxFecha:fechaISO,
       proxPaso: (r[10]||'').trim(),           // col K = Próximo Paso
     };
-    // Merge inteligente: el Sheets actualiza campos NO editados manualmente
-    // Los campos en _editados son intocables — el usuario los gestiona desde la app
+    // Merge: Sheets actualiza campos estructurales.
+    // Campos en _editados son PERMANENTEMENTE protegidos — el usuario los gestiona desde la app.
     const editados = existing ? (existing._editados || []) : [];
     const merged = { ...sheetData };
+    // Preservar valores locales para campos editados manualmente
     editados.forEach(campo => {
-      if (existing && existing[campo] !== undefined) {
-        merged[campo] = existing[campo]; // preservar valor local
+      if (existing && existing[campo] !== undefined && existing[campo] !== '') {
+        merged[campo] = existing[campo];
       }
     });
+    // SIEMPRE preservar proxPaso si el usuario lo editó (no pisar con dato viejo del Sheets)
+    if (existing && editados.includes('proxPaso') && existing.proxPaso) {
+      merged.proxPaso = existing.proxPaso;
+    }
     leads[id] = mkLead({
       id,
       ...merged,
       historial: existing ? existing.historial : [],
       creadoEn:  existing ? existing.creadoEn  : Date.now(),
       _lastEdit: existing ? existing._lastEdit  : null,
-      _editados: editados, // preservar qué campos fueron editados
+      _editados: editados, // CRÍTICO: preservar siempre
     });
     seen.add(id);
   });
@@ -1678,14 +1681,23 @@ function saveLead() {
   l.proxFecha  = (document.getElementById('pf_fecha').value||'').trim();
   l.semaforo   = document.getElementById('pf_sem').value;
   l.estado     = document.getElementById('pf_estado').value;
+  const pasoEl = document.getElementById('pf_paso');
+  if (pasoEl) l.proxPaso = pasoEl.value;
   l._lastEdit  = Date.now();
-  // Marcar estos campos como editados manualmente — el Sheets no los va a pisar
-  l._editados  = [...new Set([...(l._editados||[]), 'proxFecha','semaforo','estado'])];
+  // Marcar campos como editados — PERMANENTEMENTE protegidos del sync del Sheets
+  l._editados  = [...new Set([...(l._editados||[]), 'proxFecha','semaforo','estado','proxPaso'])];
   saveLocal();
   if(SCRIPT) syncLeadToSheet(l);
   drawAll();
-  toast('✓ Guardado','ok');
-  // Actualizar badges en el modal sin cerrarlo
+  // Feedback visual en botón
+  const btn = document.querySelector('#mPerfil .btn-sage');
+  if (btn) {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Guardado';
+    btn.style.background = '#3a9e5f';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
+  }
+  toast('✓ Guardado — fecha protegida del sync','ok');
   renderBadgesPerfil(l);
 }
 
