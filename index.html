@@ -2163,7 +2163,10 @@ function drawTabla() {
   tbody.innerHTML = all.map(l => `
     <tr>
       <td style="font-weight:600;font-size:12.5px;max-width:140px">
-        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.empresa}</div>
+        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+          color:var(--gold);cursor:pointer;text-decoration:underline;text-decoration-color:rgba(232,184,75,.3)"
+          onclick="abrirPerfil('${l.id}')"
+          title="Abrir perfil">${l.empresa}</div>
       </td>
       <td style="font-size:12px;color:var(--fog2);max-width:120px">
         <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.contacto}</div>
@@ -2286,46 +2289,77 @@ function eliminarLead() {
 
 
 // ══════════════════════════════════════════
-// TAGS DE SITUACIÓN
+// SITUACIÓN — resumen automático desde historial
 // ══════════════════════════════════════════
-const TAGS_SIT = [
-  { key:'reunion',      label:'📅 Reunión',        css:'tag-reunion',      words:['reuni','meeting','meet','call coordinada','llamada coordinada'] },
-  { key:'carpeta',      label:'📁 Carpeta enviada', css:'tag-carpeta',      words:['carpeta','portafolio','pdf','presentacion','presentación','propuesta'] },
-  { key:'no-responde',  label:'💤 No responde',     css:'tag-no-responde',  words:['no respond','no contesta','sin respuesta','no reply','no respondio','no respondió'] },
-  { key:'en-contacto',  label:'💬 En contacto',     css:'tag-en-contacto',  words:['respondio','respondió','hablamos','conversamos','interesado','interesada'] },
-  { key:'enviado',      label:'✉️ Propuesta enviada',css:'tag-enviado',      words:['mande','mandé','envie','envié','le mande','le mandé'] },
-];
 
-function detectarTag(l) {
-  const texto = [
-    l.proxPaso||'',
-    ...(l.historial||[]).slice(-3).map(h=>h.contenido||'')
-  ].join(' ').toLowerCase();
-
-  for (const t of TAGS_SIT) {
-    if (t.words.some(w => texto.includes(w))) return t;
-  }
-  return null;
-}
+// Cache de resúmenes para no regenerar en cada render
+const _resumenCache = {};
 
 function tagHTML(l) {
-  const t = detectarTag(l);
-  if (!t) {
-    // Mostrar resumen corto del proxPaso si hay
-    const paso = (l.proxPaso||'').trim();
-    if (paso) {
-      const corto = paso.length > 38 ? paso.substring(0,36)+'…' : paso;
-      return `<span class="tag-sit tag-sin-tag" title="${paso.replace(/"/g,'&quot;')}">${corto}</span>`;
-    }
-    return '<span style="color:var(--fog);font-size:11px">—</span>';
+  // Si hay resumen cacheado, mostrar
+  const cached = _resumenCache[l.id];
+  if (cached !== undefined) {
+    return cached
+      ? `<span class="tag-sit tag-sin-tag" title="${cached}" style="cursor:pointer" onclick="abrirPerfil('${l.id}')">${cached}</span>`
+      : '<span style="color:var(--fog);font-size:11px">—</span>';
   }
-  return `<span class="tag-sit ${t.css}">${t.label}</span>`;
+
+  // Mientras genera (o sin historial), mostrar proxPaso corto
+  const hist = (l.historial||[]);
+  if (!hist.length) {
+    const paso = (l.proxPaso||'').trim();
+    const corto = paso.length > 34 ? paso.substring(0,32)+'…' : paso;
+    return corto
+      ? `<span class="tag-sit tag-sin-tag">${corto}</span>`
+      : '<span style="color:var(--fog);font-size:11px">—</span>';
+  }
+
+  // Disparar generación async y devolver placeholder
+  generarResumen(l);
+  return `<span style="color:var(--fog);font-size:11px;font-style:italic">…</span>`;
 }
 
-// Detectar si un lead tiene reunión para colorear pill
+async function generarResumen(l) {
+  if (!KEY || _resumenCache[l.id] !== undefined) return;
+  _resumenCache[l.id] = null; // marcar como "en proceso"
+
+  const hist = (l.historial||[]).slice(-5);
+  if (!hist.length) { _resumenCache[l.id] = ''; return; }
+
+  // Armar hilo de mensajes con quién habló
+  const hilo = hist.map(h => {
+    const quien = h.quien === 'cliente' ? l.contacto : 'Dami';
+    return `${quien}: ${(h.contenido||'').substring(0,120)}`;
+  }).join('\n');
+
+  try {
+    const r = await aiCall(
+      `Leé este hilo de mensajes entre Dami (Enfoco Films) y ${l.contacto} (${l.empresa}).
+Resume en EXACTAMENTE 4-6 palabras qué pasó hasta ahora. Ejemplos: "Envió carpeta, no respondió", "Reunión coordinada el martes", "Interesado, espera presupuesto", "Respondió, quiere conocernos".
+Solo el resumen, sin puntos, sin comillas, sin explicaciones.
+
+${hilo}`
+    );
+    _resumenCache[l.id] = r.trim().replace(/^["']|["']$/g,'').substring(0,50);
+  } catch(e) {
+    _resumenCache[l.id] = '';
+  }
+
+  // Re-render tabla si está visible
+  if (document.getElementById('panel-tabla')?.classList.contains('on')) {
+    drawTabla();
+  }
+}
+
+// Limpiar cache cuando se agrega historial nuevo
+function limpiarResumenCache(id) {
+  delete _resumenCache[id];
+}
+
+// Detectar reunión para colorear pill en calendario
 function esReunion(l) {
   const texto = [l.proxPaso||'', ...(l.historial||[]).slice(-2).map(h=>h.contenido||'')].join(' ').toLowerCase();
-  return TAGS_SIT[0].words.some(w => texto.includes(w));
+  return ['reuni','meeting','meet'].some(w => texto.includes(w));
 }
 // ══════════════════════════════════════════
 // BADGES EDITABLES EN PERFIL
