@@ -1929,10 +1929,9 @@ function nlAutoExtract() {
     // LinkedIn: primera línea con mayúscula
     // WPP: "Nombre Apellido HH:MM" o "Nombre Apellido ha enviado"
     const nombrePatterns = [
-      /^([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+ [A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+(?:\s[A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)?)\s+(?:\d{2}:\d{2}|ha enviado|sent)/m,
+      /^([A-Za-z\xc0-\xff]+ [A-Za-z\xc0-\xff]+)[\r\n]/m,
       /Ver el perfil de\s+([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+(?: [A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)+)/i,
-      /^([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+ [A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)[
-]/m,
+      /^([A-Za-z\u00C0-\u024F]+ [A-Za-z\u00C0-\u024F]+)[\r\n]/m,
     ];
     for (const p of nombrePatterns) {
       const m = txt.match(p);
@@ -1948,8 +1947,7 @@ function nlAutoExtract() {
   const cargoEl = document.getElementById('nl_cargo');
   if (!cargoEl.value) {
     // Buscar cargo típico después del nombre en LinkedIn
-    const cargoMatch = txt.match(/(?:CEO|Director|Gerente|Manager|Jefe|Head|Presidente|Fundador|Founder|CMO|CFO|CTO|Coordinador|Responsable)[^
-]{0,60}/i);
+    const cargoMatch = txt.match(/(?:CEO|Director|Gerente|Manager|Jefe|Head|Presidente|Fundador|Founder|CMO|CFO|CTO|Coordinador|Responsable)[^\n\r]{0,60}/i);
     if (cargoMatch) { cargoEl.value = cargoMatch[0].trim().substring(0,60); found++; }
   }
 
