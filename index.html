@@ -549,9 +549,7 @@ body::before{
     <div class="nav-links">
       <button class="nav-link on" onclick="goPanel('semana',this)"><span class="ico">📅</span>Semana</button>
       <button class="nav-link" onclick="goPanel('leads',this)"><span class="ico">💼</span>Leads</button>
-      <button class="nav-link" onclick="goPanel('vistage',this)"><span class="ico">🏆</span>Vistage</button>
       <div class="nav-sep"></div>
-      <button class="nav-link" id="navNuevo" onclick="goPanel('nuevo',this)"><span class="ico">➕</span>Cargar LinkedIn</button>
       <button class="nav-link" onclick="goPanel('tono',this)"><span class="ico">🎙️</span>Tono IA</button>
       <button class="nav-link" onclick="goPanel('tabla',this)"><span class="ico">📋</span>Tabla / Editar</button>
       <button class="nav-link" onclick="goPanel('perdidos',this)"><span class="ico">🗃️</span>Perdidos</button>
@@ -1002,32 +1000,46 @@ body::before{
 
 <!-- MODAL: NUEVO LEAD -->
 <div class="overlay" id="mNuevoLead">
-  <div class="modal" style="max-width:520px">
+  <div class="modal" style="max-width:560px">
     <div class="modal-h">
-      <div class="modal-h-info"><div class="modal-hname" style="font-size:17px">Nuevo Lead</div></div>
+      <div class="modal-h-info"><div class="modal-hname" style="font-size:17px">➕ Nuevo Lead</div></div>
       <button class="modal-close" onclick="closeModal('mNuevoLead')">×</button>
     </div>
-    <div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px">
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+
+      <!-- ZONA PEGADO CONVERSACIÓN -->
+      <div>
+        <label style="font-size:11px;color:var(--fog);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px">
+          Pegá la conversación o perfil (WPP, LinkedIn, Mail...)
+        </label>
+        <div style="position:relative;margin-top:6px">
+          <textarea id="nl_conv" rows="4"
+            placeholder="Pegá acá el copy-paste de la conversación o el perfil. Se va a extraer automáticamente nombre, empresa, teléfono, mail y LinkedIn."
+            oninput="nlAutoExtract()"
+            style="width:100%;resize:vertical;padding-right:80px"></textarea>
+          <span id="nlExtractStatus" style="position:absolute;bottom:8px;right:10px;font-size:10px;color:var(--fog);font-family:'DM Mono',monospace"></span>
+        </div>
+      </div>
+
+      <!-- CAMPOS — se rellenan solos -->
       <div class="fg">
         <div class="field"><label>Empresa *</label><input type="text" id="nl_empresa" placeholder="Nombre de la empresa" /></div>
         <div class="field"><label>Contacto</label><input type="text" id="nl_contacto" placeholder="Nombre del contacto" /></div>
         <div class="field"><label>Cargo</label><input type="text" id="nl_cargo" placeholder="CEO, Gerente..." /></div>
-        <div class="field"><label>Rubro</label><input type="text" id="nl_rubro" placeholder="Alimentos, Automotriz..." /></div>
         <div class="field"><label>WhatsApp</label><input type="text" id="nl_wpp" placeholder="11-1234-5678" /></div>
         <div class="field"><label>Email</label><input type="text" id="nl_mail" placeholder="nombre@empresa.com" /></div>
+        <div class="field"><label>LinkedIn</label><input type="text" id="nl_li" placeholder="linkedin.com/in/..." /></div>
         <div class="field"><label>Origen</label>
           <select id="nl_origen">
-            <option>Vistage</option><option>LinkedIn</option>
-            <option>Referido</option><option>Expo/Feria</option><option>Otro</option>
+            <option>LinkedIn</option><option>WhatsApp</option>
+            <option>Referido</option><option>Expo/Feria</option><option>Vistage</option><option>Otro</option>
           </select>
         </div>
-        <div class="field fw"><label>Próximo paso</label>
-          <textarea id="nl_paso" rows="2" placeholder="Qué hay que hacer con este contacto..."></textarea>
-        </div>
       </div>
+
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button class="btn btn-ghost btn-sm" onclick="closeModal('mNuevoLead')">Cancelar</button>
-        <button class="btn btn-gold btn-sm" onclick="crearNuevoLead()">✓ Crear lead</button>
+        <button class="btn btn-gold" onclick="crearNuevoLead()" style="padding:9px 20px">✓ Crear lead</button>
       </div>
     </div>
   </div>
@@ -1861,6 +1873,91 @@ function confirmarEnvio() {
 // ══════════════════════════════════════════
 // NUEVO LEAD
 // ══════════════════════════════════════════
+
+// ══════════════════════════════════════════
+// EXTRACCIÓN AUTOMÁTICA DE CONTACTO desde copy-paste
+// ══════════════════════════════════════════
+function nlAutoExtract() {
+  const txt = document.getElementById('nl_conv')?.value || '';
+  if (txt.length < 10) return;
+
+  const status = document.getElementById('nlExtractStatus');
+  let found = 0;
+
+  // ── TELÉFONO / WPP ──────────────────────
+  // Buscar patrones de número argentino: 11-1234-5678, +54 9 11 ..., 541138..., etc.
+  const wppEl = document.getElementById('nl_wpp');
+  if (!wppEl.value) {
+    const telPatterns = [
+      /(?:whatsapp|wpp|tel[eé]fono|celular|cel|phone)?[\s:]*(\+?54[\s\-]?9?[\s\-]?\d{2,4}[\s\-]?\d{4}[\s\-]?\d{4})/i,
+      /(?<!\d)(\+?54[\s\-]?\d{2,4}[\s\-]?\d{4}[\s\-]?\d{4})(?!\d)/,
+      /(?<!\d)((?:11|15|2[0-9]{2,3}|3[0-9]{2,3})[\s\-]?\d{4}[\s\-]?\d{4})(?!\d)/,
+    ];
+    for (const p of telPatterns) {
+      const m = txt.match(p);
+      if (m) {
+        const num = (m[1]||m[0]).replace(/[\s\-]/g,'').replace(/^\+/,'');
+        wppEl.value = num;
+        found++;
+        break;
+      }
+    }
+  }
+
+  // ── EMAIL ────────────────────────────────
+  const mailEl = document.getElementById('nl_mail');
+  if (!mailEl.value) {
+    const mails = txt.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g);
+    if (mails && mails.length) {
+      // Filtrar mails de plataformas (LinkedIn, WPP, etc.)
+      const real = mails.find(m => !/(linkedin|whatsapp|facebook|instagram|gmail\.com$|noreply)/i.test(m));
+      if (real) { mailEl.value = real; found++; }
+    }
+  }
+
+  // ── LINKEDIN URL ─────────────────────────
+  const liEl = document.getElementById('nl_li');
+  if (!liEl.value) {
+    const liMatch = txt.match(/linkedin\.com\/in\/([a-zA-Z0-9\-\_]+)/i);
+    if (liMatch) { liEl.value = 'linkedin.com/in/' + liMatch[1]; found++; }
+  }
+
+  // ── NOMBRE ───────────────────────────────
+  const contactoEl = document.getElementById('nl_contacto');
+  if (!contactoEl.value) {
+    // Buscar "Nombre Apellido" en formatos de LinkedIn/WPP
+    // LinkedIn: primera línea con mayúscula
+    // WPP: "Nombre Apellido HH:MM" o "Nombre Apellido ha enviado"
+    const nombrePatterns = [
+      /^([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+ [A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+(?:\s[A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)?)\s+(?:\d{2}:\d{2}|ha enviado|sent)/m,
+      /Ver el perfil de\s+([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+(?: [A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)+)/i,
+      /^([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+ [A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)[
+]/m,
+    ];
+    for (const p of nombrePatterns) {
+      const m = txt.match(p);
+      if (m && m[1] && m[1].length > 3) {
+        contactoEl.value = m[1].trim();
+        found++;
+        break;
+      }
+    }
+  }
+
+  // ── CARGO ────────────────────────────────
+  const cargoEl = document.getElementById('nl_cargo');
+  if (!cargoEl.value) {
+    // Buscar cargo típico después del nombre en LinkedIn
+    const cargoMatch = txt.match(/(?:CEO|Director|Gerente|Manager|Jefe|Head|Presidente|Fundador|Founder|CMO|CFO|CTO|Coordinador|Responsable)[^
+]{0,60}/i);
+    if (cargoMatch) { cargoEl.value = cargoMatch[0].trim().substring(0,60); found++; }
+  }
+
+  if (status) {
+    status.textContent = found > 0 ? `✓ ${found} dato${found>1?'s':''} extraído${found>1?'s':''}` : '';
+    status.style.color = found > 0 ? 'var(--sage)' : 'var(--fog)';
+  }
+}
 function openNewLead() {
   openModal('mNuevoLead');
 }
@@ -1869,6 +1966,8 @@ function crearNuevoLead() {
   const empresa  = document.getElementById('nl_empresa').value.trim();
   const contacto = document.getElementById('nl_contacto').value.trim();
   if (!empresa) { toast('Completá la empresa','err'); return; }
+  const conv = document.getElementById('nl_conv')?.value.trim() || '';
+  const liVal = document.getElementById('nl_li')?.value.trim() || '';
   const id = mkId();
   leads[id] = mkLead({
     id,
@@ -1877,20 +1976,35 @@ function crearNuevoLead() {
     cargo:     document.getElementById('nl_cargo').value.trim(),
     wpp:       document.getElementById('nl_wpp').value.trim(),
     mail:      document.getElementById('nl_mail').value.trim(),
-    rubro:     document.getElementById('nl_rubro').value.trim(),
+    observacion: liVal, // LinkedIn URL
     medio:     document.getElementById('nl_origen').value,
-    estado:    'nuevo',
+    estado:    'contactado',
     semaforo:  'hoy',
     proxFecha: addDaysISO(todayISO(), 0),
-    proxPaso:  document.getElementById('nl_paso').value.trim(),
+    proxPaso:  '',
   });
+  // Si pegaron conversación, guardarla como primera nota en el historial
+  if (conv) {
+    leads[id].historial = [{
+      id: mkId(),
+      tipo: 'nota',
+      quien: 'dami',
+      fecha: Date.now(),
+      contenido: conv,
+    }];
+  }
   leads[id]._lastEdit = Date.now();
+  leads[id]._editados = ['wpp','mail','observacion'];
   saveLocal();
   closeModal('mNuevoLead');
-  ['nl_empresa','nl_contacto','nl_cargo','nl_wpp','nl_mail','nl_rubro','nl_paso']
-    .forEach(id => document.getElementById(id).value='');
+  // Limpiar campos
+  ['nl_empresa','nl_contacto','nl_cargo','nl_wpp','nl_mail','nl_li','nl_conv']
+    .forEach(fid => { const el=document.getElementById(fid); if(el) el.value=''; });
+  const nlExtSt = document.getElementById('nlExtractStatus');
+  if (nlExtSt) nlExtSt.textContent = '';
+  goPanel('leads', document.querySelector('.nav-link[onclick*="leads"]'));
   drawAll();
-  abrirPerfil(id);
+  abrirPerfil(id); // abre el perfil directo
   toast(`${empresa} agregado ✓`,'ok');
 }
 
