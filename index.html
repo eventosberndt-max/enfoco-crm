@@ -188,6 +188,10 @@ body::before{
 .pill.urg{border-left-color:var(--rose)}
 .pill.hoy{border-left-color:var(--amber)}
 .pill.ok{border-left-color:var(--sage)}
+.pill.reunion{background:rgba(147,112,219,.12) !important;border-left-color:#c4aff0 !important}
+.pill.reunion .pill-name{color:#d4c0f5 !important}
+.pill.presupuesto{background:rgba(93,184,122,.1) !important;border-left-color:var(--sage) !important}
+.pill.presupuesto .pill-name{color:var(--sage) !important}
 .pill-emp{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill-con{font-size:10px;color:var(--fog);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill-ch{font-size:9px;font-family:'DM Mono',monospace;margin-top:3px}
@@ -550,6 +554,7 @@ body::before{
       <button class="nav-link" id="navNuevo" onclick="goPanel('nuevo',this)"><span class="ico">➕</span>Cargar LinkedIn</button>
       <button class="nav-link" onclick="goPanel('tono',this)"><span class="ico">🎙️</span>Tono IA</button>
       <button class="nav-link" onclick="goPanel('tabla',this)"><span class="ico">📋</span>Tabla / Editar</button>
+      <button class="nav-link" onclick="goPanel('perdidos',this)"><span class="ico">🗃️</span>Perdidos</button>
       <button class="nav-link" onclick="goPanel('config',this)"><span class="ico">⚙️</span>Config</button>
     </div>
     <div class="nav-foot">
@@ -781,6 +786,28 @@ body::before{
       </div>
 
       <!-- CONFIG -->
+      <!-- PANEL PERDIDOS -->
+      <div class="panel" id="panel-perdidos">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--rose)">Archivo — Perdidos</div>
+          <span id="perdidosCount" style="font-size:11px;color:var(--fog);font-family:'DM Mono',monospace"></span>
+        </div>
+        <div style="font-size:12px;color:var(--fog);margin-top:-8px">Leads que no prosperaron. Se guardan para referencia futura.</div>
+        <div class="card" style="overflow-x:auto">
+          <table class="vtable" id="tablaPerdidos">
+            <thead><tr>
+              <th>Empresa</th>
+              <th>Contacto</th>
+              <th>Contacto</th>
+              <th>Medio</th>
+              <th>Último paso</th>
+              <th>Acciones</th>
+            </tr></thead>
+            <tbody id="perdidosBody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="panel" id="panel-config">
         <div class="card">
           <div class="card-h"><div class="card-title">Configuración</div></div>
@@ -844,12 +871,13 @@ body::before{
           <option value="ok" selected>🟢 Al día</option>
         </select>
         <select class="qc-sel" id="pf_estado">
-          <option value="nuevo">🆕 Nuevo</option>
+          <option value="contactado">👤 Contactado</option>
           <option value="enviado">✉️ Enviado</option>
+          <option value="enviar-propuesta">📄 Enviar Propuesta</option>
           <option value="tratativa">🤝 En Tratativa</option>
-          <option value="potencial">⭐ Potencial Cliente</option>
+          <option value="presupuesto">💰 Presupuesto</option>
           <option value="reunion">📅 Reunión</option>
-          <option value="pausa">⏸ En Pausa</option>
+          <option value="potencial">⭐ Potencial Cliente</option>
           <option value="no-potencial">💤 No Potencial</option>
           <option value="perdido">✗ Perdido</option>
         </select>
@@ -1454,20 +1482,21 @@ function fmtFechaDisplay(iso) {
 }
 
 function estadoFromStr(s) {
-  if (!s) return 'nuevo';
+  if (!s) return 'contactado';
   s = s.toLowerCase();
-  if (s.includes('tratativa')) return 'tratativa';
-  if (s.includes('enviado'))   return 'enviado';
-  if (s.includes('pausa'))     return 'pausa';
-  if (s.includes('perdido') || s.includes('0 -')) return 'perdido';
-  if (s.includes('potencial') && s.includes('no')) return 'no-potencial';
-  if (s.includes('potencial')) return 'potencial';
-  if (s.includes('reunion') || s.includes('reunión')) return 'reunion';
-  return 'nuevo';
+  if (s.includes('presupuesto'))                        return 'presupuesto';
+  if (s.includes('propuesta'))                          return 'enviar-propuesta';
+  if (s.includes('tratativa'))                          return 'tratativa';
+  if (s.includes('enviado'))                            return 'enviado';
+  if (s.includes('reunion') || s.includes('reunión'))   return 'reunion';
+  if (s.includes('potencial') && s.includes('no'))      return 'no-potencial';
+  if (s.includes('potencial'))                          return 'potencial';
+  if (s.includes('perdido') || s.includes('0 -'))       return 'perdido';
+  return 'contactado';
 }
 
 function estadoToStr(s) {
-  const m = {nuevo:'1 - Nuevo',enviado:'2 - Enviado',tratativa:'6 - Proyecto En Tratativa',pausa:'3 - En Pausa',perdido:'0 - Perdido',potencial:'7 - Potencial Cliente',reunion:'8 - Reunión',"no-potencial":'9 - No Potencial'};
+  const m = {contactado:'1 - Contactado',enviado:'2 - Enviado',tratativa:'6 - En Tratativa',presupuesto:'5 - Presupuesto',"enviar-propuesta":'4 - Enviar Propuesta',reunion:'8 - Reunión',potencial:'7 - Potencial Cliente',"no-potencial":'9 - No Potencial',perdido:'0 - Perdido'};
   return m[s] || s;
 }
 
@@ -1491,14 +1520,15 @@ function semColor(s) {
 
 function estadoChip(s) {
   const map = {
-    nuevo:          ['c-sky','🆕 Nuevo'],
-    enviado:        ['c-gold','✉️ Enviado'],
-    tratativa:      ['c-sage','🤝 Tratativa'],
-    pausa:          ['c-fog','⏸ Pausa'],
-    perdido:        ['c-rose','✗ Perdido'],
-    potencial:      ['c-violet','⭐ Potencial'],
-    reunion:        ['c-violet','📅 Reunión'],
-    'no-potencial': ['c-muted','💤 No potencial'],
+    contactado:        ['c-sky','👤 Contactado'],
+    enviado:           ['c-gold','✉️ Enviado'],
+    tratativa:         ['c-sage','🤝 Tratativa'],
+    presupuesto:       ['c-sage','💰 Presupuesto'],
+    'enviar-propuesta':['c-gold','📄 Enviar Propuesta'],
+    reunion:           ['c-violet','📅 Reunión'],
+    potencial:         ['c-violet','⭐ Potencial'],
+    'no-potencial':    ['c-muted','💤 No Potencial'],
+    perdido:           ['c-rose','✗ Perdido'],
   };
   const [cls,lbl] = map[s] || ['c-fog',s];
   return `<span class="chip ${cls}">${lbl}</span>`;
@@ -1606,7 +1636,9 @@ function drawWeek() {
 
 function pillHTML(l, sf=false) {
   const ci=canalInfo(l);
-  const clsPill = (l.estado==='reunion' || esReunion(l)) ? 'reunion' : (l.semaforo||'ok');
+  let clsPill = l.semaforo||'ok';
+  if (l.estado==='reunion') clsPill = 'reunion';
+  else if (l.estado==='presupuesto') clsPill = 'presupuesto';
   return `<div class="pill ${clsPill}" data-id="${l.id}" onclick="abrirPerfil('${l.id}')">
     <div class="pill-emp">${l.empresa}</div>
     <div class="pill-con">${l.contacto}</div>
@@ -1765,9 +1797,11 @@ function drawHistorial(l) {
 function saveLead() {
   if(!currentId||!leads[currentId])return;
   const l=leads[currentId];
-  l.proxFecha  = (document.getElementById('pf_fecha').value||'').trim();
-  l.semaforo   = document.getElementById('pf_sem').value;
   l.estado     = document.getElementById('pf_estado').value;
+  l.proxFecha  = (document.getElementById('pf_fecha').value||'').trim();
+  // Si es perdido, limpiar fecha del calendario
+  if (l.estado === 'perdido') l.proxFecha = '';
+  l.semaforo   = document.getElementById('pf_sem').value;
   const pasoEl = document.getElementById('pf_paso');
   if (pasoEl) l.proxPaso = pasoEl.value;
   l._lastEdit  = Date.now();
@@ -2243,6 +2277,7 @@ function goPanel(name, btn) {
   document.getElementById('panel-'+name)?.classList.add('on');
   if(btn) btn.classList.add('on');
   if(name==='tabla') drawTabla();
+  if(name==='perdidos') drawPerdidos();
   if(name==='tono') initTono();
   const titles={semana:'Plan <em>Semanal</em>',leads:'<em>Leads</em> 2026',vistage:'<em>Vistage</em> 2026',nuevo:'Cargar desde <em>LinkedIn</em>',tabla:'<em>Tabla</em> — Edición rápida',tono:'<em>Tono IA</em> — Identidad de voz',config:'<em>Configuración</em>'};
   document.getElementById('pgTitle').innerHTML=titles[name]||name;
@@ -2285,6 +2320,49 @@ document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{
 // ══════════════════════════════════════════
 // TABLA EDITABLE
 // ══════════════════════════════════════════
+
+function drawPerdidos() {
+  const tbody = document.getElementById('perdidosBody');
+  const count = document.getElementById('perdidosCount');
+  if (!tbody) return;
+  const perdidos = Object.values(leads).filter(l => l.estado === 'perdido')
+    .sort((a,b) => a.empresa.localeCompare(b.empresa,'es'));
+  if (count) count.textContent = perdidos.length + ' archivados';
+  if (!perdidos.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--fog)">Ningún lead perdido por ahora 🎉</td></tr>';
+    return;
+  }
+  const wpp_fn = wppUrl, mail_fn = gmailUrl, li_fn = linkedinUrl;
+  tbody.innerHTML = perdidos.map(l => {
+    const wppL  = wppUrl(l.wpp);
+    const mailL = gmailUrl(l.mail);
+    const liL   = linkedinUrl(l.observacion);
+    return `<tr style="opacity:.75">
+      <td style="font-weight:600;font-size:12.5px;color:var(--fog2)">${l.empresa}</td>
+      <td style="font-size:12px;color:var(--fog)">
+        ${l.contacto}<br>
+        ${l.cargo?`<span style="font-size:10px">${l.cargo}</span>`:''}
+      </td>
+      <td style="font-size:11px">
+        ${wppL  ? `<a href="${wppL}"  target="_blank" class="chip b-wpp"  style="text-decoration:none;display:inline-block;margin:1px">💬</a>`:''}
+        ${mailL ? `<a href="${mailL}" target="_blank" class="chip b-mail" style="text-decoration:none;display:inline-block;margin:1px">📧</a>`:''}
+        ${liL   ? `<a href="${liL}"   target="_blank" class="chip b-li"   style="text-decoration:none;display:inline-block;margin:1px">💼</a>`:''}
+      </td>
+      <td style="font-size:11px;color:var(--fog)">${l.medio||'—'}</td>
+      <td style="font-size:11.5px;color:var(--fog2);max-width:200px">
+        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.proxPaso||'—'}</div>
+      </td>
+      <td>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-ghost btn-sm" onclick="abrirPerfil('${l.id}')" title="Ver perfil">👤</button>
+          <button class="btn btn-ghost btn-sm" style="font-size:10px" 
+            onclick="if(confirm('¿Reactivar este lead?')){leads['${l.id}'].estado='contactado';leads['${l.id}'].proxFecha='';saveLocal();drawAll();drawPerdidos();toast('Lead reactivado','ok')}"
+            title="Reactivar">↩ Reactivar</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
 function drawTabla() {
   const q = (document.getElementById('tablaSearch')?.value||'').toLowerCase();
   const tbody = document.getElementById('tablaBody');
@@ -2351,12 +2429,13 @@ function drawTabla() {
       <td>
         <select onchange="quickUpdate('${l.id}','estado',this.value)"
           style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:4px 6px;border-radius:6px;font-size:11px;outline:none">
-          <option value="nuevo"          ${l.estado==='nuevo'?'selected':''}>🆕 Nuevo</option>
+          <option value="contactado"       ${l.estado==='contactado'?'selected':''}>👤 Contactado</option>
           <option value="enviado"        ${l.estado==='enviado'?'selected':''}>✉️ Enviado</option>
+          <option value="enviar-propuesta" ${l.estado==='enviar-propuesta'?'selected':''}>📄 Enviar Propuesta</option>
           <option value="tratativa"      ${l.estado==='tratativa'?'selected':''}>🤝 Tratativa</option>
-          <option value="potencial"      ${l.estado==='potencial'?'selected':''}>⭐ Potencial</option>
+          <option value="presupuesto"    ${l.estado==='presupuesto'?'selected':''}>💰 Presupuesto</option>
           <option value="reunion"        ${l.estado==='reunion'?'selected':''}>📅 Reunión</option>
-          <option value="pausa"          ${l.estado==='pausa'?'selected':''}>⏸ Pausa</option>
+          <option value="potencial"      ${l.estado==='potencial'?'selected':''}>⭐ Potencial</option>
           <option value="no-potencial"   ${l.estado==='no-potencial'?'selected':''}>💤 No Potencial</option>
           <option value="perdido"        ${l.estado==='perdido'?'selected':''}>✗ Perdido</option>
         </select>
@@ -2389,6 +2468,11 @@ function drawTabla() {
 // Edición inline directa desde la tabla
 function quickUpdate(id, campo, valor) {
   if (!leads[id]) return;
+  // Si se marca como perdido, limpiar fecha para que no aparezca en calendario
+  if (campo === 'estado' && valor === 'perdido') {
+    leads[id].proxFecha = '';
+    leads[id]._editados = [...new Set([...(leads[id]._editados||[]), 'proxFecha','estado'])];
+  }
   // Normalizar fecha a YYYY-MM-DD siempre
   if (campo === 'proxFecha') {
     valor = parseFechaToISO(valor) || valor;  // HTML date input ya viene YYYY-MM-DD, igual normalizar
@@ -2523,6 +2607,9 @@ ${hilo}`
   if (document.getElementById('panel-tabla')?.classList.contains('on')) {
     drawTabla();
   }
+  if (document.getElementById('panel-perdidos')?.classList.contains('on')) {
+    drawPerdidos();
+  }
 }
 
 // Limpiar cache cuando se agrega historial nuevo
@@ -2538,19 +2625,73 @@ function esReunion(l) {
 // ══════════════════════════════════════════
 // BADGES EDITABLES EN PERFIL
 // ══════════════════════════════════════════
+
+// Formatear número a formato WhatsApp internacional (Argentina +54)
+function wppUrl(num) {
+  if (!num || num === 'nan') return null;
+  let n = num.replace(/[^0-9]/g, '');
+  // Si empieza con 54 y tiene 12+ dígitos, ya está bien
+  if (n.startsWith('54') && n.length >= 12) return 'https://api.whatsapp.com/send?phone=' + n;
+  // Si empieza con 0, sacar el 0
+  if (n.startsWith('0')) n = n.substring(1);
+  // Si empieza con 15, es celular argentino viejo
+  if (n.startsWith('15')) n = n.substring(2);
+  // Agregar prefijo 54 + 9 para móviles argentinos
+  if (!n.startsWith('54')) {
+    // Si tiene 10 dígitos (ej: 1138330715) → 549 + número
+    if (n.length === 10) n = '549' + n;
+    else n = '54' + n;
+  }
+  return 'https://api.whatsapp.com/send?phone=' + n;
+}
+
+function gmailUrl(mail) {
+  if (!mail || mail === 'nan') return null;
+  return 'https://mail.google.com/mail/u/0/#search/' + encodeURIComponent('from:' + mail + ' OR to:' + mail);
+}
+
+function linkedinUrl(url) {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  if (url.startsWith('linkedin.com')) return 'https://' + url;
+  if (url.startsWith('in/')) return 'https://www.linkedin.com/' + url;
+  return 'https://www.linkedin.com/in/' + url;
+}
 function renderBadgesPerfil(l) {
   const cont = document.getElementById('pf_badges');
   const wpp  = l.wpp  && l.wpp!=='nan'  ? l.wpp  : '';
   const mail = l.mail && l.mail!=='nan' ? l.mail : '';
   const li   = l.observacion || '';   // LinkedIn URL si está
 
+  const wppLink  = wppUrl(wpp);
+  const mailLink = gmailUrl(mail);
+  const liLink   = linkedinUrl(li);
+
   cont.innerHTML = [
-    wpp  ? `<span class="chip b-wpp"  title="Click para editar" onclick="editContacto('wpp','${wpp.replace(/'/g,"\'")}')">💬 ${wpp}</span>`
-         : `<span class="chip b-wpp"  style="opacity:.5;border-style:dashed" title="Agregar WhatsApp" onclick="editContacto('wpp','')">💬 + WPP</span>`,
-    mail ? `<span class="chip b-mail" title="Click para editar" onclick="editContacto('mail','${mail.replace(/'/g,"\'")}')">📧 ${mail}</span>`
-         : `<span class="chip b-mail" style="opacity:.5;border-style:dashed" title="Agregar email" onclick="editContacto('mail','')">📧 + Mail</span>`,
-    li   ? `<span class="chip b-li"   title="Click para editar" onclick="editContacto('li','${li.replace(/'/g,"\'")}')">💼 LinkedIn ✎</span>`
-         : `<span class="chip b-li"   style="opacity:.5;border-style:dashed" title="Agregar LinkedIn URL" onclick="editContacto('li','')">💼 + LinkedIn</span>`,
+    // WPP: botón directo + lápiz editar
+    wpp
+      ? `<span class="chip b-wpp" style="gap:4px">
+           <a href="${wppLink}" target="_blank" style="color:inherit;text-decoration:none" title="Abrir WhatsApp">💬 ${wpp}</a>
+           <span onclick="editContacto('wpp','${wpp.replace(/'/g,"\'")}')" title="Editar" style="cursor:pointer;opacity:.6;font-size:9px;margin-left:2px">✎</span>
+         </span>`
+      : `<span class="chip b-wpp" style="opacity:.5;border-style:dashed;cursor:pointer" onclick="editContacto('wpp','')">💬 + WPP</span>`,
+
+    // Mail: botón directo a Gmail + lápiz
+    mail
+      ? `<span class="chip b-mail" style="gap:4px">
+           <a href="${mailLink}" target="_blank" style="color:inherit;text-decoration:none" title="Buscar en Gmail">📧 ${mail}</a>
+           <span onclick="editContacto('mail','${mail.replace(/'/g,"\'")}')" title="Editar" style="cursor:pointer;opacity:.6;font-size:9px;margin-left:2px">✎</span>
+         </span>`
+      : `<span class="chip b-mail" style="opacity:.5;border-style:dashed;cursor:pointer" onclick="editContacto('mail','')">📧 + Mail</span>`,
+
+    // LinkedIn: botón directo al perfil + lápiz
+    li
+      ? `<span class="chip b-li" style="gap:4px">
+           <a href="${liLink}" target="_blank" style="color:inherit;text-decoration:none" title="Abrir perfil LinkedIn">💼 LinkedIn</a>
+           <span onclick="editContacto('li','${li.replace(/'/g,"\'")}')" title="Editar" style="cursor:pointer;opacity:.6;font-size:9px;margin-left:2px">✎</span>
+         </span>`
+      : `<span class="chip b-li" style="opacity:.5;border-style:dashed;cursor:pointer" onclick="editContacto('li','')">💼 + LinkedIn</span>`,
+
     estadoChip(l.estado),
   ].join(' ');
 }
