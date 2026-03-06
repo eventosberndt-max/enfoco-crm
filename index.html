@@ -210,6 +210,19 @@ body::before{
 .badge-edit-input{background:none;border:none;outline:none;color:var(--paper);font-size:11px;font-family:'DM Mono',monospace;width:160px}
 .b-mail{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(232,184,75,.2)}
 .b-li{background:var(--sky-dim);color:var(--sky);border:1px solid rgba(90,143,212,.2)}
+/* Tags de situación en tabla */
+.tag-sit{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600;letter-spacing:.2px;white-space:nowrap;cursor:default}
+.tag-reunion{background:rgba(147,112,219,.18);color:#b49fdc;border:1px solid rgba(147,112,219,.35)}
+.tag-carpeta{background:rgba(232,184,75,.13);color:var(--gold);border:1px solid rgba(232,184,75,.3)}
+.tag-presentacion{background:rgba(90,143,212,.15);color:var(--sky);border:1px solid rgba(90,143,212,.3)}
+.tag-no-responde{background:rgba(232,100,80,.12);color:#e86450;border:1px solid rgba(232,100,80,.28)}
+.tag-en-contacto{background:rgba(93,184,122,.13);color:var(--sage);border:1px solid rgba(93,184,122,.28)}
+.tag-enviado{background:rgba(232,184,75,.1);color:var(--gold);border:1px solid rgba(232,184,75,.2)}
+.tag-sin-tag{background:var(--ink4);color:var(--fog);border:1px solid var(--line)}
+/* Pill REUNIÓN — color especial en calendario */
+.pill.reunion{background:rgba(147,112,219,.18);border:1px solid rgba(147,112,219,.5) !important}
+.pill.reunion .pill-name{color:#c4aff0}
+.pill.reunion .pill-sit{color:#b49fdc}
 .lc-paso{font-size:11px;color:var(--fog);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .lc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:9px}
 .lc-fecha{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--fog2)}
@@ -628,12 +641,20 @@ body::before{
 
       <!-- TABLA EDITABLE -->
       <div class="panel" id="panel-tabla">
-        <div style="display:flex;gap:10px;align-items:center">
-          <div class="search" style="flex:1"><input type="text" id="tablaSearch" placeholder="Buscar..." oninput="drawTabla()" /></div>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-ghost btn-sm" onclick="syncFromSheets()">⟳ Sync Sheets</button>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="search" style="flex:1;min-width:140px"><input type="text" id="tablaSearch" placeholder="Buscar..." oninput="drawTabla()" /></div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <select id="tablaOrden" onchange="drawTabla()"
+              style="background:var(--ink3);border:1px solid var(--line);color:var(--fog);padding:6px 10px;border-radius:8px;font-size:11.5px;outline:none;cursor:pointer">
+              <option value="urgencia">🔴 Por urgencia</option>
+              <option value="fecha">📅 Por fecha</option>
+              <option value="alfa">🔤 Alfabético</option>
+              <option value="reunion">📅 Reuniones primero</option>
+              <option value="estado">📊 Por estado</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="syncFromSheets()">⟳ Sync</button>
             <a href="https://docs.google.com/spreadsheets/d/1xUoXkb-OIcQmjxuMZTUN2YfB9qtFnv87/edit#gid=1488122141"
-               target="_blank" class="btn btn-ghost btn-sm" style="text-decoration:none">↗ Abrir Sheets</a>
+               target="_blank" class="btn btn-ghost btn-sm" style="text-decoration:none">↗ Sheets</a>
             <button class="btn btn-gold btn-sm" onclick="openNewLead()">+ Nuevo</button>
           </div>
         </div>
@@ -646,7 +667,7 @@ body::before{
               <th>Estado</th>
               <th>Semáforo</th>
               <th>Próxima fecha</th>
-              <th>Próximo paso</th>
+              <th>Situación</th>
               <th>Acciones</th>
             </tr></thead>
             <tbody id="tablaBody"></tbody>
@@ -1521,10 +1542,11 @@ function drawWeek() {
 
 function pillHTML(l, sf=false) {
   const ci=canalInfo(l);
-  return `<div class="pill ${sf ? l.semaforo||'ok' : l.semaforo||'ok'}" data-id="${l.id}" onclick="abrirPerfil('${l.id}')">
+  const clsPill = esReunion(l) ? 'reunion' : (l.semaforo||'ok');
+  return `<div class="pill ${clsPill}" data-id="${l.id}" onclick="abrirPerfil('${l.id}')">
     <div class="pill-emp">${l.empresa}</div>
     <div class="pill-con">${l.contacto}</div>
-    <div class="pill-ch" style="color:${ci.color}">${ci.ico} ${ci.label||ci.key}</div>
+    <div class="pill-ch" style="color:${esReunion(l)?'#b49fdc':ci.color}">${esReunion(l)?'📅 Reunión':ci.ico+' '+(ci.label||ci.key)}</div>
   </div>`;
 }
 
@@ -2101,9 +2123,31 @@ function drawTabla() {
   const count = document.getElementById('tablaCount');
   if (!tbody) return;
 
+  const orden = document.getElementById('tablaOrden')?.value || 'urgencia';
   const all = Object.values(leads)
     .filter(l => !q || l.empresa.toLowerCase().includes(q) || l.contacto.toLowerCase().includes(q))
     .sort((a,b) => {
+      if (orden === 'fecha') {
+        if (!a.proxFecha && !b.proxFecha) return 0;
+        if (!a.proxFecha) return 1;
+        if (!b.proxFecha) return -1;
+        return a.proxFecha.localeCompare(b.proxFecha);
+      }
+      if (orden === 'alfa') return a.empresa.localeCompare(b.empresa, 'es');
+      if (orden === 'reunion') {
+        const ra = esReunion(a) ? 0 : 1;
+        const rb = esReunion(b) ? 0 : 1;
+        if (ra !== rb) return ra - rb;
+        if (!a.proxFecha && !b.proxFecha) return 0;
+        if (!a.proxFecha) return 1;
+        if (!b.proxFecha) return -1;
+        return a.proxFecha.localeCompare(b.proxFecha);
+      }
+      if (orden === 'estado') {
+        const oe={nuevo:0,enviado:1,tratativa:2,pausa:3,perdido:4};
+        return (oe[a.estado]??5)-(oe[b.estado]??5);
+      }
+      // default: urgencia
       const ord={urg:0,hoy:1,ok:2};
       return (ord[a.semaforo]??3)-(ord[b.semaforo]??3);
     });
@@ -2153,11 +2197,8 @@ function drawTabla() {
           onchange="quickUpdate('${l.id}','proxFecha',this.value)"
           style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:4px 7px;border-radius:6px;font-family:'DM Mono',monospace;font-size:11px;outline:none" />
       </td>
-      <td style="max-width:200px">
-        <input type="text" value="${(l.proxPaso||'').replace(/"/g,'&quot;')}"
-          onchange="quickUpdate('${l.id}','proxPaso',this.value)"
-          placeholder="Próximo paso..."
-          style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:4px 7px;border-radius:6px;font-size:11px;outline:none;width:100%" />
+      <td style="max-width:180px">
+        ${tagHTML(l)}
       </td>
       <td>
         <div style="display:flex;gap:5px">
@@ -2243,6 +2284,49 @@ function eliminarLead() {
 // Llamar drawTabla cuando se abre ese panel
 
 
+
+// ══════════════════════════════════════════
+// TAGS DE SITUACIÓN
+// ══════════════════════════════════════════
+const TAGS_SIT = [
+  { key:'reunion',      label:'📅 Reunión',        css:'tag-reunion',      words:['reuni','meeting','meet','call coordinada','llamada coordinada'] },
+  { key:'carpeta',      label:'📁 Carpeta enviada', css:'tag-carpeta',      words:['carpeta','portafolio','pdf','presentacion','presentación','propuesta'] },
+  { key:'no-responde',  label:'💤 No responde',     css:'tag-no-responde',  words:['no respond','no contesta','sin respuesta','no reply','no respondio','no respondió'] },
+  { key:'en-contacto',  label:'💬 En contacto',     css:'tag-en-contacto',  words:['respondio','respondió','hablamos','conversamos','interesado','interesada'] },
+  { key:'enviado',      label:'✉️ Propuesta enviada',css:'tag-enviado',      words:['mande','mandé','envie','envié','le mande','le mandé'] },
+];
+
+function detectarTag(l) {
+  const texto = [
+    l.proxPaso||'',
+    ...(l.historial||[]).slice(-3).map(h=>h.contenido||'')
+  ].join(' ').toLowerCase();
+
+  for (const t of TAGS_SIT) {
+    if (t.words.some(w => texto.includes(w))) return t;
+  }
+  return null;
+}
+
+function tagHTML(l) {
+  const t = detectarTag(l);
+  if (!t) {
+    // Mostrar resumen corto del proxPaso si hay
+    const paso = (l.proxPaso||'').trim();
+    if (paso) {
+      const corto = paso.length > 38 ? paso.substring(0,36)+'…' : paso;
+      return `<span class="tag-sit tag-sin-tag" title="${paso.replace(/"/g,'&quot;')}">${corto}</span>`;
+    }
+    return '<span style="color:var(--fog);font-size:11px">—</span>';
+  }
+  return `<span class="tag-sit ${t.css}">${t.label}</span>`;
+}
+
+// Detectar si un lead tiene reunión para colorear pill
+function esReunion(l) {
+  const texto = [l.proxPaso||'', ...(l.historial||[]).slice(-2).map(h=>h.contenido||'')].join(' ').toLowerCase();
+  return TAGS_SIT[0].words.some(w => texto.includes(w));
+}
 // ══════════════════════════════════════════
 // BADGES EDITABLES EN PERFIL
 // ══════════════════════════════════════════
