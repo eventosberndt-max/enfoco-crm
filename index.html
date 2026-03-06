@@ -259,6 +259,13 @@ body::before{
 .ai-head{padding:9px 13px;display:flex;align-items:center;gap:7px;border-bottom:1px solid rgba(232,184,75,.1)}
 .ai-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:blink .9s infinite;flex-shrink:0}
 .ai-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:1px}
+.resumen-box{
+  background:var(--ink3);border:1px solid var(--line);border-left:3px solid var(--gold);
+  border-radius:10px;padding:13px 15px;margin-bottom:4px;
+}
+.resumen-loader{color:var(--fog);font-size:12px;font-style:italic;padding:4px 0}
+.resumen-txt{font-size:13px;line-height:1.65;color:var(--paper2);white-space:pre-wrap}
+.resumen-meta{font-family:'DM Mono',monospace;font-size:9px;color:var(--fog);margin-top:7px;letter-spacing:.5px}
 .ai-body{padding:12px 13px;font-size:12.5px;line-height:1.75;color:var(--paper);white-space:pre-wrap}
 .ai-msg-sep{padding:8px 13px 4px;font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:1px;border-top:1px solid rgba(232,184,75,.1);display:flex;justify-content:space-between;align-items:center}
 .ai-msg-body{padding:0 13px 12px;font-size:12.5px;line-height:1.75;color:var(--paper2);white-space:pre-wrap}
@@ -838,6 +845,16 @@ body::before{
           <option value="perdido">✗ Perdido</option>
         </select>
         <button class="btn btn-sage btn-sm" onclick="saveLead()">✓ Guardar</button>
+      </div>
+    </div>
+
+    <!-- RESUMEN RÁPIDO -->
+    <div class="msec" id="pf_resumen_sec">
+      <div class="msec-label">Situación</div>
+      <div class="resumen-box">
+        <div class="resumen-loader" id="resumenLoader">Leyendo historial…</div>
+        <div class="resumen-txt" id="resumenTxt" style="display:none"></div>
+        <div class="resumen-meta" id="resumenMeta"></div>
       </div>
     </div>
 
@@ -1637,6 +1654,7 @@ function abrirPerfil(id) {
 
   drawHistorial(l);
   openModal('mPerfil');
+  genResumenPerfil(l);
   genSugerencia(l);
 }
 
@@ -1851,6 +1869,100 @@ function guardarVistage() {
 // ══════════════════════════════════════════
 // IA
 // ══════════════════════════════════════════
+
+// ══════════════════════════════════════════
+// RESUMEN RÁPIDO DEL PERFIL
+// ══════════════════════════════════════════
+const _perfilResumenCache = {};
+
+async function genResumenPerfil(l) {
+  const loaderEl = document.getElementById('resumenLoader');
+  const txtEl    = document.getElementById('resumenTxt');
+  const metaEl   = document.getElementById('resumenMeta');
+  if (!loaderEl || !txtEl) return;
+
+  // Si ya está cacheado, mostrarlo directo
+  if (_perfilResumenCache[l.id]) {
+    loaderEl.style.display = 'none';
+    txtEl.textContent = _perfilResumenCache[l.id].txt;
+    txtEl.style.display = 'block';
+    if (metaEl) metaEl.textContent = _perfilResumenCache[l.id].meta;
+    return;
+  }
+
+  loaderEl.style.display = 'block';
+  loaderEl.textContent = 'Leyendo historial…';
+  txtEl.style.display = 'none';
+
+  const hist = (l.historial||[]);
+  if (!hist.length && !l.proxPaso) {
+    loaderEl.textContent = 'Sin historial cargado aún.';
+    return;
+  }
+
+  if (!KEY) {
+    // Sin API key — mostrar resumen manual
+    const lineas = [];
+    if (l.proxPaso) lineas.push('Próximo paso: ' + l.proxPaso);
+    if (hist.length) {
+      const ultimo = hist[hist.length-1];
+      const quien = ultimo.quien === 'cliente' ? l.contacto : 'Dami';
+      lineas.push(`Último contacto: ${quien} vía ${ultimo.tipo}`);
+      if (ultimo.contenido) lineas.push(ultimo.contenido.substring(0,120)+(ultimo.contenido.length>120?'…':''));
+    }
+    loaderEl.style.display = 'none';
+    txtEl.innerHTML = lineas.map(ln=>`<div style="margin-bottom:5px">${ln}</div>`).join('');
+    txtEl.style.display = 'block';
+    return;
+  }
+
+  // Armar hilo con quién habla
+  const hiloTexto = hist.slice(-6).map(h => {
+    const quien = h.quien === 'cliente' ? l.contacto : 'Dami (Enfoco)';
+    const fecha = h.fecha ? new Date(h.fecha).toLocaleDateString('es-AR',{day:'numeric',month:'short'}) : '';
+    return `[${fecha}] ${quien} (${h.tipo}): ${(h.contenido||'').substring(0,200)}`;
+  }).join('\n');
+
+  const nMensajes = hist.length;
+  const ultimoQuien = hist.length ? (hist[hist.length-1].quien==='cliente'?l.contacto:'Dami') : '';
+
+  try {
+    const resumen = await aiCall(
+`Sos asistente comercial de Dami Guelman (Enfoco Films).
+Leé el historial de contacto con ${l.contacto} de ${l.empresa} y escribí un resumen rápido para que Dami recuerde la situación al instante.
+
+Formato: 3 líneas simples, sin bullets, sin títulos, sin markdown:
+1. Qué pasó: qué se mandó o habló (específico: carpeta, reunión, seguimiento, etc.)
+2. Cómo respondió: si respondió bien, mal, no respondió, qué dijo puntualmente
+3. Dónde estamos: en qué momento está la relación y qué falta
+
+Sé concreto con los datos reales. No inventes. Si algo no está en el historial, no lo digas.
+
+Empresa: ${l.empresa} | Estado: ${l.estado} | Próximo paso: ${l.proxPaso||'ninguno'}
+
+Historial (${nMensajes} entradas, última de ${ultimoQuien}):
+${hiloTexto}`
+    );
+
+    const txt = resumen.trim();
+    _perfilResumenCache[l.id] = {
+      txt,
+      meta: `${nMensajes} ${nMensajes===1?'entrada':'entradas'} · última de ${ultimoQuien}`
+    };
+    loaderEl.style.display = 'none';
+    // Separar líneas y renderizar con más aire
+    const lineas = txt.split('\n').filter(x=>x.trim());
+    txtEl.innerHTML = lineas.map(ln => `<div style="margin-bottom:5px">${ln.trim()}</div>`).join('');
+    txtEl.style.display = 'block';
+    if (metaEl) metaEl.textContent = _perfilResumenCache[l.id].meta;
+  } catch(e) {
+    loaderEl.textContent = 'No se pudo generar el resumen.';
+  }
+}
+
+function limpiarResumenPerfil(id) {
+  delete _perfilResumenCache[id];
+}
 async function genSugerencia(l) {
   document.getElementById('pf_ai_wrap').style.display='none';
   document.getElementById('aiLoader').classList.add('on');
