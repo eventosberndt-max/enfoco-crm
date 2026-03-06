@@ -150,6 +150,12 @@ body::before{
 .c-rose{background:var(--rose-dim);color:var(--rose);border:1px solid rgba(212,96,90,.25)}
 .c-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(212,138,58,.25)}
 .c-sky{background:var(--sky-dim);color:var(--sky);border:1px solid rgba(90,143,212,.25)}
+.c-violet{background:rgba(147,112,219,.15);color:#c4aff0;border:1px solid rgba(147,112,219,.35)}
+.c-teal{background:rgba(0,180,160,.12);color:#00b4a0;border:1px solid rgba(0,180,160,.28)}
+.c-muted{background:rgba(120,120,130,.12);color:#888;border:1px solid rgba(120,120,130,.25)}
+/* Pill reunión en calendario */
+.pill.reunion{background:rgba(147,112,219,.15) !important;border-left-color:#c4aff0 !important}
+.pill.reunion .pill-name{color:#d4c0f5}
 .c-fog{background:var(--ink4);color:var(--fog);border:1px solid var(--line)}
 
 /* ── LOADER ── */
@@ -841,7 +847,10 @@ body::before{
           <option value="nuevo">🆕 Nuevo</option>
           <option value="enviado">✉️ Enviado</option>
           <option value="tratativa">🤝 En Tratativa</option>
+          <option value="potencial">⭐ Potencial Cliente</option>
+          <option value="reunion">📅 Reunión</option>
           <option value="pausa">⏸ En Pausa</option>
+          <option value="no-potencial">💤 No Potencial</option>
           <option value="perdido">✗ Perdido</option>
         </select>
         <button class="btn btn-sage btn-sm" onclick="saveLead()">✓ Guardar</button>
@@ -1135,9 +1144,41 @@ function mkLead(d={}) {
 // ══════════════════════════════════════════
 // PERSISTENCIA LOCAL
 // ══════════════════════════════════════════
+// ── UNDO STACK ──────────────────────────
+const UNDO_MAX = 20;
+let undoStack = [];
+
 function saveLocal() {
-  try { localStorage.setItem('efcrm_leads', JSON.stringify(leads)); } catch(e) {}
+  try {
+    const snap = JSON.stringify(leads);
+    const prev = localStorage.getItem('efcrm_leads');
+    if (prev && prev !== snap) {
+      undoStack.push(prev);
+      if (undoStack.length > UNDO_MAX) undoStack.shift();
+    }
+    localStorage.setItem('efcrm_leads', snap);
+  } catch(e) {}
 }
+
+function undoLast() {
+  if (!undoStack.length) { toast('No hay más pasos para deshacer','err'); return; }
+  const prev = undoStack.pop();
+  try {
+    leads = JSON.parse(prev);
+    localStorage.setItem('efcrm_leads', prev);
+    drawAll();
+    toast('↩ Deshecho — estado anterior restaurado','ok');
+  } catch(e) { toast('Error al deshacer','err'); }
+}
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    e.preventDefault();
+    undoLast();
+  }
+});
 
 function loadLocal() {
   try {
@@ -1419,11 +1460,14 @@ function estadoFromStr(s) {
   if (s.includes('enviado'))   return 'enviado';
   if (s.includes('pausa'))     return 'pausa';
   if (s.includes('perdido') || s.includes('0 -')) return 'perdido';
+  if (s.includes('potencial') && s.includes('no')) return 'no-potencial';
+  if (s.includes('potencial')) return 'potencial';
+  if (s.includes('reunion') || s.includes('reunión')) return 'reunion';
   return 'nuevo';
 }
 
 function estadoToStr(s) {
-  const m = {nuevo:'1 - Nuevo',enviado:'2 - Enviado',tratativa:'6 - Proyecto En Tratativa',pausa:'3 - En Pausa',perdido:'0 - Perdido'};
+  const m = {nuevo:'1 - Nuevo',enviado:'2 - Enviado',tratativa:'6 - Proyecto En Tratativa',pausa:'3 - En Pausa',perdido:'0 - Perdido',potencial:'7 - Potencial Cliente',reunion:'8 - Reunión',"no-potencial":'9 - No Potencial'};
   return m[s] || s;
 }
 
@@ -1447,11 +1491,14 @@ function semColor(s) {
 
 function estadoChip(s) {
   const map = {
-    nuevo:    ['c-sky','🆕 Nuevo'],
-    enviado:  ['c-gold','✉️ Enviado'],
-    tratativa:['c-sage','🤝 Tratativa'],
-    pausa:    ['c-fog','⏸ Pausa'],
-    perdido:  ['c-rose','✗ Perdido'],
+    nuevo:          ['c-sky','🆕 Nuevo'],
+    enviado:        ['c-gold','✉️ Enviado'],
+    tratativa:      ['c-sage','🤝 Tratativa'],
+    pausa:          ['c-fog','⏸ Pausa'],
+    perdido:        ['c-rose','✗ Perdido'],
+    potencial:      ['c-violet','⭐ Potencial'],
+    reunion:        ['c-violet','📅 Reunión'],
+    'no-potencial': ['c-muted','💤 No potencial'],
   };
   const [cls,lbl] = map[s] || ['c-fog',s];
   return `<span class="chip ${cls}">${lbl}</span>`;
@@ -1559,7 +1606,7 @@ function drawWeek() {
 
 function pillHTML(l, sf=false) {
   const ci=canalInfo(l);
-  const clsPill = esReunion(l) ? 'reunion' : (l.semaforo||'ok');
+  const clsPill = (l.estado==='reunion' || esReunion(l)) ? 'reunion' : (l.semaforo||'ok');
   return `<div class="pill ${clsPill}" data-id="${l.id}" onclick="abrirPerfil('${l.id}')">
     <div class="pill-emp">${l.empresa}</div>
     <div class="pill-con">${l.contacto}</div>
@@ -1928,19 +1975,28 @@ async function genResumenPerfil(l) {
 
   try {
     const resumen = await aiCall(
-`Sos asistente comercial de Dami Guelman (Enfoco Films).
-Leé el historial de contacto con ${l.contacto} de ${l.empresa} y escribí un resumen rápido para que Dami recuerde la situación al instante.
+`Sos asistente comercial de Dami Guelman (Enfoco Films, productora audiovisual).
 
-Formato: 3 líneas simples, sin bullets, sin títulos, sin markdown:
-1. Qué pasó: qué se mandó o habló (específico: carpeta, reunión, seguimiento, etc.)
-2. Cómo respondió: si respondió bien, mal, no respondió, qué dijo puntualmente
-3. Dónde estamos: en qué momento está la relación y qué falta
+Leé las notas y mensajes de contacto con ${l.contacto} de ${l.empresa}.
+Las notas pueden contener copy-paste directo de WhatsApp, LinkedIn o mail, con formatos como:
+- "Nombre Apellido HH:MM\nTexto del mensaje"
+- "Damian Guelman 15:33\nTexto..."
+- Bloques con asteriscos, fechas sueltas, etc.
 
-Sé concreto con los datos reales. No inventes. Si algo no está en el historial, no lo digas.
+Analizá quién mandó cada cosa: si el nombre es el del cliente (${l.contacto}) = él habla. Si es Dami / Damian / Enfoco = habla Dami.
+Ignorá los metadatos (fechas de carga, horas del sistema, asteriscos, "Ver el perfil de", "ha enviado").
+Concentrarte en el CONTENIDO real de cada mensaje.
+
+Escribí 3 líneas directas, sin títulos, sin bullets, sin markdown:
+1. Qué hizo Dami: qué mandó, qué propuso (carpeta, reunión, seguimiento, etc.)
+2. Qué respondió ${l.contacto}: qué dijo exactamente, o si no respondió
+3. Estado actual: en qué momento está esto y qué falta para avanzar
+
+Usá solo lo que esté en las notas. No inventes. Sé específico con el contenido real.
 
 Empresa: ${l.empresa} | Estado: ${l.estado} | Próximo paso: ${l.proxPaso||'ninguno'}
 
-Historial (${nMensajes} entradas, última de ${ultimoQuien}):
+Notas y mensajes (${nMensajes} entradas):
 ${hiloTexto}`
     );
 
@@ -2259,7 +2315,10 @@ function drawTabla() {
         const oe={nuevo:0,enviado:1,tratativa:2,pausa:3,perdido:4};
         return (oe[a.estado]??5)-(oe[b.estado]??5);
       }
-      // default: urgencia
+      // default: urgencia — potencial y reunion al tope
+      const estOrd={reunion:0,potencial:1,tratativa:2};
+      const ea=estOrd[a.estado]??10, eb=estOrd[b.estado]??10;
+      if (ea!==eb) return ea-eb;
       const ord={urg:0,hoy:1,ok:2};
       return (ord[a.semaforo]??3)-(ord[b.semaforo]??3);
     });
@@ -2292,11 +2351,14 @@ function drawTabla() {
       <td>
         <select onchange="quickUpdate('${l.id}','estado',this.value)"
           style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:4px 6px;border-radius:6px;font-size:11px;outline:none">
-          <option value="nuevo"     ${l.estado==='nuevo'?'selected':''}>🆕 Nuevo</option>
-          <option value="enviado"   ${l.estado==='enviado'?'selected':''}>✉️ Enviado</option>
-          <option value="tratativa" ${l.estado==='tratativa'?'selected':''}>🤝 Tratativa</option>
-          <option value="pausa"     ${l.estado==='pausa'?'selected':''}>⏸ Pausa</option>
-          <option value="perdido"   ${l.estado==='perdido'?'selected':''}>✗ Perdido</option>
+          <option value="nuevo"          ${l.estado==='nuevo'?'selected':''}>🆕 Nuevo</option>
+          <option value="enviado"        ${l.estado==='enviado'?'selected':''}>✉️ Enviado</option>
+          <option value="tratativa"      ${l.estado==='tratativa'?'selected':''}>🤝 Tratativa</option>
+          <option value="potencial"      ${l.estado==='potencial'?'selected':''}>⭐ Potencial</option>
+          <option value="reunion"        ${l.estado==='reunion'?'selected':''}>📅 Reunión</option>
+          <option value="pausa"          ${l.estado==='pausa'?'selected':''}>⏸ Pausa</option>
+          <option value="no-potencial"   ${l.estado==='no-potencial'?'selected':''}>💤 No Potencial</option>
+          <option value="perdido"        ${l.estado==='perdido'?'selected':''}>✗ Perdido</option>
         </select>
       </td>
       <td>
