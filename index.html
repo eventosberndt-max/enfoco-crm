@@ -915,31 +915,32 @@ body::before{
     <!-- ACCIONES -->
     <div class="msec" style="background:var(--ink3)">
       <div class="action-tabs" style="margin-bottom:0" id="actionTabs">
-        <button class="btn btn-gold btn-sm" onclick="toggleSection('pfResponder','pfNota')">✉️ Responder</button>
-        <button class="btn btn-ghost btn-sm" onclick="toggleSection('pfNota','pfResponder')">📝 Nota</button>
+        <button class="btn btn-gold btn-sm" onclick="toggleSection('pfResponder','pfNota')">💬 Mensaje / Nota</button>
         <button class="btn btn-ghost btn-sm" onclick="reanalizar()">🔄 Re-analizar</button>
       </div>
 
-      <!-- RESPONDER -->
+      <!-- CAMPO UNIFICADO: mensaje recibido, nota, conversación -->
       <div id="pfResponder" style="display:none;flex-direction:column;gap:10px;margin-top:12px">
+        <div style="font-size:11px;color:var(--fog);font-family:'DM Mono',monospace">
+          Pegá la conversación, un mensaje recibido, o escribí una nota. La IA detecta el canal automáticamente.
+        </div>
+        <div style="position:relative">
+          <textarea id="msg_ctx" rows="4"
+            placeholder="Pegá acá WPP, LinkedIn o mail... o escribí una nota interna."
+            style="width:100%;padding-bottom:28px"
+            oninput="notaDetectarCanal(this.value)"></textarea>
+          <span id="notaCanalDetectado" style="position:absolute;bottom:8px;left:10px;font-size:10px;color:var(--fog);font-family:'DM Mono',monospace;pointer-events:none"></span>
+        </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <div class="canal-row" id="canalRow">
-            <button class="canal-opt wpp on" onclick="setCanal('wpp',this)">💬 WhatsApp</button>
-            <button class="canal-opt li" onclick="setCanal('li',this)">💼 LinkedIn</button>
-            <button class="canal-opt mail" onclick="setCanal('mail',this)">📧 Email</button>
-          </div>
-          <select class="qc-sel" id="msg_tipo">
+          <button class="btn btn-ghost btn-sm" id="btnVozNota" onclick="toggleVoz()" title="Transcripción de voz">🎤 Voz</button>
+          <select class="qc-sel" id="msg_tipo" style="flex:1">
             <option value="seguimiento según el historial">Seguimiento</option>
             <option value="primer contacto frío">Primer contacto</option>
             <option value="respuesta al mensaje recibido">Responder recibido</option>
             <option value="propuesta concreta de servicio">Propuesta</option>
           </select>
+          <button class="btn btn-gold btn-sm" onclick="genMsg()">✨ Generar mensaje</button>
         </div>
-        <div class="field">
-          <label>Contexto / lo que te respondieron</label>
-          <textarea id="msg_ctx" rows="3" placeholder="Pegá la respuesta que recibiste, o contexto nuevo..."></textarea>
-        </div>
-        <button class="btn btn-gold btn-sm" style="align-self:flex-start" onclick="genMsg()">✨ Generar mensaje</button>
         <div class="loader" id="msgLoader"><div class="dots"><span></span><span></span><span></span></div>Generando...</div>
         <div class="ai-wrap" id="msgWrap" style="display:none">
           <div class="ai-head">
@@ -1000,35 +1001,45 @@ body::before{
 
 <!-- MODAL: NUEVO LEAD -->
 <div class="overlay" id="mNuevoLead">
-  <div class="modal" style="max-width:560px">
+  <div class="modal" style="max-width:580px">
     <div class="modal-h">
       <div class="modal-h-info"><div class="modal-hname" style="font-size:17px">➕ Nuevo Lead</div></div>
       <button class="modal-close" onclick="closeModal('mNuevoLead')">×</button>
     </div>
     <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
 
-      <!-- ZONA PEGADO CONVERSACIÓN -->
-      <div>
-        <label style="font-size:11px;color:var(--fog);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px">
-          Pegá la conversación o perfil (WPP, LinkedIn, Mail...)
-        </label>
-        <div style="position:relative;margin-top:6px">
-          <textarea id="nl_conv" rows="4"
-            placeholder="Pegá acá el copy-paste de la conversación o el perfil. Se va a extraer automáticamente nombre, empresa, teléfono, mail y LinkedIn."
-            oninput="nlAutoExtract()"
-            style="width:100%;resize:vertical;padding-right:80px"></textarea>
+      <!-- PASO 1: URL + CONVERSACIÓN -->
+      <div style="background:var(--ink3);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:11px;color:var(--gold);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px">
+          1 · Pegá el link de LinkedIn y/o la conversación
+        </div>
+        <input type="url" id="nl_liurl"
+          placeholder="https://www.linkedin.com/in/nombre-apellido/"
+          oninput="nlOnLinkChange()"
+          style="font-size:13px" />
+        <div style="position:relative">
+          <textarea id="nl_conv" rows="5"
+            placeholder="Pegá acá la conversación completa (LinkedIn, WPP, mail). La IA va a extraer nombre, empresa, cargo y dejar la conv como nota."
+            oninput="nlAutoExtract();nlOnLinkChange()"
+            style="width:100%;resize:vertical"></textarea>
           <span id="nlExtractStatus" style="position:absolute;bottom:8px;right:10px;font-size:10px;color:var(--fog);font-family:'DM Mono',monospace"></span>
         </div>
+        <button class="btn btn-gold btn-sm" id="nlAiBtn" onclick="nlAnalizarConIA()" style="align-self:flex-start;display:none">
+          ✨ Analizar con IA
+        </button>
+        <div id="nlAiStatus" style="font-size:11.5px;color:var(--fog);display:none"></div>
       </div>
 
-      <!-- CAMPOS — se rellenan solos -->
+      <!-- PASO 2: CAMPOS EXTRAÍDOS -->
+      <div style="font-size:11px;color:var(--fog2);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px">
+        2 · Confirmá los datos (se completan solos)
+      </div>
       <div class="fg">
+        <div class="field"><label>Contacto *</label><input type="text" id="nl_contacto" placeholder="Nombre del contacto" /></div>
         <div class="field"><label>Empresa *</label><input type="text" id="nl_empresa" placeholder="Nombre de la empresa" /></div>
-        <div class="field"><label>Contacto</label><input type="text" id="nl_contacto" placeholder="Nombre del contacto" /></div>
         <div class="field"><label>Cargo</label><input type="text" id="nl_cargo" placeholder="CEO, Gerente..." /></div>
         <div class="field"><label>WhatsApp</label><input type="text" id="nl_wpp" placeholder="11-1234-5678" /></div>
         <div class="field"><label>Email</label><input type="text" id="nl_mail" placeholder="nombre@empresa.com" /></div>
-        <div class="field"><label>LinkedIn</label><input type="text" id="nl_li" placeholder="linkedin.com/in/..." /></div>
         <div class="field"><label>Origen</label>
           <select id="nl_origen">
             <option>LinkedIn</option><option>WhatsApp</option>
@@ -1569,6 +1580,54 @@ function addDaysISO(iso, n) {
 // ══════════════════════════════════════════
 // RENDER
 // ══════════════════════════════════════════
+
+// ══════════════════════════════════════════
+// BACKUP AUTOMÁTICO 24HS
+// ══════════════════════════════════════════
+function checkAutoBackup() {
+  try {
+    const lastBackup = parseInt(localStorage.getItem('efcrm_lastBackup') || '0');
+    const now = Date.now();
+    const hs24 = 24 * 60 * 60 * 1000;
+    if (now - lastBackup > hs24) {
+      // Hacer backup silencioso
+      const snap = JSON.stringify({ leads, fecha: new Date().toISOString(), version: 2 });
+      localStorage.setItem('efcrm_backup_auto', snap);
+      localStorage.setItem('efcrm_lastBackup', now.toString());
+      console.log('[CRM] Backup automático guardado:', new Date().toLocaleString('es-AR'));
+    }
+  } catch(e) {}
+}
+
+function descargarBackup() {
+  const data = { leads, vistage, fecha: new Date().toISOString(), version: 2 };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'enfoco_crm_backup_' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ Backup descargado', 'ok');
+}
+
+function restaurarBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.leads) { toast('Archivo inválido', 'err'); return; }
+      if (!confirm('¿Restaurar backup? Vas a pisar los datos actuales.')) return;
+      leads = data.leads;
+      saveLocal();
+      drawAll();
+      toast('✓ Backup restaurado — ' + Object.keys(leads).length + ' leads', 'ok');
+    } catch(err) { toast('Error al leer el archivo', 'err'); }
+  };
+  reader.readAsText(file);
+}
 function drawAll() {
   drawWeek();
   drawLeads();
@@ -1834,6 +1893,98 @@ function saveLead() {
   renderBadgesPerfil(l);
 }
 
+
+// ── Detección automática de canal en notas ──
+function notaDetectarCanal(txt) {
+  const el = document.getElementById('notaCanalDetectado');
+  if (!el || !txt) return;
+  let canal = '', icon = '';
+  // Detectar por marcadores del formato
+  if (/\d{1,2}:\d{2}.*\n|ha enviado.*mensaje|Damian Guelman|Ver el perfil de/i.test(txt)) {
+    canal = 'linkedin'; icon = '💼 LinkedIn detectado';
+  } else if (/\+?54|\d{2,4}[-\s]\d{4}[-\s]\d{4}|WhatsApp|wpp/i.test(txt) && /\d{1,2}:\d{2}/.test(txt)) {
+    canal = 'wpp'; icon = '💬 WhatsApp detectado';
+  } else if (/@|Asunto:|Subject:|De:|Para:/i.test(txt)) {
+    canal = 'mail'; icon = '📧 Mail detectado';
+  } else if (txt.length > 20) {
+    canal = 'nota'; icon = '📝 Nota interna';
+  }
+  el.textContent = icon;
+  el._canal = canal;
+}
+
+// ── Transcripción de voz ──────────────────
+let _voiceRec = null;
+function toggleVoz() {
+  const btn = document.getElementById('btnVozNota');
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    toast('Tu browser no soporta transcripción de voz — usá Chrome', 'err');
+    return;
+  }
+  if (_voiceRec) {
+    _voiceRec.stop(); _voiceRec = null;
+    if (btn) { btn.textContent = '🎤 Voz'; btn.style.color = ''; }
+    return;
+  }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  _voiceRec = new SpeechRecognition();
+  _voiceRec.lang = 'es-AR';
+  _voiceRec.continuous = true;
+  _voiceRec.interimResults = true;
+  const textarea = document.getElementById('msg_ctx');
+  let base = textarea?.value || '';
+  _voiceRec.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) base += e.results[i][0].transcript + ' ';
+      else interim = e.results[i][0].transcript;
+    }
+    if (textarea) textarea.value = base + interim;
+  };
+  _voiceRec.onend = () => {
+    _voiceRec = null;
+    if (btn) { btn.textContent = '🎤 Voz'; btn.style.color = ''; }
+  };
+  _voiceRec.onerror = () => {
+    _voiceRec = null;
+    if (btn) { btn.textContent = '🎤 Voz'; btn.style.color = ''; }
+    toast('Error de micrófono', 'err');
+  };
+  _voiceRec.start();
+  if (btn) { btn.textContent = '⏹ Detener'; btn.style.color = 'var(--rose)'; }
+  toast('Escuchando... hablá ahora', 'ok');
+}
+
+// ── saveNota mejorada: detecta canal automáticamente ──
+function saveNotaUnificada() {
+  if (!currentId) return;
+  const txt = document.getElementById('msg_ctx')?.value.trim();
+  if (!txt) { toast('Escribí o pegá algo primero', 'err'); return; }
+
+  const canalEl = document.getElementById('notaCanalDetectado');
+  const canal = canalEl?._canal || 'nota';
+
+  // Detectar quién habla en la conversación
+  const l = leads[currentId];
+  let quien = 'dami';
+  if (canal !== 'nota') {
+    // Si el texto contiene el nombre del contacto como "hablando", es del cliente
+    const nombreCliente = (l?.contacto||'').split(' ')[0].toLowerCase();
+    const lines = txt.split('\n').slice(0,5).join(' ').toLowerCase();
+    if (nombreCliente && lines.includes(nombreCliente) && !lines.includes('damian')) {
+      quien = 'mixto'; // conversación con ambos
+    }
+  }
+
+  addHist(currentId, { tipo: canal, quien, contenido: txt });
+  document.getElementById('msg_ctx').value = '';
+  if (canalEl) { canalEl.textContent = ''; canalEl._canal = ''; }
+  limpiarResumenPerfil(currentId);
+  limpiarResumenCache(currentId);
+  drawHistorial(leads[currentId]);
+  toast('✓ Guardado', 'ok');
+}
+
 function saveNota() {
   if(!currentId)return;
   const txt=document.getElementById('nt_txt').value.trim();
@@ -1877,82 +2028,183 @@ function confirmarEnvio() {
 // ══════════════════════════════════════════
 // EXTRACCIÓN AUTOMÁTICA DE CONTACTO desde copy-paste
 // ══════════════════════════════════════════
+// ── Cuando cambia el link de LinkedIn ───
+function nlOnLinkChange() {
+  const url = document.getElementById('nl_liurl')?.value.trim() || '';
+  const btn = document.getElementById('nlAiBtn');
+  const conv = document.getElementById('nl_conv')?.value.trim() || '';
+  // Mostrar botón IA si hay URL o texto suficiente
+  if (btn) btn.style.display = (url.includes('linkedin.com') || conv.length > 50) ? '' : 'none';
+  // Extraer el slug de LinkedIn para guardarlo
+  const m = url.match(/linkedin\.com\/in\/([a-zA-Z0-9\-_]+)/i);
+  const liEl = document.getElementById('nl_li');
+  if (liEl && m) liEl.value = 'linkedin.com/in/' + m[1];
+  nlAutoExtract();
+}
+
+// ── Análisis completo con IA ─────────────
+async function nlAnalizarConIA() {
+  const url  = document.getElementById('nl_liurl')?.value.trim() || '';
+  const conv = document.getElementById('nl_conv')?.value.trim() || '';
+  const statusEl = document.getElementById('nlAiStatus');
+  const btn = document.getElementById('nlAiBtn');
+
+  if (!KEY) { toast('Falta la API Key — andá a Config', 'err'); return; }
+  if (!url && conv.length < 20) { toast('Pegá la URL o la conversación primero', 'err'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Analizando...';
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Extrayendo datos...'; }
+
+  const input = [
+    url ? `URL LinkedIn: ${url}` : '',
+    conv ? `Conversación:\n${conv.substring(0, 2000)}` : '',
+  ].filter(Boolean).join('\n\n');
+
+  try {
+    const r = await aiCall(
+`Analizá esta información de un contacto de LinkedIn y/o una conversación.
+Extraé los datos en formato JSON exactamente así (sin markdown, sin backticks):
+{
+  "nombre": "Nombre completo del contacto",
+  "empresa": "Nombre de la empresa donde trabaja",
+  "cargo": "Cargo o título",
+  "wpp": "Número de teléfono si aparece, sino vacío",
+  "mail": "Email si aparece, sino vacío",
+  "linkedin": "URL completa de LinkedIn si aparece, sino vacío",
+  "resumen": "1 oración: qué pasó en esta conversación o de qué trata el perfil"
+}
+
+Reglas:
+- Para el nombre: ignorá "Damian", "Dami", "Enfoco" — esos son nosotros
+- Para la empresa: buscá donde trabaja el contacto, no Enfoco Films
+- Si hay conversación: el nombre es quien habla con Dami, no Dami
+- Ignorá metadatos de LinkedIn (Móvil, Contacto de 1er grado, Hace X horas, etc.)
+- Solo devolvé el JSON, nada más
+
+${input}`
+    );
+
+    // Parsear JSON
+    const clean = r.replace(/```json|```/g,'').trim();
+    const data = JSON.parse(clean);
+
+    // Rellenar campos
+    if (data.nombre)   { const el = document.getElementById('nl_contacto'); if(el && !el.value) el.value = data.nombre; }
+    if (data.empresa)  { const el = document.getElementById('nl_empresa');  if(el && !el.value) el.value = data.empresa; }
+    if (data.cargo)    { const el = document.getElementById('nl_cargo');    if(el && !el.value) el.value = data.cargo; }
+    if (data.wpp)      { const el = document.getElementById('nl_wpp');      if(el && !el.value) el.value = data.wpp; }
+    if (data.mail)     { const el = document.getElementById('nl_mail');     if(el && !el.value) el.value = data.mail; }
+    if (data.linkedin) { const el = document.getElementById('nl_li');       if(el && !el.value) el.value = data.linkedin; }
+
+    if (statusEl) {
+      statusEl.textContent = data.resumen ? `✓ ${data.resumen}` : '✓ Datos extraídos';
+      statusEl.style.color = 'var(--sage)';
+    }
+    if (document.getElementById('nl_extractStatus')) {
+      document.getElementById('nlExtractStatus').textContent = '✓ IA extrajo los datos';
+    }
+  } catch(e) {
+    if (statusEl) { statusEl.textContent = 'No pude parsear — completá los campos manualmente'; statusEl.style.color = 'var(--rose)'; }
+    // Fallback: extracción local
+    nlAutoExtract();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Re-analizar';
+  }
+}
+
+// ── Extracción local (sin IA, en tiempo real) ──
 function nlAutoExtract() {
   const txt = document.getElementById('nl_conv')?.value || '';
   if (txt.length < 10) return;
 
   const status = document.getElementById('nlExtractStatus');
   let found = 0;
+  const lines = txt.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
 
-  // ── TELÉFONO / WPP ──────────────────────
-  // Buscar patrones de número argentino: 11-1234-5678, +54 9 11 ..., 541138..., etc.
-  const wppEl = document.getElementById('nl_wpp');
-  if (!wppEl.value) {
-    const telPatterns = [
-      /(?:whatsapp|wpp|tel[eé]fono|celular|cel|phone)?[\s:]*(\+?54[\s\-]?9?[\s\-]?\d{2,4}[\s\-]?\d{4}[\s\-]?\d{4})/i,
-      /(?<!\d)(\+?54[\s\-]?\d{2,4}[\s\-]?\d{4}[\s\-]?\d{4})(?!\d)/,
-      /(?<!\d)((?:11|15|2[0-9]{2,3}|3[0-9]{2,3})[\s\-]?\d{4}[\s\-]?\d{4})(?!\d)/,
-    ];
-    for (const p of telPatterns) {
-      const m = txt.match(p);
-      if (m) {
-        const num = (m[1]||m[0]).replace(/[\s\-]/g,'').replace(/^\+/,'');
-        wppEl.value = num;
-        found++;
-        break;
-      }
-    }
-  }
-
-  // ── EMAIL ────────────────────────────────
-  const mailEl = document.getElementById('nl_mail');
-  if (!mailEl.value) {
-    const mails = txt.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g);
-    if (mails && mails.length) {
-      // Filtrar mails de plataformas (LinkedIn, WPP, etc.)
-      const real = mails.find(m => !/(linkedin|whatsapp|facebook|instagram|gmail\.com$|noreply)/i.test(m));
-      if (real) { mailEl.value = real; found++; }
-    }
-  }
-
-  // ── LINKEDIN URL ─────────────────────────
-  const liEl = document.getElementById('nl_li');
-  if (!liEl.value) {
-    const liMatch = txt.match(/linkedin\.com\/in\/([a-zA-Z0-9\-\_]+)/i);
-    if (liMatch) { liEl.value = 'linkedin.com/in/' + liMatch[1]; found++; }
-  }
-
-  // ── NOMBRE ───────────────────────────────
+  // ── NOMBRE DEL CONTACTO ──────────────────
+  // Formato LinkedIn: primera línea es el nombre
+  // "Ma. Juliana Vazquez", "Diego G Agatiello", etc.
+  // Ignorar líneas que son metadatos de LinkedIn
+  const metaPatterns = /^(M\u00f3vil|Correo|Contacto de|Abre la lista|Minimiza|Cierra tu|Estado:|Perfil de|\d+er|\d+do|\d+to|Hace \d+|Hoy|Ayer|linkedin|http)/i;
   const contactoEl = document.getElementById('nl_contacto');
   if (!contactoEl.value) {
-    // Buscar "Nombre Apellido" en formatos de LinkedIn/WPP
-    // LinkedIn: primera línea con mayúscula
-    // WPP: "Nombre Apellido HH:MM" o "Nombre Apellido ha enviado"
-    const nombrePatterns = [
-      /^([A-Za-z\xc0-\xff]+ [A-Za-z\xc0-\xff]+)[\r\n]/m,
-      /Ver el perfil de\s+([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+(?: [A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+)+)/i,
-      /^([A-Za-z\u00C0-\u024F]+ [A-Za-z\u00C0-\u024F]+)[\r\n]/m,
-    ];
-    for (const p of nombrePatterns) {
-      const m = txt.match(p);
-      if (m && m[1] && m[1].length > 3) {
-        contactoEl.value = m[1].trim();
-        found++;
-        break;
+    // La primera línea que no es meta y tiene al menos nombre + apellido
+    for (const line of lines.slice(0, 5)) {
+      if (metaPatterns.test(line)) continue;
+      if (/^[A-Z\u00C0-\u024F][a-z\u00C0-\u024F]/.test(line) && line.split(' ').length >= 2 && line.length < 60) {
+        // Sacar sufijos tipo "· 1er", "Hace 15 horas", etc.
+        const clean = line.replace(/[·•].*/,'').replace(/\s+\d+.*$/,'').trim();
+        if (clean.length > 3) { contactoEl.value = clean; found++; break; }
       }
+    }
+    // Fallback: "Ver el perfil de NombreApellido NombreApellido"
+    if (!contactoEl.value) {
+      const m = txt.match(/Ver el perfil de\s+((?:[A-Z\u00C0-\u024F][a-z\u00C0-\u024F]+\.?\s*){2,4})/);
+      if (m) { contactoEl.value = m[1].trim(); found++; }
     }
   }
 
   // ── CARGO ────────────────────────────────
   const cargoEl = document.getElementById('nl_cargo');
   if (!cargoEl.value) {
-    // Buscar cargo típico después del nombre en LinkedIn
-    const cargoMatch = txt.match(/(?:CEO|Director|Gerente|Manager|Jefe|Head|Presidente|Fundador|Founder|CMO|CFO|CTO|Coordinador|Responsable)[^\n\r]{0,60}/i);
-    if (cargoMatch) { cargoEl.value = cargoMatch[0].trim().substring(0,60); found++; }
+    // En LinkedIn el cargo suele estar en línea 3-6, después del nombre y "Móvil"
+    const cargoRe = /(?:Lic\.|Ing\.|Dr\.|Dra\.|CEO|Director|Gerente|Manager|Jefe|Head|Presidente|Fundador|Founder|CMO|CFO|CTO|Coordinador|Responsable|Product|Marketing|Comercial|Ventas|RRHH|Recursos)[^\r\n]{0,80}/i;
+    for (const line of lines.slice(0, 10)) {
+      if (metaPatterns.test(line)) continue;
+      if (cargoRe.test(line) && !line.includes('@')) {
+        cargoEl.value = line.replace(/[·•].*/,'').trim().substring(0, 70);
+        found++;
+        break;
+      }
+    }
+  }
+
+  // ── EMPRESA ───────────────────────────────
+  const empresaEl = document.getElementById('nl_empresa');
+  if (!empresaEl.value) {
+    // Buscar patrón "en NombreEmpresa" o "@ NombreEmpresa" o línea con empresa conocida
+    const empresaM = txt.match(/(?:en|@|\bat\b)\s+([A-Z][A-Za-z\u00C0-\u024F &\.]{2,40}(?:S\.A\.|SRL|SA|LLC|Inc\.?)?)/);
+    if (empresaM) { empresaEl.value = empresaM[1].trim(); found++; }
+  }
+
+  // ── EMAIL ────────────────────────────────
+  const mailEl = document.getElementById('nl_mail');
+  if (!mailEl.value) {
+    const mails = txt.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g);
+    if (mails) {
+      const real = mails.find(m => !/(linkedin|whatsapp|facebook|instagram|noreply|no-reply)/i.test(m));
+      if (real) { mailEl.value = real; found++; }
+    }
+  }
+
+  // ── WPP / TELÉFONO ───────────────────────
+  const wppEl = document.getElementById('nl_wpp');
+  if (!wppEl.value) {
+    const telPatterns = [
+      /(\+?54\s*9?\s*\d{2,4}\s*\d{4}\s*\d{4})/,
+      /(?<!\d)((?:11|15|2\d{2,3}|3\d{2,3})[-\s]?\d{4}[-\s]?\d{4})(?!\d)/,
+    ];
+    for (const p of telPatterns) {
+      const m = txt.match(p);
+      if (m) {
+        wppEl.value = (m[1]||m[0]).replace(/[\s\-]/g,'').replace(/^\+/,'');
+        found++;
+        break;
+      }
+    }
+  }
+
+  // ── LINKEDIN ─────────────────────────────
+  const liEl = document.getElementById('nl_li');
+  if (!liEl.value) {
+    const liM = txt.match(/linkedin\.com\/in\/([a-zA-Z0-9\-_]+)/i);
+    if (liM) { liEl.value = 'linkedin.com/in/' + liM[1]; found++; }
   }
 
   if (status) {
-    status.textContent = found > 0 ? `✓ ${found} dato${found>1?'s':''} extraído${found>1?'s':''}` : '';
+    status.textContent = found > 0 ? `✓ ${found} dato${found>1?'s':''} extraído${found>1?'s':''}` : 'Pegá una conversación para extraer datos';
     status.style.color = found > 0 ? 'var(--sage)' : 'var(--fog)';
   }
 }
@@ -1965,7 +2217,10 @@ function crearNuevoLead() {
   const contacto = document.getElementById('nl_contacto').value.trim();
   if (!empresa) { toast('Completá la empresa','err'); return; }
   const conv = document.getElementById('nl_conv')?.value.trim() || '';
-  const liVal = document.getElementById('nl_li')?.value.trim() || '';
+  // LinkedIn: puede venir del campo nl_li o del url nl_liurl
+  const liValRaw = document.getElementById('nl_li')?.value.trim() || '';
+  const liUrlRaw = document.getElementById('nl_liurl')?.value.trim() || '';
+  const liVal = liValRaw || liUrlRaw;
   const id = mkId();
   leads[id] = mkLead({
     id,
@@ -1996,7 +2251,7 @@ function crearNuevoLead() {
   saveLocal();
   closeModal('mNuevoLead');
   // Limpiar campos
-  ['nl_empresa','nl_contacto','nl_cargo','nl_wpp','nl_mail','nl_li','nl_conv']
+  ['nl_empresa','nl_contacto','nl_cargo','nl_wpp','nl_mail','nl_li','nl_liurl','nl_conv']
     .forEach(fid => { const el=document.getElementById(fid); if(el) el.value=''; });
   const nlExtSt = document.getElementById('nlExtractStatus');
   if (nlExtSt) nlExtSt.textContent = '';
@@ -2121,28 +2376,23 @@ async function genResumenPerfil(l) {
 
   try {
     const resumen = await aiCall(
-`Sos asistente comercial de Dami Guelman (Enfoco Films, productora audiovisual).
+`Sos el asistente comercial de Dami Guelman (Enfoco Films).
 
-Leé las notas y mensajes de contacto con ${l.contacto} de ${l.empresa}.
-Las notas pueden contener copy-paste directo de WhatsApp, LinkedIn o mail, con formatos como:
-- "Nombre Apellido HH:MM\nTexto del mensaje"
-- "Damian Guelman 15:33\nTexto..."
-- Bloques con asteriscos, fechas sueltas, etc.
+TAREA: Resumir en exactamente 2 oraciones el estado actual de este contacto.
 
-Analizá quién mandó cada cosa: si el nombre es el del cliente (${l.contacto}) = él habla. Si es Dami / Damian / Enfoco = habla Dami.
-Ignorá los metadatos (fechas de carga, horas del sistema, asteriscos, "Ver el perfil de", "ha enviado").
-Concentrarte en el CONTENIDO real de cada mensaje.
+REGLAS ESTRICTAS:
+- Solo hablá de las ÚLTIMAS interacciones (lo más reciente)
+- Identificá quién habló último: si el nombre es "${l.contacto}" = el cliente, si dice "Dami" o "Damian" o "Enfoco" = Dami
+- Ignorá completamente: asteriscos, "Ver el perfil de", "ha enviado el siguiente mensaje", "ha enviado los siguientes mensajes", horarios, fechas del sistema, emojis solos
+- PRIMERA ORACIÓN: "Dami [hizo X]" — qué fue lo último concreto que mandó Dami (propuesta, seguimiento, adjunto, etc.)
+- SEGUNDA ORACIÓN: "[Contacto] [respondió Y / no respondió]" — si el cliente respondió qué dijo puntualmente, o si no respondió decirlo directo
 
-Escribí 3 líneas directas, sin títulos, sin bullets, sin markdown:
-1. Qué hizo Dami: qué mandó, qué propuso (carpeta, reunión, seguimiento, etc.)
-2. Qué respondió ${l.contacto}: qué dijo exactamente, o si no respondió
-3. Estado actual: en qué momento está esto y qué falta para avanzar
+Ejemplo bueno: "Dami mandó presentación EXPO STREAM y propuso una call. Juliana respondió que ya tienen agencia pero le interesó verla."
+Ejemplo malo: "Se estableció contacto y se intercambiaron mensajes sobre posibles colaboraciones." (demasiado vago)
 
-Usá solo lo que esté en las notas. No inventes. Sé específico con el contenido real.
+Empresa: ${l.empresa} | Estado: ${l.estado}
 
-Empresa: ${l.empresa} | Estado: ${l.estado} | Próximo paso: ${l.proxPaso||'ninguno'}
-
-Notas y mensajes (${nMensajes} entradas):
+Notas y mensajes (${nMensajes} entradas — analizá especialmente las ÚLTIMAS):
 ${hiloTexto}`
     );
 
@@ -2176,26 +2426,7 @@ async function genSugerencia(l) {
   const ci=canalInfo(l);
   const sugeridaFecha=fmtFechaDisplay(addDaysISO(todayISO(),3));
 
-  const prompt=CTX+`\n\nLEAD A ANALIZAR:
-Empresa: ${l.empresa}
-Contacto: ${l.contacto}${l.cargo?' — '+l.cargo:''}
-Rubro/Industria: ${l.rubro||'No especificado'}
-Canal disponible: ${ci.key==='wpp'?'WhatsApp '+ci.label:ci.key==='mail'?'Email '+ci.label:'Solo LinkedIn'}
-Estado actual: ${estadoToStr(l.estado)}
-Próximo paso anotado: ${l.proxPaso||'ninguno'}
-
-ÚLTIMAS INTERACCIONES:
-${histTxt}
-
-Analizá este lead pensando en qué puede necesitar su empresa y qué le podemos ofrecer nosotros concretamente.
-
-Respondé en este formato EXACTO (sin títulos extra, sin markdown):
-ANÁLISIS: [En 2-3 líneas: qué hace su empresa, qué necesidades audiovisuales probables tiene, y cuál de nuestros servicios encaja mejor. Sé específico, no genérico.]
-ÁNGULO: [La propuesta concreta que tiene más chances — en 1 línea. Ej: "Video institucional para su proceso de ventas B2B" o "Cobertura de su próximo evento con streaming"]
-SIGUIENTE PASO: [qué hacer ahora, por qué canal, en 1 línea]
-CUÁNDO: [${sugeridaFecha}]
-MENSAJE:
-[Mensaje listo para enviar por ${ci.key==='wpp'?'WhatsApp':ci.key==='mail'?'Email':'LinkedIn'}. Máx 5 líneas. Que suene a Dami, no a una agencia. Terminar con UNA pregunta concreta.]`;
+  const prompt=CTX+`\n\nLEAD:\nEmpresa: ${l.empresa}\nContacto: ${l.contacto}${l.cargo?' — '+l.cargo:''}\nCanal: ${ci.key==='wpp'?'WhatsApp':ci.key==='mail'?'Email':'LinkedIn'}\nEstado: ${estadoToStr(l.estado)}\n\nINTERACCIONES RECIENTES:\n${histTxt}\n\nGenerá un mensaje listo para enviar. ESTILO OBLIGATORIO:\n- Directo, sin intro, sin \"Espero que estés bien\"\n- Empresarial pero cercano, serio sin rigidez, juvenil sin slang\n- Sin humo: nada de \"potenciar\", \"sinergia\", \"soluciones innovadoras\"\n- Máx 4 líneas en WPP/LinkedIn, puede ser más en mail\n- Si ya hubo contacto, mencioná el hilo brevemente\n- Terminar con UNA sola pregunta concreta\n\nFormato EXACTO:\nANÁLISIS: [1 línea: qué hace su empresa + servicio que encaja]\nSIGUIENTE: [1 línea: canal + qué proponer]\nMENSAJE:\n[el mensaje listo para copiar]`;
 
   try {
     const r=await aiCall(prompt);
@@ -2206,16 +2437,16 @@ MENSAJE:
     const pasoM     = r.match(/SIGUIENTE PASO:\s*(.+)/i);
     const cuandoM   = r.match(/CUÁNDO:\s*(.+)/i);
 
-    // Armar el bloque de análisis
+    const analisisM2 = r.match(/ANÁLISIS:\s*(.+)/i);
+    const siguienteM = r.match(/SIGUIENTE:\s*(.+)/i);
     let ctxHtml = '';
-    if (analisisM) ctxHtml += analisisM[1].trim();
-    if (anguloM)   ctxHtml += '\n\n💡 ' + anguloM[1].trim();
-    if (pasoM)     ctxHtml += '\n⚡ ' + pasoM[1].trim();
-    if (cuandoM)   ctxHtml += '\n📅 ' + cuandoM[1].trim();
-    if (!ctxHtml)  ctxHtml = r.replace(/MENSAJE:[\s\S]*/i,'').trim();
+    if (analisisM2) ctxHtml += '🔍 ' + analisisM2[1].trim();
+    if (siguienteM) ctxHtml += (ctxHtml?'\n':'') + '⚡ ' + siguienteM[1].trim();
+    if (!ctxHtml && analisisM) ctxHtml = analisisM[1].trim();
+    if (!ctxHtml) ctxHtml = r.replace(/MENSAJE:[\s\S]*/i,'').trim().substring(0,120);
 
     document.getElementById('pf_ai_ctx').textContent = ctxHtml;
-    document.getElementById('pf_ai_msg').textContent = msgM ? msgM[1].trim() : '';
+    document.getElementById('pf_ai_msg').textContent = msgM ? msgM[1].trim() : r.trim();
     document.getElementById('pf_ai_wrap').style.display = 'block';
   } catch(e){
     const esKey = !KEY || e.message.includes('Key') || e.message.includes('401');
@@ -2226,6 +2457,23 @@ MENSAJE:
   } finally { document.getElementById('aiLoader').classList.remove('on'); }
 }
 
+
+function reactivarLead(id) {
+  const l = leads[id];
+  if (!l) return;
+  const fecha = prompt(`Reactivar ${l.empresa}\n\n¿Cuándo es el próximo contacto? (DD/MM/YYYY o YYYY-MM-DD)`, '');
+  if (fecha === null) return; // canceló
+  const fechaISO = parseFechaToISO(fecha) || addDaysISO(todayISO(), 7);
+  l.estado = 'contactado';
+  l.proxFecha = fechaISO;
+  l.semaforo = 'hoy';
+  l._editados = [...new Set([...(l._editados||[]), 'estado','proxFecha','semaforo'])];
+  l._lastEdit = Date.now();
+  saveLocal();
+  drawAll();
+  drawPerdidos();
+  toast(`${l.empresa} reactivado — próx. acción ${fmtFechaDisplay(fechaISO)}`, 'ok');
+}
 function reanalizar() { const l=leads[currentId]; if(l) genSugerencia(l); }
 
 function copyMsgAI() {
@@ -2468,7 +2716,7 @@ function drawPerdidos() {
         <div style="display:flex;gap:5px">
           <button class="btn btn-ghost btn-sm" onclick="abrirPerfil('${l.id}')" title="Ver perfil">👤</button>
           <button class="btn btn-ghost btn-sm" style="font-size:10px" 
-            onclick="if(confirm('¿Reactivar este lead?')){leads['${l.id}'].estado='contactado';leads['${l.id}'].proxFecha='';saveLocal();drawAll();drawPerdidos();toast('Lead reactivado','ok')}"
+            onclick="reactivarLead('${l.id}')"
             title="Reactivar">↩ Reactivar</button>
         </div>
       </td>
@@ -2858,23 +3106,42 @@ function guardarContacto(campo) {
 // ══════════════════════════════════════════
 // TONO IA
 // ══════════════════════════════════════════
-const TONO_DEFAULT = `TONO Y ESTILO DE COMUNICACIÓN — ENFOCO FILMS:
-Somos directos, claros y concretos. Hablamos de igual a igual, sin sonar a agencia ni a vendedores. No usamos frases vacías como "potenciar tu marca" o "llevar tu comunicación al siguiente nivel".
+const TONO_DEFAULT = `CÓMO HABLA DAMI — ENFOCO FILMS
 
-Nuestro objetivo en cada mensaje es conseguir UNA reunión o llamada. No cerramos por mensaje.
+ESTILO:
+- Directo. Sin "espero que estés bien", sin intro de relleno.
+- Cercano pero profesional. Tuteo siempre.
+- Sin humo: jamás "potenciar", "sinergia", "soluciones innovadoras".
+- WPP y LinkedIn: máximo 4-5 líneas. Una sola pregunta al final, concreta.
+- Si ya hubo contacto, retomar el hilo sin repetir todo.
+- No sonar a agencia. Sonar a Dami.
 
-Para WhatsApp y LinkedIn:
-- Máximo 5 líneas
-- Terminar con UNA sola pregunta concreta
-- Tono cercano pero profesional
+MENSAJES REALES DE DAMI — copiar este tono y estructura:
 
-Para Email:
-- Primera línea siempre es el asunto
-- Podemos extendernos más, pero sin relleno
+[Seguimiento después de mandar algo]
+"Hola Nati, como andas?
+Quería ver si pudiste ver lo que te mandamos y si te interesa podemos coordinar una call sin compromiso para conocernos la semana que viene."
 
-Contexto Vistage:
-- Dami es del G-308, somos pares con los miembros Vistage
-- Mencionarlo en el primer contacto con miembros del grupo`;
+[Respuesta agradeciendo + propuesta]
+"Gracias Nati por tu respuesta, te dejo un disparador como idea pero me gustaría conocernos para pensar y sin compromiso de contratación proponerles ideas!"
+
+[Respuesta con portfolio]
+"Hola Vero! Gracias por tu respuesta!
+Siii! Nosotros realizamos varios proyectos, desde animación, diseño gráfico, 3D y actualmente trabajando mucho con generación de contenido con IA.
+Te dejo nuestro portfolio: https://www.enfocofilms.com/portfolio"
+
+[Propuesta de reunión con horarios]
+"Hola, como andas?
+Quería proponerte un breve meet para mostrarte el proyecto que te contamos — armar un set en el stand, llevar influencers, gente del sector.
+Si te interesa podemos coordinar el lunes a las 11am o martes mismo horario!"
+
+REGLAS:
+- Arrancar con "Hola [Nombre]" o directo si ya hay hilo
+- Proponer reunión/call siempre como siguiente paso
+- Dar opciones concretas de horario cuando corresponde
+- Mencionar Vistage G-308 solo en primer contacto con miembros Vistage
+- Portfolio: https://www.enfocofilms.com/portfolio (cuando hay dudas de qué hacemos)`;
+
 
 let tonoEjemplos = []; // array de {id, tipo, canal, ctx, msg, nota, fecha}
 
