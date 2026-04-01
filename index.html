@@ -552,6 +552,7 @@ body::before{
       <div class="nav-sep"></div>
       <button class="nav-link" onclick="goPanel('tono',this)"><span class="ico">🎙️</span>Tono IA</button>
       <button class="nav-link" onclick="goPanel('tabla',this)"><span class="ico">📋</span>Tabla / Editar</button>
+      <button class="nav-link" onclick="goPanel('atrasados',this)"><span class="ico">⏰</span>Atrasados</button>
       <button class="nav-link" onclick="goPanel('perdidos',this)"><span class="ico">🗃️</span>Perdidos</button>
       <button class="nav-link" onclick="goPanel('config',this)"><span class="ico">⚙️</span>Config</button>
     </div>
@@ -784,6 +785,16 @@ body::before{
       </div>
 
       <!-- CONFIG -->
+      <!-- PANEL ATRASADOS -->
+      <div class="panel" id="panel-atrasados">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--amber)">⏰ Atrasados</div>
+          <span id="atrasadosCount" style="font-size:11px;color:var(--fog);font-family:'DM Mono',monospace"></span>
+        </div>
+        <div style="font-size:12px;color:var(--fog);margin-top:-8px">Leads con fecha vencida o de semanas anteriores que necesitan atención.</div>
+        <div id="atrasadosGrid" class="leads-grid"></div>
+      </div>
+
       <!-- PANEL PERDIDOS -->
       <div class="panel" id="panel-perdidos">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -858,7 +869,7 @@ body::before{
       <button class="modal-close" onclick="closeModal('mPerfil')">×</button>
     </div>
 
-    <!-- CONTROLES RÁPIDOS -->
+    <!-- 1. FECHAS Y ESTADO -->
     <div class="msec" style="background:var(--ink3)">
       <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
         <span style="font-size:11px;color:var(--fog)">Próxima acción:</span>
@@ -879,67 +890,76 @@ body::before{
           <option value="no-potencial">💤 No Potencial</option>
           <option value="perdido">✗ Perdido</option>
         </select>
-        <button class="btn btn-sage btn-sm" onclick="saveLead()">✓ Guardar</button>
+        <button class="btn btn-sage btn-sm" id="btnGuardar" onclick="saveLead()">✓ Guardar</button>
       </div>
     </div>
 
-    <!-- RESUMEN RÁPIDO -->
+    <!-- 2. RESUMEN IA -->
     <div class="msec" id="pf_resumen_sec">
-      <div class="msec-label">Situación</div>
+      <div class="msec-label">Resumen</div>
       <div class="resumen-box">
-        <div class="resumen-loader" id="resumenLoader">Leyendo historial…</div>
+        <div class="resumen-loader" id="resumenLoader">Analizando historial…</div>
         <div class="resumen-txt" id="resumenTxt" style="display:none"></div>
         <div class="resumen-meta" id="resumenMeta"></div>
       </div>
     </div>
 
-    <!-- IA: SUGERENCIA -->
+    <!-- 3. MENSAJE SUGERIDO (con prompt libre) -->
     <div class="msec" id="pf_ai_sec">
-      <div class="msec-label">Sugerencia IA</div>
-      <div class="loader" id="aiLoader"><div class="dots"><span></span><span></span><span></span></div>Analizando historial...</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="msec-label" style="margin:0">Mensaje sugerido</div>
+        <button class="btn btn-ghost btn-sm" onclick="reanalizar()" style="margin-left:auto;font-size:11px">🔄 Regenerar</button>
+      </div>
+      <!-- Prompt libre -->
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input type="text" id="pf_prompt_libre" placeholder='Ej: "seguimiento", "proponer reunión", "responder que ya tienen agencia"'
+          style="flex:1;font-size:12px;padding:6px 10px"
+          onkeydown="if(event.key==='Enter')reanalizarConPrompt()" />
+        <button class="btn btn-gold btn-sm" onclick="reanalizarConPrompt()">✨</button>
+      </div>
+      <div class="loader" id="aiLoader"><div class="dots"><span></span><span></span><span></span></div>Generando...</div>
       <div class="ai-wrap" id="pf_ai_wrap" style="display:none">
         <div class="ai-head">
           <div class="ai-dot"></div>
-          <div class="ai-label">Análisis · Ángulo · Mensaje</div>
-          <div style="margin-left:auto"><button class="copy-btn" onclick="copyEl('pf_ai_ctx')">📋</button></div>
+          <div class="ai-label" id="pf_ai_label">Mensaje</div>
+          <div style="margin-left:auto"><button class="copy-btn" onclick="copyMsgAI()">📋 Copiar</button></div>
         </div>
-        <div class="ai-body" id="pf_ai_ctx"></div>
-        <div class="ai-msg-sep">
-          <span>Mensaje sugerido</span>
-          <button class="copy-btn" onclick="copyMsgAI()">📋 Copiar y registrar</button>
+        <div class="ai-body" id="pf_ai_ctx" style="font-size:11px;color:var(--fog);margin-bottom:6px"></div>
+        <div class="ai-msg-body" id="pf_ai_msg" style="font-size:13.5px;line-height:1.6"></div>
+        <div style="margin-top:8px;display:flex;gap:6px">
+          <button class="copy-btn" onclick="copyMsgAI()" style="flex:1;justify-content:center;padding:7px">📋 Copiar y registrar</button>
         </div>
-        <div class="ai-msg-body" id="pf_ai_msg"></div>
       </div>
     </div>
 
-    <!-- ACCIONES -->
+    <!-- 4. AGREGAR NOTA / MENSAJE -->
     <div class="msec" style="background:var(--ink3)">
-      <div class="action-tabs" style="margin-bottom:0" id="actionTabs">
-        <button class="btn btn-gold btn-sm" onclick="toggleSection('pfResponder','pfNota')">💬 Mensaje / Nota</button>
-        <button class="btn btn-ghost btn-sm" onclick="reanalizar()">🔄 Re-analizar</button>
+      <div class="msec-label" style="margin-bottom:8px">Agregar nota o mensaje</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="position:relative">
+          <textarea id="msg_ctx" rows="3"
+            placeholder="Pegá la conversación (WPP, LinkedIn, mail) o escribí una nota interna. La IA detecta el canal."
+            style="width:100%;padding-bottom:24px"
+            oninput="notaDetectarCanal(this.value)"></textarea>
+          <span id="notaCanalDetectado" style="position:absolute;bottom:6px;left:10px;font-size:10px;color:var(--fog);font-family:'DM Mono',monospace;pointer-events:none"></span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" id="btnVozNota" onclick="toggleVoz()">🎤 Voz</button>
+          <button class="btn btn-gold btn-sm" onclick="saveNotaUnificada()">+ Guardar</button>
+          <button class="btn btn-ghost btn-sm" onclick="genMsgDesdeNota()">✨ Generar mensaje con esto</button>
+        </div>
       </div>
 
-      <!-- CAMPO UNIFICADO: mensaje recibido, nota, conversación -->
-      <div id="pfResponder" style="display:none;flex-direction:column;gap:10px;margin-top:12px">
-        <div style="font-size:11px;color:var(--fog);font-family:'DM Mono',monospace">
-          Pegá la conversación, un mensaje recibido, o escribí una nota. La IA detecta el canal automáticamente.
-        </div>
-        <div style="position:relative">
-          <textarea id="msg_ctx" rows="4"
-            placeholder="Pegá acá WPP, LinkedIn o mail... o escribí una nota interna."
-            style="width:100%;padding-bottom:28px"
-            oninput="notaDetectarCanal(this.value)"></textarea>
-          <span id="notaCanalDetectado" style="position:absolute;bottom:8px;left:10px;font-size:10px;color:var(--fog);font-family:'DM Mono',monospace;pointer-events:none"></span>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" id="btnVozNota" onclick="toggleVoz()" title="Transcripción de voz">🎤 Voz</button>
+      <!-- Generador de mensaje rápido (se muestra al pedir) -->
+      <div id="pfResponder" style="display:none;flex-direction:column;gap:8px;margin-top:10px">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           <select class="qc-sel" id="msg_tipo" style="flex:1">
             <option value="seguimiento según el historial">Seguimiento</option>
             <option value="primer contacto frío">Primer contacto</option>
             <option value="respuesta al mensaje recibido">Responder recibido</option>
             <option value="propuesta concreta de servicio">Propuesta</option>
           </select>
-          <button class="btn btn-gold btn-sm" onclick="genMsg()">✨ Generar mensaje</button>
+          <button class="btn btn-gold btn-sm" onclick="genMsg()">✨ Generar</button>
         </div>
         <div class="loader" id="msgLoader"><div class="dots"><span></span><span></span><span></span></div>Generando...</div>
         <div class="ai-wrap" id="msgWrap" style="display:none">
@@ -965,25 +985,7 @@ body::before{
         </div>
       </div>
 
-      <!-- NOTA -->
-      <div id="pfNota" style="display:none;flex-direction:column;gap:8px;margin-top:12px">
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <select class="qc-sel" id="nt_quien">
-            <option value="Cliente">💬 Respondió el cliente</option>
-            <option value="Comercial">✉️ Enviamos nosotros</option>
-            <option value="Nota">📝 Nota interna</option>
-          </select>
-          <select class="qc-sel" id="nt_canal">
-            <option value="wpp">WhatsApp</option>
-            <option value="linkedin">LinkedIn</option>
-            <option value="mail">Email</option>
-            <option value="reunion">Reunión</option>
-            <option value="nota">Nota</option>
-          </select>
-        </div>
-        <textarea id="nt_txt" rows="3" class="field" placeholder="Pegá la conversación, lo que dijeron, o escribí una nota..." style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:8px 11px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical"></textarea>
-        <button class="btn btn-gold btn-sm" style="align-self:flex-start" onclick="saveNota()">+ Guardar nota</button>
-      </div>
+      <!-- pfNota deprecado — unificado arriba -->
     </div>
 
     <!-- HISTORIAL -->
@@ -1413,9 +1415,18 @@ function mergeLeadsCSV(csv) {
         merged[campo] = existing[campo];
       }
     });
-    // SIEMPRE preservar proxPaso si el usuario lo editó (no pisar con dato viejo del Sheets)
+    // SIEMPRE preservar proxPaso si el usuario lo editó
     if (existing && editados.includes('proxPaso') && existing.proxPaso) {
       merged.proxPaso = existing.proxPaso;
+    }
+    // CRÍTICO: si el lead local está marcado como perdido, preservar estado y fecha vacía
+    if (existing && existing.estado === 'perdido') {
+      merged.estado = 'perdido';
+      merged.proxFecha = '';  // perdidos nunca tienen fecha
+    }
+    // CRÍTICO: preservar cualquier campo de fecha editado — nunca pisar con Sheets
+    if (existing && (editados.includes('proxFecha') || existing.estado === 'perdido')) {
+      merged.proxFecha = existing.proxFecha || '';
     }
     leads[id] = mkLead({
       id,
@@ -1797,7 +1808,8 @@ function abrirPerfil(id) {
 
   // Resetear secciones
   document.getElementById('pfResponder').style.display='none';
-  document.getElementById('pfNota').style.display='none';
+  if(document.getElementById('pfNota')) document.getElementById('pfNota').style.display='none';
+  saveLocal(); // asegurar persistencia al cerrar perfil
   document.getElementById('msgWrap').style.display='none';
   document.getElementById('msgPost').style.display='none';
   document.getElementById('msg_ctx').value='';
@@ -2415,7 +2427,7 @@ ${hiloTexto}`
 function limpiarResumenPerfil(id) {
   delete _perfilResumenCache[id];
 }
-async function genSugerencia(l) {
+async function genSugerencia(l, promptLibre) {
   document.getElementById('pf_ai_wrap').style.display='none';
   document.getElementById('aiLoader').classList.add('on');
 
@@ -2426,7 +2438,8 @@ async function genSugerencia(l) {
   const ci=canalInfo(l);
   const sugeridaFecha=fmtFechaDisplay(addDaysISO(todayISO(),3));
 
-  const prompt=CTX+`\n\nLEAD:\nEmpresa: ${l.empresa}\nContacto: ${l.contacto}${l.cargo?' — '+l.cargo:''}\nCanal: ${ci.key==='wpp'?'WhatsApp':ci.key==='mail'?'Email':'LinkedIn'}\nEstado: ${estadoToStr(l.estado)}\n\nINTERACCIONES RECIENTES:\n${histTxt}\n\nGenerá un mensaje listo para enviar. ESTILO OBLIGATORIO:\n- Directo, sin intro, sin \"Espero que estés bien\"\n- Empresarial pero cercano, serio sin rigidez, juvenil sin slang\n- Sin humo: nada de \"potenciar\", \"sinergia\", \"soluciones innovadoras\"\n- Máx 4 líneas en WPP/LinkedIn, puede ser más en mail\n- Si ya hubo contacto, mencioná el hilo brevemente\n- Terminar con UNA sola pregunta concreta\n\nFormato EXACTO:\nANÁLISIS: [1 línea: qué hace su empresa + servicio que encaja]\nSIGUIENTE: [1 línea: canal + qué proponer]\nMENSAJE:\n[el mensaje listo para copiar]`;
+  const promptExtra = promptLibre ? `\n\nPETICIÓN ESPECÍFICA: ${promptLibre}\nGenerá un mensaje enfocado en esto.` : '';
+  const prompt=CTX+promptExtra+`\n\nLEAD:\nEmpresa: ${l.empresa}\nContacto: ${l.contacto}${l.cargo?' — '+l.cargo:''}\nCanal: ${ci.key==='wpp'?'WhatsApp':ci.key==='mail'?'Email':'LinkedIn'}\nEstado: ${estadoToStr(l.estado)}\n\nINTERACCIONES RECIENTES:\n${histTxt}\n\nGenerá un mensaje listo para enviar. ESTILO OBLIGATORIO:\n- Directo, sin intro, sin \"Espero que estés bien\"\n- Empresarial pero cercano, serio sin rigidez, juvenil sin slang\n- Sin humo: nada de \"potenciar\", \"sinergia\", \"soluciones innovadoras\"\n- Máx 4 líneas en WPP/LinkedIn, puede ser más en mail\n- Si ya hubo contacto, mencioná el hilo brevemente\n- Terminar con UNA sola pregunta concreta\n\nFormato EXACTO:\nANÁLISIS: [1 línea: qué hace su empresa + servicio que encaja]\nSIGUIENTE: [1 línea: canal + qué proponer]\nMENSAJE:\n[el mensaje listo para copiar]`;
 
   try {
     const r=await aiCall(prompt);
@@ -2474,7 +2487,26 @@ function reactivarLead(id) {
   drawPerdidos();
   toast(`${l.empresa} reactivado — próx. acción ${fmtFechaDisplay(fechaISO)}`, 'ok');
 }
-function reanalizar() { const l=leads[currentId]; if(l) genSugerencia(l); }
+function reanalizar() {
+  const l = leads[currentId]; if(!l) return;
+  document.getElementById('pf_prompt_libre').value = '';
+  genSugerencia(l);
+}
+
+function reanalizarConPrompt() {
+  const l = leads[currentId]; if(!l) return;
+  const prompt = document.getElementById('pf_prompt_libre')?.value.trim() || '';
+  genSugerencia(l, prompt);
+}
+
+function genMsgDesdeNota() {
+  const ctx = document.getElementById('msg_ctx')?.value.trim() || '';
+  if (!ctx) { toast('Escribí o pegá algo primero','err'); return; }
+  const l = leads[currentId]; if(!l) return;
+  const tipo = document.getElementById('msg_tipo')?.value || 'seguimiento';
+  document.getElementById('pf_prompt_libre').value = tipo + (ctx ? ': ' + ctx.substring(0,60) : '');
+  reanalizarConPrompt();
+}
 
 function copyMsgAI() {
   const msg=document.getElementById('pf_ai_msg').textContent.trim();
@@ -2638,6 +2670,7 @@ function goPanel(name, btn) {
   if(btn) btn.classList.add('on');
   if(name==='tabla') drawTabla();
   if(name==='perdidos') drawPerdidos();
+  if(name==='atrasados') drawAtrasados();
   if(name==='tono') initTono();
   const titles={semana:'Plan <em>Semanal</em>',leads:'<em>Leads</em> 2026',vistage:'<em>Vistage</em> 2026',nuevo:'Cargar desde <em>LinkedIn</em>',tabla:'<em>Tabla</em> — Edición rápida',tono:'<em>Tono IA</em> — Identidad de voz',config:'<em>Configuración</em>'};
   document.getElementById('pgTitle').innerHTML=titles[name]||name;
@@ -2681,6 +2714,66 @@ document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{
 // TABLA EDITABLE
 // ══════════════════════════════════════════
 
+
+function drawAtrasados() {
+  const grid = document.getElementById('atrasadosGrid');
+  const count = document.getElementById('atrasadosCount');
+  if (!grid) return;
+
+  const hoy = todayISO();
+  const atrasados = Object.values(leads)
+    .filter(l => {
+      if (l.estado === 'perdido' || l.estado === 'no-potencial') return false;
+      if (!l.proxFecha) return false;
+      return l.proxFecha < hoy; // fecha anterior a hoy
+    })
+    .sort((a,b) => a.proxFecha.localeCompare(b.proxFecha)); // más viejos primero
+
+  if (count) count.textContent = atrasados.length + ' leads atrasados';
+
+  if (!atrasados.length) {
+    grid.innerHTML = '<div style="text-align:center;padding:32px;color:var(--fog);grid-column:1/-1">🎉 Todo al día — no hay leads atrasados</div>';
+    return;
+  }
+
+  grid.innerHTML = atrasados.map(l => {
+    const diasAtraso = Math.floor((new Date(hoy) - new Date(l.proxFecha)) / 86400000);
+    const atrasoLabel = diasAtraso === 1 ? '1 día' : diasAtraso + ' días';
+    const ci = canalInfo(l);
+    return `<div class="lcard urg" onclick="abrirPerfil('${l.id}')" style="border-left:3px solid var(--amber)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div class="lcard-name">${l.empresa}</div>
+        <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--amber);background:rgba(232,184,75,.12);padding:2px 7px;border-radius:10px;white-space:nowrap">⏰ ${atrasoLabel}</span>
+      </div>
+      <div class="lcard-sub">${l.contacto}${l.cargo?' · '+l.cargo:''}</div>
+      <div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        ${estadoChip(l.estado)}
+        <span style="font-size:11px;color:var(--fog)">📅 ${fmtFechaDisplay(l.proxFecha)}</span>
+      </div>
+      ${l.proxPaso?`<div style="font-size:11.5px;color:var(--fog2);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.proxPaso}</div>`:''}
+      <div style="margin-top:10px;display:flex;gap:5px">
+        <button class="btn btn-gold btn-sm" style="flex:1;justify-content:center;font-size:11px"
+          onclick="event.stopPropagation();reprogramarAtrasado('${l.id}')">📅 Reprogramar</button>
+        <button class="btn btn-ghost btn-sm" style="font-size:11px"
+          onclick="event.stopPropagation();abrirPerfil('${l.id}')">👤 Ver</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function reprogramarAtrasado(id) {
+  const l = leads[id]; if(!l) return;
+  const fecha = prompt('Nueva fecha para ' + l.empresa + ':', '');
+  if (!fecha) return;
+  const iso = parseFechaToISO(fecha) || addDaysISO(todayISO(), 3);
+  leads[id].proxFecha = iso;
+  leads[id]._editados = [...new Set([...(leads[id]._editados||[]), 'proxFecha'])];
+  leads[id]._lastEdit = Date.now();
+  saveLocal();
+  drawAtrasados();
+  drawAll();
+  toast(l.empresa + ' reprogramado para ' + fmtFechaDisplay(iso), 'ok');
+}
 function drawPerdidos() {
   const tbody = document.getElementById('perdidosBody');
   const count = document.getElementById('perdidosCount');
@@ -2969,6 +3062,9 @@ ${hilo}`
   }
   if (document.getElementById('panel-perdidos')?.classList.contains('on')) {
     drawPerdidos();
+  }
+  if (document.getElementById('panel-atrasados')?.classList.contains('on')) {
+    drawAtrasados();
   }
 }
 
