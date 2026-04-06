@@ -1213,6 +1213,26 @@ function saveLocal() {
   } catch(e) {}
 }
 
+// IDs y empresas de leads eliminados — persisten para evitar que Sheets los restaure
+function getEliminados() {
+  try { return JSON.parse(localStorage.getItem('efcrm_eliminados') || '[]'); } catch(e) { return []; }
+}
+function addEliminado(id, empresa) {
+  const lista = getEliminados();
+  const ya = lista.some(x => (typeof x === 'object' ? x.id : x) === id);
+  if (!ya) {
+    lista.push({ id, empresa: (empresa||'').trim().toLowerCase() });
+    localStorage.setItem('efcrm_eliminados', JSON.stringify(lista));
+  }
+}
+function isEliminado(id, empresa) {
+  const lista = getEliminados();
+  return lista.some(x => {
+    if (typeof x === 'object') return x.id === id || (empresa && x.empresa === empresa.trim().toLowerCase());
+    return x === id;
+  });
+}
+
 function undoLast() {
   if (!undoStack.length) { toast('No hay más pasos para deshacer','err'); return; }
   const prev = undoStack.pop();
@@ -1385,6 +1405,8 @@ function mergeLeadsCSV(csv) {
     const empresa = (r[0]||'').trim();
     const contacto= (r[1]||'').trim();
     if (!empresa) return;
+    // No restaurar leads eliminados manualmente (por ID o por empresa)
+    if (isEliminado('', empresa)) return;
 
     const existing = Object.values(leads).find(l => l.empresa===empresa);
     const id = existing ? existing.id : mkId();
@@ -1447,6 +1469,11 @@ function mergeLeadsCSV(csv) {
       const esNuevoLocal = creadoHace < 2 * 60 * 60 * 1000;
       if (!esNuevoLocal) delete leads[lid];
     }
+  });
+  // Nunca restaurar leads que el usuario eliminó manualmente
+  getEliminados().forEach(x => {
+    const lid = typeof x === 'object' ? x.id : x;
+    if (lid) delete leads[lid];
   });
 }
 
@@ -2386,25 +2413,37 @@ async function genResumenPerfil(l) {
   const nMensajes = hist.length;
   const ultimoQuien = hist.length ? (hist[hist.length-1].quien==='cliente'?l.contacto:'Dami') : '';
 
+  // Fecha de hoy en texto para que la IA la use como referencia
+  const hoyStr = new Date().toLocaleDateString('es-AR', {day:'numeric', month:'long', year:'numeric'});
+
   try {
     const resumen = await aiCall(
-`Sos el asistente comercial de Dami Guelman (Enfoco Films).
+`Sos el asistente comercial de Dami Guelman (Enfoco Films). Hoy es ${hoyStr}.
 
-TAREA: Resumir en exactamente 2 oraciones el estado actual de este contacto.
+TAREA: Analizar el historial de este contacto y producir un resumen útil y accionable.
 
-REGLAS ESTRICTAS:
-- Solo hablá de las ÚLTIMAS interacciones (lo más reciente)
-- Identificá quién habló último: si el nombre es "${l.contacto}" = el cliente, si dice "Dami" o "Damian" o "Enfoco" = Dami
-- Ignorá completamente: asteriscos, "Ver el perfil de", "ha enviado el siguiente mensaje", "ha enviado los siguientes mensajes", horarios, fechas del sistema, emojis solos
-- PRIMERA ORACIÓN: "Dami [hizo X]" — qué fue lo último concreto que mandó Dami (propuesta, seguimiento, adjunto, etc.)
-- SEGUNDA ORACIÓN: "[Contacto] [respondió Y / no respondió]" — si el cliente respondió qué dijo puntualmente, o si no respondió decirlo directo
+FORMATO DE ENTRADA — las notas pueden tener:
+1. Mensajes de WhatsApp: "[HH:MM, DD/M/AAAA] Nombre del contacto: mensaje" o "[HH:MM, DD/M/AAAA] Enfoco Films: mensaje"
+   - Si dice "Enfoco Films" o "Dami" → lo mandó DAMI
+   - Cualquier otro nombre → lo mandó EL CLIENTE
+2. Notas/indicaciones internas: texto en mayúsculas o frases como "HABLARLE EN X", "LLAMAR EN", "ESPERAR HASTA"
+   → Son instrucciones internas de Dami, no mensajes al cliente. Usarlas para sugerir fecha.
+3. Mensajes libres sin formato especial → tratar como notas del contexto
 
-Ejemplo bueno: "Dami mandó presentación EXPO STREAM y propuso una call. Juliana respondió que ya tienen agencia pero le interesó verla."
-Ejemplo malo: "Se estableció contacto y se intercambiaron mensajes sobre posibles colaboraciones." (demasiado vago)
+REGLAS DE ANÁLISIS:
+- Ignorar completamente: asteriscos, "Ver el perfil de", metadatos de LinkedIn, emojis solos, horarios del sistema
+- Identificar el ESTADO REAL: qué se acordó, qué prometió el cliente, cuándo hay que volver a contactar
+- Si el cliente dijo "el mes que viene", "en X semanas", "cuando termine X" → calcular fecha aproximada desde hoy
+- Si hay una indicación interna con fecha → usarla como referencia para la fecha sugerida
 
-Empresa: ${l.empresa} | Estado: ${l.estado}
+RESPUESTA — exactamente en este formato (sin variaciones):
+ESTADO: [1 oración: qué pasó hasta acá — quién hizo qué, concretamente]
+ÚLTIMO: [quién habló último y qué dijo en pocas palabras]
+ACCIÓN: [qué hacer y cuándo — fecha concreta si se puede calcular, ej: "Contactar ~25 abr" o "Esperar respuesta"]
 
-Notas y mensajes (${nMensajes} entradas — analizá especialmente las ÚLTIMAS):
+Empresa: ${l.empresa} | Contacto: ${l.contacto} | Estado CRM: ${estadoToStr(l.estado)}
+
+Historial (${nMensajes} entradas — las más recientes son las más importantes):
 ${hiloTexto}`
     );
 
@@ -2414,9 +2453,24 @@ ${hiloTexto}`
       meta: `${nMensajes} ${nMensajes===1?'entrada':'entradas'} · última de ${ultimoQuien}`
     };
     loaderEl.style.display = 'none';
-    // Separar líneas y renderizar con más aire
-    const lineas = txt.split('\n').filter(x=>x.trim());
-    txtEl.innerHTML = lineas.map(ln => `<div style="margin-bottom:5px">${ln.trim()}</div>`).join('');
+
+    // Parsear las 3 líneas del formato estructurado
+    const lines = txt.split('\n').map(x => x.trim()).filter(x => x);
+    let htmlLines = '';
+    lines.forEach(ln => {
+      if (ln.startsWith('ESTADO:')) {
+        htmlLines += `<div style="margin-bottom:7px"><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--fog);text-transform:uppercase;letter-spacing:.06em">Estado</span><br>${ln.replace('ESTADO:','').trim()}</div>`;
+      } else if (ln.startsWith('ÚLTIMO:')) {
+        htmlLines += `<div style="margin-bottom:7px"><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--fog);text-transform:uppercase;letter-spacing:.06em">Último movimiento</span><br>${ln.replace('ÚLTIMO:','').trim()}</div>`;
+      } else if (ln.startsWith('ACCIÓN:')) {
+        const accion = ln.replace('ACCIÓN:','').trim();
+        htmlLines += `<div style="margin-top:4px;padding:7px 10px;background:rgba(232,184,75,.1);border-left:2px solid var(--gold);border-radius:0 6px 6px 0"><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--amber);text-transform:uppercase;letter-spacing:.06em">→ Próxima acción</span><br><strong>${accion}</strong></div>`;
+      } else {
+        htmlLines += `<div style="margin-bottom:5px">${ln}</div>`;
+      }
+    });
+
+    txtEl.innerHTML = htmlLines || txt;
     txtEl.style.display = 'block';
     if (metaEl) metaEl.textContent = _perfilResumenCache[l.id].meta;
   } catch(e) {
@@ -2725,21 +2779,28 @@ function drawAtrasados() {
     .filter(l => {
       if (l.estado === 'perdido' || l.estado === 'no-potencial') return false;
       if (!l.proxFecha) return false;
-      return l.proxFecha < hoy; // fecha anterior a hoy
+      return l.proxFecha < hoy;
     })
-    .sort((a,b) => a.proxFecha.localeCompare(b.proxFecha)); // más viejos primero
+    .sort((a,b) => a.proxFecha.localeCompare(b.proxFecha));
 
-  if (count) count.textContent = atrasados.length + ' leads atrasados';
+  const sinFecha = Object.values(leads)
+    .filter(l => {
+      if (l.estado === 'perdido' || l.estado === 'no-potencial') return false;
+      return !l.proxFecha || l.proxFecha === '';
+    })
+    .sort((a,b) => (a.empresa||'').localeCompare(b.empresa||''));
 
-  if (!atrasados.length) {
-    grid.innerHTML = '<div style="text-align:center;padding:32px;color:var(--fog);grid-column:1/-1">🎉 Todo al día — no hay leads atrasados</div>';
+  const total = atrasados.length + sinFecha.length;
+  if (count) count.textContent = atrasados.length + ' atrasados · ' + sinFecha.length + ' sin fecha';
+
+  if (!total) {
+    grid.innerHTML = '<div style="text-align:center;padding:32px;color:var(--fog);grid-column:1/-1">🎉 Todo al día — no hay leads atrasados ni sin fecha</div>';
     return;
   }
 
-  grid.innerHTML = atrasados.map(l => {
+  const cardAtrasado = l => {
     const diasAtraso = Math.floor((new Date(hoy) - new Date(l.proxFecha)) / 86400000);
     const atrasoLabel = diasAtraso === 1 ? '1 día' : diasAtraso + ' días';
-    const ci = canalInfo(l);
     return `<div class="lcard urg" onclick="abrirPerfil('${l.id}')" style="border-left:3px solid var(--amber)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div class="lcard-name">${l.empresa}</div>
@@ -2758,7 +2819,49 @@ function drawAtrasados() {
           onclick="event.stopPropagation();abrirPerfil('${l.id}')">👤 Ver</button>
       </div>
     </div>`;
-  }).join('');
+  };
+
+  const cardSinFecha = l => {
+    return `<div class="lcard" onclick="abrirPerfil('${l.id}')" style="border-left:3px solid var(--rose);opacity:.9">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div class="lcard-name">${l.empresa}</div>
+        <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--rose);background:rgba(220,100,100,.12);padding:2px 7px;border-radius:10px;white-space:nowrap">📭 Sin fecha</span>
+      </div>
+      <div class="lcard-sub">${l.contacto}${l.cargo?' · '+l.cargo:''}</div>
+      <div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        ${estadoChip(l.estado)}
+      </div>
+      ${l.proxPaso?`<div style="font-size:11.5px;color:var(--fog2);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.proxPaso}</div>`:''}
+      <div style="margin-top:10px;display:flex;gap:5px">
+        <button class="btn btn-gold btn-sm" style="flex:1;justify-content:center;font-size:11px"
+          onclick="event.stopPropagation();reprogramarAtrasado('${l.id}')">📅 Asignar fecha</button>
+        <button class="btn btn-ghost btn-sm" style="font-size:11px"
+          onclick="event.stopPropagation();abrirPerfil('${l.id}')">👤 Ver</button>
+      </div>
+    </div>`;
+  };
+
+  let html = '';
+
+  if (atrasados.length) {
+    html += `<div style="grid-column:1/-1;margin-bottom:4px">
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;padding:6px 0 4px;border-bottom:1px solid var(--line);margin-bottom:8px">
+        ⏰ Atrasados (${atrasados.length})
+      </div>
+    </div>`;
+    html += atrasados.map(cardAtrasado).join('');
+  }
+
+  if (sinFecha.length) {
+    html += `<div style="grid-column:1/-1;margin-top:${atrasados.length?'16px':'0'};margin-bottom:4px">
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--rose);text-transform:uppercase;letter-spacing:.08em;padding:6px 0 4px;border-bottom:1px solid var(--line);margin-bottom:8px">
+        📭 Sin fecha asignada (${sinFecha.length})
+      </div>
+    </div>`;
+    html += sinFecha.map(cardSinFecha).join('');
+  }
+
+  grid.innerHTML = html;
 }
 
 function reprogramarAtrasado(id) {
@@ -2988,6 +3091,7 @@ function eliminarLead() {
   const nombre = leads[id].empresa;
   if (!confirm(`¿Eliminás a ${nombre}? Esta acción no se puede deshacer.`)) return;
   delete leads[id];
+  addEliminado(id, nombre); // persistir por ID y empresa para que Sheets no lo restaure
   saveLocal();
   closeModal('mEditar');
   drawAll();
@@ -3108,10 +3212,20 @@ function gmailUrl(mail) {
 
 function linkedinUrl(url) {
   if (!url) return null;
-  if (url.startsWith('http')) return url;
-  if (url.startsWith('linkedin.com')) return 'https://' + url;
-  if (url.startsWith('in/')) return 'https://www.linkedin.com/' + url;
-  return 'https://www.linkedin.com/in/' + url;
+  const u = url.trim();
+  if (!u) return null;
+  // Ya es una URL completa
+  if (u.startsWith('http://') || u.startsWith('https://')) return u;
+  // www.linkedin.com/...
+  if (u.startsWith('www.linkedin.com')) return 'https://' + u;
+  // linkedin.com/...
+  if (u.startsWith('linkedin.com')) return 'https://' + u;
+  // in/nombre-apellido
+  if (u.startsWith('in/')) return 'https://www.linkedin.com/' + u;
+  // Solo el slug: nombre-apellido (sin slash)
+  if (!u.includes('/') && !u.includes(' ') && u.length > 2) return 'https://www.linkedin.com/in/' + u;
+  // Tiene barra pero no es una URL conocida — igual agregar linkedin base
+  return 'https://www.linkedin.com/in/' + u;
 }
 function renderBadgesPerfil(l) {
   const cont = document.getElementById('pf_badges');
@@ -3407,8 +3521,11 @@ window.onload = checkSetup;
     <button class="mnav-btn" id="mn_leads" onclick="goPanel('leads',this);syncMobileNav('leads')">
       <span class="mico">💼</span><span class="mlbl">Leads</span>
     </button>
-    <button class="mnav-btn" id="mn_tono" onclick="goPanel('tono',this);syncMobileNav('tono')">
-      <span class="mico">🎙️</span><span class="mlbl">Tono</span>
+    <button class="mnav-btn" id="mn_atrasados" onclick="goPanel('atrasados',this);syncMobileNav('atrasados')">
+      <span class="mico">⏰</span><span class="mlbl">Atrasos</span>
+    </button>
+    <button class="mnav-btn" id="mn_tabla" onclick="goPanel('tabla',this);syncMobileNav('tabla')">
+      <span class="mico">📋</span><span class="mlbl">Tabla</span>
     </button>
     <button class="mnav-btn" id="mn_config" onclick="goPanel('config',this);syncMobileNav('config')">
       <span class="mico">⚙️</span><span class="mlbl">Config</span>
@@ -3426,11 +3543,26 @@ function syncMobileNav(name) {
   if (btn) btn.classList.add('on');
 }
 
-// Sincronizar mobile nav cuando se cambia panel desde sidebar
-const _goPanelOrig = goPanel;
-// Patchear goPanel para que también sincronice mobile nav
-const _goPanel = goPanel;
-window.addEventListener('DOMContentLoaded', () => {});
+// Parchar goPanel para sincronizar mobile nav automáticamente
+(function() {
+  const _orig = goPanel;
+  window.goPanel = function(name, btn) {
+    _orig(name, btn);
+    syncMobileNav(name);
+  };
+})();
+
+// Forzar rerenderizado al volver a la app desde background (visibilitychange)
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    try { drawAll(); } catch(e) {}
+  }
+});
+
+// Focus: también rerenderizar cuando el usuario vuelve a la pestaña
+window.addEventListener('focus', function() {
+  try { drawAll(); } catch(e) {}
+});
 </script>
 
 
