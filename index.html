@@ -186,9 +186,6 @@ body::before{
   border-left:3px solid var(--line2);user-select:none;
 }
 .pill:hover{background:var(--ink4);border-color:var(--gold);transform:translateY(-1px)}
-.pill.urg{border-left-color:var(--rose)}
-.pill.hoy{border-left-color:var(--amber)}
-.pill.ok{border-left-color:var(--sage)}
 .pill.reunion{background:rgba(147,112,219,.12) !important;border-left-color:#c4aff0 !important}
 .pill.reunion .pill-name{color:#d4c0f5 !important}
 .pill.presupuesto{background:rgba(93,184,122,.1) !important;border-left-color:var(--sage) !important}
@@ -213,10 +210,6 @@ body::before{
   padding:15px;cursor:pointer;transition:all .14s;position:relative;overflow:hidden;
 }
 .lcard::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
-.lcard.urg::after{background:var(--rose)}
-.lcard.hoy::after{background:var(--amber)}
-.lcard.ok::after{background:var(--sage)}
-.lcard.neu::after{background:var(--line2)}
 .lcard:hover{border-color:rgba(232,184,75,.35);transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,0,0,.4)}
 .lc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:7px}
 .lc-name{font-weight:600;font-size:13.5px}
@@ -681,7 +674,7 @@ body::before{
           </div>
           <div style="overflow-x:auto">
             <table class="vtable"><thead><tr>
-              <th>Empresa</th><th>Contacto</th><th>Canal</th><th>Estado</th><th>Sem.</th><th>Próxima fecha</th><th>Próximo paso</th><th></th>
+              <th>Empresa</th><th>Contacto</th><th>Canal</th><th>Origen</th><th>Próxima fecha</th><th>Próximo paso</th><th></th>
             </tr></thead><tbody id="vBody"></tbody></table>
           </div>
         </div>
@@ -743,10 +736,9 @@ body::before{
               <th>Empresa</th>
               <th>Contacto</th>
               <th>WPP / Mail</th>
-              <th>Estado</th>
-              <th>Semáforo</th>
+              <th>Origen</th>
               <th>Próxima fecha</th>
-              <th>Situación</th>
+              <th>Situación IA</th>
               <th>Acciones</th>
             </tr></thead>
             <tbody id="tablaBody"></tbody>
@@ -932,28 +924,20 @@ body::before{
       <button class="modal-close" onclick="closeModal('mPerfil')">×</button>
     </div>
 
-    <!-- 1. FECHAS Y ESTADO -->
+    <!-- 1. FECHAS Y ORIGEN -->
     <div class="msec" style="background:var(--ink3)">
       <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
         <span style="font-size:11px;color:var(--fog)">Próxima acción:</span>
         <input type="date" class="qc-date" id="pf_fecha" />
-        <select class="qc-sel" id="pf_sem">
-          <option value="urg">🔴 Urgente</option>
-          <option value="hoy">🟡 Esta semana</option>
-          <option value="ok" selected>🟢 Al día</option>
-        </select>
-        <select class="qc-sel" id="pf_estado">
-          <option value="contactado">👤 Contactado</option>
-          <option value="enviado">✉️ Enviado</option>
-          <option value="enviar-propuesta">📄 Enviar Propuesta</option>
-          <option value="tratativa">🤝 En Tratativa</option>
-          <option value="presupuesto">💰 Presupuesto</option>
-          <option value="reunion">📅 Reunión</option>
-          <option value="potencial">⭐ Potencial Cliente</option>
-          <option value="no-potencial">💤 No Potencial</option>
-          <option value="perdido">✗ Perdido</option>
+        <!-- hidden: mantener semaforo y estado en DOM para compatibilidad de datos -->
+        <select id="pf_sem" style="display:none"><option value="ok" selected>ok</option></select>
+        <select id="pf_estado" style="display:none">
+          <option value="activo">activo</option>
+          <option value="perdido">perdido</option>
+          <option value="no-potencial">no-potencial</option>
         </select>
         <button class="btn btn-sage btn-sm" id="btnGuardar" onclick="saveLead()">✓ Guardar</button>
+        <button class="btn btn-rose btn-sm" onclick="marcarPerdido()" style="background:transparent;border:1px solid var(--rose);color:var(--rose)">✕ Perdido</button>
       </div>
       <!-- Origen editable en perfil -->
       <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
@@ -1179,22 +1163,9 @@ body::before{
         <div class="field"><label>WhatsApp</label><input type="text" id="ed_wpp" /></div>
         <div class="field"><label>Email</label><input type="text" id="ed_mail" /></div>
         <div class="field"><label>Próxima fecha</label><input type="date" id="ed_fecha" /></div>
-        <div class="field"><label>Semáforo</label>
-          <select id="ed_sem">
-            <option value="urg">🔴 Urgente</option>
-            <option value="hoy">🟡 Esta semana</option>
-            <option value="ok">🟢 Al día</option>
-          </select>
-        </div>
-        <div class="field"><label>Estado</label>
-          <select id="ed_estado">
-            <option value="nuevo">🆕 Nuevo</option>
-            <option value="enviado">✉️ Enviado</option>
-            <option value="tratativa">🤝 En Tratativa</option>
-            <option value="pausa">⏸ En Pausa</option>
-            <option value="perdido">✗ Perdido</option>
-          </select>
-        </div>
+        <!-- semaforo y estado ocultos — gestionados por IA y botón Perdido -->
+        <select id="ed_sem" style="display:none"><option value="ok" selected>ok</option></select>
+        <select id="ed_estado" style="display:none"><option value="activo">activo</option><option value="perdido">perdido</option></select>
         <div class="field fw"><label>Próximo paso</label>
           <textarea id="ed_paso" rows="2"></textarea>
         </div>
@@ -1894,15 +1865,15 @@ function drawWeek() {
 
   // Nota de semana
   const tot=all.length;
-  const urg=all.filter(l=>l.semaforo==='urg').length;
   const note=document.getElementById('weekNote');
-  if(note) note.textContent= tot?`${tot} leads · ${urg} urgentes`:'' ;
+  if(note) note.textContent= tot?`${tot} leads esta semana`:'' ;
 }
 
 function pillHTML(l, sf=false) {
   const ci=canalInfo(l);
   const oi=origenInfo(l);
-  let clsPill = l.semaforo||'ok';
+  // Borde izquierdo: solo marcar reunion especialmente, el resto neutro (color viene del origen)
+  let clsPill = '';
   if (l.estado==='reunion') clsPill = 'reunion';
   else if (l.estado==='presupuesto') clsPill = 'presupuesto';
   // Dot de origen: punto de color a la derecha del nombre empresa
@@ -1922,17 +1893,22 @@ function drawLeads() {
   const grid=document.getElementById('leadsGrid');
   if(!grid)return;
   const all=Object.values(leads).filter(l=>!q||l.empresa.toLowerCase().includes(q)||l.contacto.toLowerCase().includes(q));
-  const ord={urg:0,hoy:1,ok:2};
-  all.sort((a,b)=>(ord[a.semaforo]??3)-(ord[b.semaforo]??3));
+  // Ordenar: primero los que tienen fecha próxima, sin fecha al final
+  all.sort((a,b) => {
+    if (!a.proxFecha && !b.proxFecha) return 0;
+    if (!a.proxFecha) return 1;
+    if (!b.proxFecha) return -1;
+    return a.proxFecha.localeCompare(b.proxFecha);
+  });
 
   if(!all.length){grid.innerHTML='<div class="empty"><div class="empty-ico">📭</div>Sin leads</div>';return;}
   grid.innerHTML=all.map(l=>{
     const ci=canalInfo(l);
     const histN=l.historial.length;
-    return `<div class="lcard ${l.semaforo||'neu'}" onclick="abrirPerfil('${l.id}')">
+    return `<div class="lcard" onclick="abrirPerfil('${l.id}')">
       <div class="lc-top">
         <div><div class="lc-name">${l.empresa}</div><div class="lc-who">${l.contacto}${l.cargo?' · '+l.cargo:''}</div></div>
-        ${estadoChip(l.estado)}
+        ${origenBadgeHTML(l)}
       </div>
       <div class="lc-contacts">
         ${l.wpp&&l.wpp!=='nan'?`<span class="lc-badge b-wpp">💬 ${l.wpp}</span>`:''}
@@ -1943,7 +1919,7 @@ function drawLeads() {
       </div>
       ${l.proxPaso?`<div class="lc-paso">${l.proxPaso}</div>`:''}
       <div class="lc-foot">
-        <span class="lc-fecha" style="color:${semColor(l.semaforo)}">${fmtFechaDisplay(l.proxFecha)}</span>
+        <span class="lc-fecha" style="color:var(--fog)">${fmtFechaDisplay(l.proxFecha)}</span>
         ${histN?`<span class="lc-hist">📋 ${histN}</span>`:''}
       </div>
     </div>`;
@@ -1991,9 +1967,9 @@ function abrirPerfil(id) {
   renderBadgesPerfil(l);
 
   // Fecha — si está vacía sugerir +3
-  document.getElementById('pf_fecha').value = l.proxFecha || addDaysISO(todayISO(),3);
-  document.getElementById('pf_sem').value   = l.semaforo||'ok';
-  document.getElementById('pf_estado').value= l.estado||'nuevo';
+  document.getElementById('pf_fecha').value = l.proxFecha || '';
+  document.getElementById('pf_sem').value   = l.semaforo||'ok'; // oculto, compatibilidad
+  document.getElementById('pf_estado').value= l.estado||'activo'; // oculto, compatibilidad
   // Cargar origen
   const pfOrEl = document.getElementById('pf_origen');
   const pfRefEl= document.getElementById('pf_ref_origen');
@@ -2040,7 +2016,7 @@ function moverALeads(i) {
     id,empresa:r[0]||r[2]||'',contacto:r[2]||'',
     wpp:(r[7]||'').trim(),mail:(r[8]||'').trim(),
     medio:'Vistage',rubro:(r[4]||'').trim(),
-    estado:'nuevo',semaforo:'hoy',
+    estado:'activo',semaforo:'ok',
     proxFecha:addDaysISO(todayISO(),0),
     proxPaso:'Respondió en Vistage'
   });
@@ -2126,11 +2102,10 @@ function eliminarNota(idx) {
 function saveLead() {
   if(!currentId||!leads[currentId])return;
   const l=leads[currentId];
-  l.estado     = document.getElementById('pf_estado').value;
+  // estado: preservar el que ya tenía (solo se cambia con botón Perdido)
   l.proxFecha  = (document.getElementById('pf_fecha').value||'').trim();
   // Si es perdido, limpiar fecha del calendario
   if (l.estado === 'perdido') l.proxFecha = '';
-  l.semaforo   = document.getElementById('pf_sem').value;
   const pasoEl = document.getElementById('pf_paso');
   if (pasoEl) l.proxPaso = pasoEl.value;
   l._lastEdit  = Date.now();
@@ -2140,7 +2115,7 @@ function saveLead() {
   const pfRefOrigenInp = document.getElementById('pf_ref_origen');
   if (pfOrigenSel) l.origen = pfOrigenSel.value;
   if (pfRefOrigenInp) l.refOrigen = (l.origen === 'referenciado') ? pfRefOrigenInp.value.trim() : '';
-  l._editados  = [...new Set([...(l._editados||[]), 'proxFecha','semaforo','estado','proxPaso','origen','refOrigen'])];
+  l._editados  = [...new Set([...(l._editados||[]), 'proxFecha','proxPaso','origen','refOrigen'])];
   saveLocal();
   if(SCRIPT) syncLeadToSheet(l);
   drawAll();
@@ -2274,7 +2249,7 @@ function confirmarEnvio() {
   l.proxFecha=addDaysISO(todayISO(),dias);
   l.semaforo='ok';
   l.estado='enviado';
-  l._editados=[...new Set([...(l._editados||[]),'proxFecha','semaforo','estado'])];
+  l._editados=[...new Set([...(l._editados||[]),'proxFecha','estado'])];
   saveLocal();
   if(SCRIPT) syncLeadToSheet(l);
   document.getElementById('msgPost').style.display='none';
@@ -2778,7 +2753,7 @@ function reactivarLead(id) {
   l.estado = 'contactado';
   l.proxFecha = fechaISO;
   l.semaforo = 'hoy';
-  l._editados = [...new Set([...(l._editados||[]), 'estado','proxFecha','semaforo'])];
+  l._editados = [...new Set([...(l._editados||[]), 'estado','proxFecha'])];
   l._lastEdit = Date.now();
   saveLocal();
   drawAll();
@@ -3050,7 +3025,7 @@ function drawAtrasados() {
       </div>
       <div class="lcard-sub">${l.contacto}${l.cargo?' · '+l.cargo:''}</div>
       <div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        ${estadoChip(l.estado)}
+        ${origenBadgeHTML(l)}
         <span style="font-size:11px;color:var(--fog)">📅 ${fmtFechaDisplay(l.proxFecha)}</span>
       </div>
       ${l.proxPaso?`<div style="font-size:11.5px;color:var(--fog2);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.proxPaso}</div>`:''}
@@ -3193,12 +3168,11 @@ function drawTabla() {
         const oe={nuevo:0,enviado:1,tratativa:2,pausa:3,perdido:4};
         return (oe[a.estado]??5)-(oe[b.estado]??5);
       }
-      // default: urgencia — potencial y reunion al tope
-      const estOrd={reunion:0,potencial:1,tratativa:2};
-      const ea=estOrd[a.estado]??10, eb=estOrd[b.estado]??10;
-      if (ea!==eb) return ea-eb;
-      const ord={urg:0,hoy:1,ok:2};
-      return (ord[a.semaforo]??3)-(ord[b.semaforo]??3);
+      // default: por fecha más próxima
+      if (!a.proxFecha && !b.proxFecha) return 0;
+      if (!a.proxFecha) return 1;
+      if (!b.proxFecha) return -1;
+      return a.proxFecha.localeCompare(b.proxFecha);
     });
 
   if (count) count.textContent = all.length + ' leads';
@@ -3227,28 +3201,8 @@ function drawTabla() {
         ${!l.wpp&&!l.mail?`<div style="color:var(--sky)">💼 LinkedIn</div>`:''}
       </td>
       <td style="font-size:11px">${l.origen?origenBadgeHTML(l):'<span style="color:var(--fog)">—</span>'}</td>
-      <td>
-        <select onchange="quickUpdate('${l.id}','estado',this.value)"
-          style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:4px 6px;border-radius:6px;font-size:11px;outline:none">
-          <option value="contactado"       ${l.estado==='contactado'?'selected':''}>👤 Contactado</option>
-          <option value="enviado"        ${l.estado==='enviado'?'selected':''}>✉️ Enviado</option>
-          <option value="enviar-propuesta" ${l.estado==='enviar-propuesta'?'selected':''}>📄 Enviar Propuesta</option>
-          <option value="tratativa"      ${l.estado==='tratativa'?'selected':''}>🤝 Tratativa</option>
-          <option value="presupuesto"    ${l.estado==='presupuesto'?'selected':''}>💰 Presupuesto</option>
-          <option value="reunion"        ${l.estado==='reunion'?'selected':''}>📅 Reunión</option>
-          <option value="potencial"      ${l.estado==='potencial'?'selected':''}>⭐ Potencial</option>
-          <option value="no-potencial"   ${l.estado==='no-potencial'?'selected':''}>💤 No Potencial</option>
-          <option value="perdido"        ${l.estado==='perdido'?'selected':''}>✗ Perdido</option>
-        </select>
-      </td>
-      <td>
-        <select onchange="quickUpdate('${l.id}','semaforo',this.value)"
-          style="background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:4px 6px;border-radius:6px;font-size:11px;outline:none">
-          <option value="urg" ${l.semaforo==='urg'?'selected':''}>🔴 Urgente</option>
-          <option value="hoy" ${l.semaforo==='hoy'?'selected':''}>🟡 Esta semana</option>
-          <option value="ok"  ${l.semaforo==='ok'?'selected':''}>🟢 Al día</option>
-        </select>
-      </td>
+
+
       <td>
         <input type="date" value="${l.proxFecha||''}"
           onchange="quickUpdate('${l.id}','proxFecha',this.value)"
@@ -3324,11 +3278,10 @@ function guardarEdicion() {
   l.wpp       = document.getElementById('ed_wpp').value.trim();
   l.mail      = document.getElementById('ed_mail').value.trim();
   l.proxFecha = (document.getElementById('ed_fecha').value||'').trim();
-  l.semaforo  = document.getElementById('ed_sem').value;
-  l.estado    = document.getElementById('ed_estado').value;
+  // semaforo y estado: preservar — ocultos en la UI, solo cambiar con botones específicos
   l.proxPaso  = document.getElementById('ed_paso').value.trim();
   l._lastEdit = Date.now();
-  l._editados = [...new Set([...(l._editados||[]), 'proxFecha','semaforo','estado','proxPaso','empresa','contacto','wpp','mail','cargo','rubro'])];
+  l._editados = [...new Set([...(l._editados||[]), 'proxFecha','proxPaso','empresa','contacto','wpp','mail','cargo','rubro'])];
   saveLocal();
   if (SCRIPT) syncLeadToSheet(l);
   closeModal('mEditar');
@@ -3338,6 +3291,21 @@ function guardarEdicion() {
 }
 
 // Mostrar/ocultar campo "de parte de quién" según el select de origen
+// Marcar lead como perdido desde el perfil
+function marcarPerdido() {
+  const l = leads[currentId]; if (!l) return;
+  if (!confirm(`¿Marcás a ${l.empresa} como perdido? Se quitará del calendario.`)) return;
+  l.estado = 'perdido';
+  l.proxFecha = '';
+  l._lastEdit = Date.now();
+  l._editados = [...new Set([...(l._editados||[]), 'estado','proxFecha'])];
+  saveLocal();
+  if (SCRIPT) syncLeadToSheet(l);
+  closeModal('mPerfil');
+  drawAll();
+  toast(`${l.empresa} marcado como perdido`, 'info');
+}
+
 function toggleRefOrigen(prefix) {
   const sel  = document.getElementById(prefix + '_origen');
   const wrap = document.getElementById(prefix + '_ref_wrap');
@@ -3528,7 +3496,6 @@ function renderBadgesPerfil(l) {
          </span>`
       : `<span class="chip b-li" style="opacity:.5;border-style:dashed;cursor:pointer" onclick="editContacto('li','')">💼 + LinkedIn</span>`,
 
-    estadoChip(l.estado),
   ].join(' ');
 }
 
