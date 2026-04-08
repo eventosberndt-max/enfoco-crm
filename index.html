@@ -600,6 +600,7 @@ body::before{
       <button class="nav-link" onclick="goPanel('tabla',this)"><span class="ico">📋</span>Tabla / Editar</button>
       <button class="nav-link" onclick="goPanel('atrasados',this)"><span class="ico">⏰</span>Atrasados</button>
       <button class="nav-link" onclick="goPanel('perdidos',this)"><span class="ico">🗃️</span>Perdidos</button>
+      <button class="nav-link" onclick="goPanel('analytics',this)"><span class="ico">📊</span>Analytics</button>
       <button class="nav-link" onclick="goPanel('config',this)"><span class="ico">⚙️</span>Config</button>
     </div>
     <div class="nav-foot">
@@ -903,6 +904,68 @@ body::before{
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!-- PANEL: ANALYTICS                          -->
+      <!-- ══════════════════════════════════════════ -->
+      <div class="panel" id="panel-analytics">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--gold)">📊 Analytics</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-ghost btn-sm" onclick="drawAnalytics()" style="font-size:11px">🔄 Actualizar</button>
+            <button class="btn btn-gold btn-sm" onclick="analizarMensajesIA()" id="btnAnalizarIA" style="font-size:11px">✨ Análisis IA profundo</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--fog);margin-top:-6px">Datos calculados desde tu historial de leads y conversaciones.</div>
+
+        <!-- FILA 1: KPIs principales -->
+        <div id="an_kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:4px"></div>
+
+        <!-- FILA 2: Conversión por origen -->
+        <div class="card" style="margin-top:4px">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px">Conversión por origen</div>
+          <div id="an_origen" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+
+        <!-- FILA 3: Actividad por canal + Tiempo promedio -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:0">
+          <div class="card">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px">Actividad por canal</div>
+            <div id="an_canal" style="display:flex;flex-direction:column;gap:7px"></div>
+          </div>
+          <div class="card">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px">Velocidad de contacto</div>
+            <div id="an_velocidad" style="display:flex;flex-direction:column;gap:7px"></div>
+          </div>
+        </div>
+
+        <!-- FILA 4: Análisis de mensajes y respuestas -->
+        <div class="card" style="margin-top:0">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px">Patrones de respuesta</div>
+          <div id="an_mensajes" style="display:flex;flex-direction:column;gap:7px"></div>
+        </div>
+
+        <!-- FILA 5: Análisis IA profundo (se rellena al apretar el botón) -->
+        <div class="card" id="an_ia_wrap" style="display:none;margin-top:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);letter-spacing:.8px;text-transform:uppercase">Análisis IA — Diagnóstico comercial</div>
+            <span style="font-size:9px;font-family:'DM Mono',monospace;padding:1px 6px;border-radius:8px;background:rgba(232,184,75,.15);color:var(--gold);border:1px solid rgba(232,184,75,.3)">✨ IA</span>
+          </div>
+          <div id="an_ia_loader" style="display:none;color:var(--fog);font-size:12px;padding:8px 0">
+            <div class="dots"><span></span><span></span><span></span></div>Analizando patrones…
+          </div>
+          <div id="an_ia_result" style="font-size:13px;line-height:1.7;color:var(--paper)"></div>
+        </div>
+
+        <!-- FILA 6: Leads por semana (actividad temporal) -->
+        <div class="card" style="margin-top:0">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px">Actividad semanal — últimas 8 semanas</div>
+          <div id="an_semanal" style="display:flex;align-items:flex-end;gap:6px;height:80px"></div>
+          <div id="an_semanal_labels" style="display:flex;gap:6px;margin-top:4px"></div>
+        </div>
+
       </div>
 
     </div>
@@ -3122,7 +3185,8 @@ function goPanel(name, btn) {
   if(name==='perdidos') drawPerdidos();
   if(name==='atrasados') drawAtrasados();
   if(name==='tono') initTono();
-  const titles={semana:'Plan <em>Semanal</em>',leads:'<em>Leads</em> 2026',vistage:'<em>Vistage</em> 2026',nuevo:'Cargar desde <em>LinkedIn</em>',tabla:'<em>Tabla</em> — Edición rápida',tono:'<em>Tono IA</em> — Identidad de voz',config:'<em>Configuración</em>'};
+  if(name==='analytics') drawAnalytics();
+  const titles={semana:'Plan <em>Semanal</em>',leads:'<em>Leads</em> 2026',vistage:'<em>Vistage</em> 2026',nuevo:'Cargar desde <em>LinkedIn</em>',tabla:'<em>Tabla</em> — Edición rápida',tono:'<em>Tono IA</em> — Identidad de voz',analytics:'📊 <em>Analytics</em>',config:'<em>Configuración</em>'};
   document.getElementById('pgTitle').innerHTML=titles[name]||name;
 }
 
@@ -3602,19 +3666,32 @@ function esReunion(l) {
 // Formatear número a formato WhatsApp internacional (Argentina +54)
 function wppUrl(num) {
   if (!num || num === 'nan') return null;
-  let n = num.replace(/[^0-9]/g, '');
-  // Si empieza con 54 y tiene 12+ dígitos, ya está bien
-  if (n.startsWith('54') && n.length >= 12) return 'https://api.whatsapp.com/send?phone=' + n;
-  // Si empieza con 0, sacar el 0
-  if (n.startsWith('0')) n = n.substring(1);
-  // Si empieza con 15, es celular argentino viejo
-  if (n.startsWith('15')) n = n.substring(2);
-  // Agregar prefijo 54 + 9 para móviles argentinos
-  if (!n.startsWith('54')) {
-    // Si tiene 10 dígitos (ej: 1138330715) → 549 + número
-    if (n.length === 10) n = '549' + n;
-    else n = '54' + n;
+  const raw = num.trim();
+
+  // Si ya tiene formato internacional con + → usar tal cual, solo sacar caracteres inválidos
+  if (raw.startsWith('+')) {
+    const n = raw.replace(/[^0-9]/g, '');
+    return 'https://api.whatsapp.com/send?phone=' + n;
   }
+
+  let n = raw.replace(/[^0-9]/g, '');
+
+  // Si ya tiene código de país (empieza con dígito distinto a 0 y tiene 11+ dígitos) → usar directo
+  // Ejemplos: 5491138330715 (AR), 5511987654321 (BR), 447700900000 (UK)
+  if (n.length >= 11 && !n.startsWith('0')) {
+    return 'https://api.whatsapp.com/send?phone=' + n;
+  }
+
+  // Solo para números argentinos sin código de país (10 dígitos locales)
+  // Ej: 1138330715 → 5491138330715
+  if (n.startsWith('0')) n = n.substring(1);      // sacar 0 inicial
+  if (n.startsWith('15')) n = n.substring(2);     // sacar 15 viejo
+
+  if (n.length === 10) {
+    // Número argentino sin prefijo: agregar 549
+    n = '549' + n;
+  }
+  // Si quedó en otro largo, usar como viene
   return 'https://api.whatsapp.com/send?phone=' + n;
 }
 
@@ -3723,6 +3800,444 @@ function guardarContacto(campo) {
   renderBadgesPerfil(l);
   drawLeads();
   toast(valor ? '✓ Guardado' : 'Campo eliminado', 'ok');
+}
+
+
+// ══════════════════════════════════════════
+// ANALYTICS
+// ══════════════════════════════════════════
+
+function drawAnalytics() {
+  const todos = Object.values(leads);
+  const activos = todos.filter(l => l.estado !== 'perdido');
+  const perdidos = todos.filter(l => l.estado === 'perdido');
+  const hoy = todayISO();
+
+  // ── Helpers ──────────────────────────────
+  function kpiCard(valor, label, sub='', color='var(--gold)') {
+    return `<div style="background:var(--ink3);border:1px solid var(--line);border-radius:10px;padding:14px 16px">
+      <div style="font-size:26px;font-weight:700;color:${color};font-family:'DM Serif Display',serif;line-height:1">${valor}</div>
+      <div style="font-size:11px;font-weight:600;color:var(--paper);margin-top:4px">${label}</div>
+      ${sub?`<div style="font-size:10px;color:var(--fog);margin-top:2px">${sub}</div>`:''}
+    </div>`;
+  }
+
+  function barRow(label, val, total, color, sub='') {
+    const pct = total > 0 ? Math.round(val/total*100) : 0;
+    const width = total > 0 ? Math.max(2, Math.round(val/total*100)) : 0;
+    return `<div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--paper)">${label}</span>
+        <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--fog)">${val} <span style="color:${color}">(${pct}%)</span></span>
+      </div>
+      <div style="background:var(--ink4);border-radius:4px;height:7px;overflow:hidden">
+        <div style="width:${width}%;height:100%;background:${color};border-radius:4px;transition:width .4s ease"></div>
+      </div>
+      ${sub?`<div style="font-size:10px;color:var(--fog);margin-top:3px">${sub}</div>`:''}
+    </div>`;
+  }
+
+  // ── KPIs ─────────────────────────────────
+  const totalLeads = todos.length;
+  const conHistorial = todos.filter(l => (l.historial||[]).length > 0).length;
+  const atrasadosN = activos.filter(l => l.proxFecha && l.proxFecha < hoy).length;
+  const sinFecha = activos.filter(l => !l.proxFecha).length;
+
+  // Leads que tienen al menos una respuesta del cliente
+  const conRespuesta = todos.filter(l => {
+    return (l.historial||[]).some(h => {
+      if (h.tipo === 'nota') return false;
+      const txt = h.contenido || '';
+      // WPP: tiene líneas que no son de Dami
+      if (/\[\d{1,2}:\d{2},/.test(txt)) {
+        return txt.split('\n').some(ln => {
+          const m = ln.match(/^\[.+?\]\s*([^:]+?):/);
+          return m && !/enfoco|dami|damian/i.test(m[1]);
+        });
+      }
+      // LinkedIn: tiene headers de otra persona
+      if (/\s{2,}\d{1,2}:\d{2}/.test(txt)) {
+        return txt.split('\n').some(ln => {
+          const m = ln.match(/^(.+?)\s{2,}\d{1,2}:\d{2}/);
+          return m && !/damian|dami|enfoco/i.test(m[1]);
+        });
+      }
+      return false;
+    });
+  }).length;
+
+  const tasaRespuesta = totalLeads > 0 ? Math.round(conRespuesta / totalLeads * 100) : 0;
+
+  document.getElementById('an_kpis').innerHTML = [
+    kpiCard(totalLeads, 'Leads totales', `${activos.length} activos · ${perdidos.length} perdidos`),
+    kpiCard(tasaRespuesta + '%', 'Tasa de respuesta', `${conRespuesta} de ${totalLeads} respondieron`, tasaRespuesta > 40 ? 'var(--sage)' : tasaRespuesta > 20 ? 'var(--amber)' : 'var(--rose)'),
+    kpiCard(atrasadosN, 'Atrasados', `leads con fecha vencida`, atrasadosN > 5 ? 'var(--rose)' : 'var(--amber)'),
+    kpiCard(sinFecha, 'Sin fecha', `activos sin próxima acción`, sinFecha > 0 ? 'var(--amber)' : 'var(--sage)'),
+    kpiCard(conHistorial, 'Con historial', `leads con al menos una nota`),
+  ].join('');
+
+  // ── Conversión por origen ─────────────────
+  const origenKeys = ['vistage','enfoco','alimentaria','paracaidas','referenciado','otro',''];
+  const origenLabels = {vistage:'🔵 Vistage', enfoco:'🟢 Cliente Enfoco', alimentaria:'🟠 Red Alimentaria', paracaidas:'🟣 Paracaídas', referenciado:'🩷 Referenciado', otro:'⚫ Otro', '':'— Sin categoría'};
+  const origenColors = {vistage:'#5a8fd4', enfoco:'#5db87a', alimentaria:'#e07b3a', paracaidas:'#9b72cf', referenciado:'#d4607a', otro:'#888', '':'#555'};
+
+  const porOrigen = {};
+  origenKeys.forEach(k => { porOrigen[k] = { total:0, conResp:0, perdidos:0 }; });
+  todos.forEach(l => {
+    const k = (l.origen||'').toLowerCase();
+    const key = origenKeys.includes(k) ? k : 'otro';
+    porOrigen[key].total++;
+    if (l.estado === 'perdido') porOrigen[key].perdidos++;
+    // Tiene respuesta del cliente?
+    const tieneResp = (l.historial||[]).some(h => {
+      if (h.tipo === 'nota') return false;
+      const txt = h.contenido || '';
+      if (/\[\d{1,2}:\d{2},/.test(txt)) return txt.split('\n').some(ln => { const m=ln.match(/^\[.+?\]\s*([^:]+?):/); return m && !/enfoco|dami|damian/i.test(m[1]); });
+      if (/\s{2,}\d{1,2}:\d{2}/.test(txt)) return txt.split('\n').some(ln => { const m=ln.match(/^(.+?)\s{2,}\d{1,2}:\d{2}/); return m && !/damian|dami|enfoco/i.test(m[1]); });
+      return false;
+    });
+    if (tieneResp) porOrigen[key].conResp++;
+  });
+
+  const origenHtml = origenKeys
+    .filter(k => porOrigen[k].total > 0)
+    .sort((a,b) => porOrigen[b].total - porOrigen[a].total)
+    .map(k => {
+      const d = porOrigen[k];
+      const respPct = d.total > 0 ? Math.round(d.conResp/d.total*100) : 0;
+      const perdPct = d.total > 0 ? Math.round(d.perdidos/d.total*100) : 0;
+      return `<div style="padding:10px 0;border-bottom:1px solid var(--line)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12.5px;font-weight:600;color:var(--paper)">${origenLabels[k]||k}</span>
+          <div style="display:flex;gap:12px;font-size:11px;font-family:'DM Mono',monospace">
+            <span style="color:var(--fog)">${d.total} leads</span>
+            <span style="color:var(--sage)">✉ ${respPct}% resp.</span>
+            <span style="color:var(--rose)">✗ ${perdPct}% perdidos</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:3px;height:8px;border-radius:4px;overflow:hidden">
+          <div style="flex:${d.conResp};background:var(--sage);min-width:${d.conResp?4:0}px" title="Respondieron: ${d.conResp}"></div>
+          <div style="flex:${d.total-d.conResp-d.perdidos};background:var(--ink4);min-width:${d.total-d.conResp-d.perdidos?4:0}px" title="Sin respuesta: ${d.total-d.conResp-d.perdidos}"></div>
+          <div style="flex:${d.perdidos};background:var(--rose);min-width:${d.perdidos?4:0}px" title="Perdidos: ${d.perdidos}"></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:4px;font-size:9.5px;color:var(--fog);font-family:'DM Mono',monospace">
+          <span style="color:var(--sage)">■ Respondieron</span>
+          <span>■ Sin respuesta</span>
+          <span style="color:var(--rose)">■ Perdidos</span>
+        </div>
+      </div>`;
+    }).join('');
+  document.getElementById('an_origen').innerHTML = origenHtml || '<span style="color:var(--fog);font-size:12px">Sin datos de origen cargados aún.</span>';
+
+  // ── Actividad por canal ───────────────────
+  const canalCount = {wpp:0, linkedin:0, mail:0, nota:0};
+  const canalResp  = {wpp:0, linkedin:0, mail:0};
+  todos.forEach(l => {
+    (l.historial||[]).forEach(h => {
+      const t = h.tipo||'nota';
+      if (t in canalCount) canalCount[t]++;
+      // Contar respuestas en este canal
+      if (t !== 'nota') {
+        const txt = h.contenido||'';
+        const tieneResp = t==='wpp'
+          ? txt.split('\n').some(ln => { const m=ln.match(/^\[.+?\]\s*([^:]+?):/); return m && !/enfoco|dami|damian/i.test(m[1]); })
+          : t==='linkedin'
+          ? txt.split('\n').some(ln => { const m=ln.match(/^(.+?)\s{2,}\d{1,2}:\d{2}/); return m && !/damian|dami|enfoco/i.test(m[1]); })
+          : false;
+        if (tieneResp && t in canalResp) canalResp[t]++;
+      }
+    });
+  });
+  const totalInteracciones = Object.values(canalCount).reduce((a,b)=>a+b,0);
+  const canalLabels = {wpp:'💬 WhatsApp', linkedin:'💼 LinkedIn', mail:'📧 Email', nota:'📝 Notas internas'};
+  const canalCol    = {wpp:'var(--sage)', linkedin:'#5a8fd4', mail:'var(--amber)', nota:'var(--fog)'};
+  document.getElementById('an_canal').innerHTML = Object.entries(canalCount)
+    .sort((a,b)=>b[1]-a[1])
+    .filter(([,v])=>v>0)
+    .map(([k,v]) => {
+      const rPct = canalResp[k] !== undefined && v > 0 ? Math.round(canalResp[k]/v*100) : null;
+      const sub = rPct !== null ? `${rPct}% de conversaciones con respuesta del cliente` : '';
+      return barRow(canalLabels[k]||k, v, totalInteracciones, canalCol[k]||'var(--fog)', sub);
+    }).join('') || '<span style="color:var(--fog);font-size:12px">Sin interacciones registradas aún.</span>';
+
+  // ── Velocidad de contacto ─────────────────
+  // Días desde creadoEn hasta primera nota / historial
+  const velocidades = todos
+    .filter(l => l.creadoEn && (l.historial||[]).length > 0)
+    .map(l => {
+      const primerHist = l.historial[0];
+      if (!primerHist?.fecha) return null;
+      try {
+        // fecha puede ser "DD/M/AAAA, HH:MM:SS"
+        const partes = primerHist.fecha.split(',')[0].trim().split('/');
+        if (partes.length >= 3) {
+          const d = new Date(`${partes[2].trim()}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}`);
+          const dias = Math.round((d - new Date(l.creadoEn)) / 86400000);
+          return isNaN(dias) ? null : dias;
+        }
+      } catch(e){}
+      return null;
+    }).filter(v => v !== null && v >= 0 && v < 365);
+
+  const promedioVel = velocidades.length > 0
+    ? (velocidades.reduce((a,b)=>a+b,0)/velocidades.length).toFixed(1)
+    : '—';
+
+  // Leads con respuesta rápida del cliente (< 48hs de la primera nota)
+  const respRapidas = todos.filter(l => {
+    const hist = l.historial||[];
+    if (hist.length < 2) return false;
+    // Buscar primera interacción con respuesta del cliente
+    for (let i = 0; i < hist.length - 1; i++) {
+      if (hist[i].tipo === 'nota') continue;
+      // Siguiente entrada es del cliente?
+      // simplificado: si la siguiente entrada existe y es de canal real
+      if (hist[i+1] && hist[i+1].tipo !== 'nota') return true;
+    }
+    return false;
+  }).length;
+
+  // Tiempo promedio entre seguimientos
+  const intervalosSeg = [];
+  todos.forEach(l => {
+    const hist = (l.historial||[]).filter(h => h.tipo !== 'nota' && h.fecha);
+    for (let i = 1; i < hist.length; i++) {
+      try {
+        const parseF = f => {
+          const p = f.split(',')[0].trim().split('/');
+          return p.length >= 3 ? new Date(`${p[2].trim()}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`) : null;
+        };
+        const d1 = parseF(hist[i-1].fecha), d2 = parseF(hist[i].fecha);
+        if (d1 && d2) {
+          const dias = Math.round((d2-d1)/86400000);
+          if (dias > 0 && dias < 180) intervalosSeg.push(dias);
+        }
+      } catch(e){}
+    }
+  });
+  const promedioInt = intervalosSeg.length > 0
+    ? (intervalosSeg.reduce((a,b)=>a+b,0)/intervalosSeg.length).toFixed(1)
+    : '—';
+
+  document.getElementById('an_velocidad').innerHTML = `
+    <div style="padding:8px 0;border-bottom:1px solid var(--line)">
+      <div style="font-size:22px;font-weight:700;color:var(--gold);font-family:'DM Serif Display',serif">${promedioVel} días</div>
+      <div style="font-size:11px;color:var(--fog);margin-top:2px">Tiempo promedio hasta primera nota</div>
+    </div>
+    <div style="padding:8px 0;border-bottom:1px solid var(--line)">
+      <div style="font-size:22px;font-weight:700;color:var(--sky);font-family:'DM Serif Display',serif">${promedioInt} días</div>
+      <div style="font-size:11px;color:var(--fog);margin-top:2px">Intervalo promedio entre seguimientos</div>
+    </div>
+    <div style="padding:8px 0">
+      <div style="font-size:22px;font-weight:700;color:var(--sage);font-family:'DM Serif Display',serif">${respRapidas}</div>
+      <div style="font-size:11px;color:var(--fog);margin-top:2px">Leads con respuesta en múltiples intercambios</div>
+    </div>`;
+
+  // ── Patrones de respuesta ─────────────────
+  let mensajesEnviados = 0, mensajesRecibidos = 0;
+  const longitudesMensajes = [];
+  const horasEnvio = new Array(24).fill(0);
+
+  todos.forEach(l => {
+    (l.historial||[]).forEach(h => {
+      if (h.tipo === 'nota') return;
+      const txt = h.contenido || '';
+
+      // WPP: parsear líneas individuales
+      if (/\[\d{1,2}:\d{2},/.test(txt)) {
+        txt.split('\n').forEach(ln => {
+          const m = ln.match(/^\[(\d{1,2}):(\d{2}),\s*\d{1,2}\/\d{1,2}\/\d{2,4}\]\s*([^:]+?):\s*(.+)/);
+          if (m) {
+            const [,hora,,nombre,msg] = m;
+            if (/enfoco|dami|damian/i.test(nombre)) {
+              mensajesEnviados++;
+              longitudesMensajes.push(msg.trim().length);
+              horasEnvio[parseInt(hora)]++;
+            } else {
+              mensajesRecibidos++;
+            }
+          }
+        });
+      }
+    });
+  });
+
+  const horaTopIdx = horasEnvio.indexOf(Math.max(...horasEnvio));
+  const horaTop = horasEnvio[horaTopIdx] > 0 ? `${horaTopIdx}:00–${horaTopIdx+1}:00` : '—';
+  const longPromedio = longitudesMensajes.length > 0
+    ? Math.round(longitudesMensajes.reduce((a,b)=>a+b,0)/longitudesMensajes.length)
+    : 0;
+
+  // Ratio respuesta: mensajes enviados vs recibidos
+  const ratioResp = mensajesEnviados > 0
+    ? (mensajesRecibidos / mensajesEnviados * 100).toFixed(0)
+    : 0;
+
+  document.getElementById('an_mensajes').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:8px">
+      <div style="background:var(--ink4);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--sky)">${mensajesEnviados}</div>
+        <div style="font-size:10px;color:var(--fog);margin-top:2px">Mensajes enviados</div>
+      </div>
+      <div style="background:var(--ink4);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--sage)">${mensajesRecibidos}</div>
+        <div style="font-size:10px;color:var(--fog);margin-top:2px">Respuestas recibidas</div>
+      </div>
+      <div style="background:var(--ink4);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:${ratioResp>40?'var(--sage)':ratioResp>20?'var(--amber)':'var(--rose)'}">${ratioResp}%</div>
+        <div style="font-size:10px;color:var(--fog);margin-top:2px">Ratio de respuesta</div>
+      </div>
+      <div style="background:var(--ink4);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--gold)">${longPromedio}</div>
+        <div style="font-size:10px;color:var(--fog);margin-top:2px">Chars promedio / mensaje</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--fog);padding:8px 0;border-top:1px solid var(--line)">
+      <span style="color:var(--paper)">Hora pico de envíos:</span> ${horaTop}
+      ${longPromedio > 0 ? ` · <span style="color:var(--paper)">Mensajes ${longPromedio < 100 ? 'cortos' : longPromedio < 250 ? 'medianos' : 'largos'}</span> (${longPromedio < 100 ? 'buen ritmo para WPP' : longPromedio < 250 ? 'equilibrado' : 'considerar acortar para WPP/LinkedIn'})` : ''}
+    </div>`;
+
+  // ── Actividad semanal ─────────────────────
+  const semanas = [];
+  for (let i = 7; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i*7);
+    const lunes = new Date(d);
+    lunes.setDate(d.getDate() - d.getDay() + 1);
+    const viernes = new Date(lunes);
+    viernes.setDate(lunes.getDate() + 4);
+    const lunesISO = lunes.toISOString().slice(0,10);
+    const viernesISO = viernes.toISOString().slice(0,10);
+    semanas.push({ lunesISO, viernesISO, label: `${lunes.getDate()}/${lunes.getMonth()+1}` });
+  }
+
+  const actividadXSemana = semanas.map(s => {
+    let count = 0;
+    todos.forEach(l => {
+      (l.historial||[]).forEach(h => {
+        if (!h.fecha) return;
+        try {
+          const p = h.fecha.split(',')[0].trim().split('/');
+          if (p.length >= 3) {
+            const iso = `${p[2].trim()}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+            if (iso >= s.lunesISO && iso <= s.viernesISO) count++;
+          }
+        } catch(e){}
+      });
+    });
+    return count;
+  });
+
+  const maxAct = Math.max(...actividadXSemana, 1);
+  const semGrid = document.getElementById('an_semanal');
+  const semLabels = document.getElementById('an_semanal_labels');
+  const barW = `calc((100% - ${semanas.length-1}*6px) / ${semanas.length})`;
+  semGrid.innerHTML = actividadXSemana.map((n,i) => {
+    const h = Math.max(4, Math.round(n/maxAct*72));
+    const isThisWeek = i === semanas.length-1;
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--fog)">${n||''}</div>
+      <div style="width:100%;height:${h}px;background:${isThisWeek?'var(--gold)':'var(--sky)'};border-radius:4px 4px 0 0;opacity:${isThisWeek?1:.7};transition:height .4s ease" title="${n} interacciones semana ${semanas[i].label}"></div>
+    </div>`;
+  }).join('');
+  semLabels.innerHTML = semanas.map((s,i) =>
+    `<div style="flex:1;text-align:center;font-size:8.5px;font-family:'DM Mono',monospace;color:${i===semanas.length-1?'var(--gold)':'var(--fog)'}">${s.label}</div>`
+  ).join('');
+}
+
+// ══════════════════════════════════════════
+// ANÁLISIS IA PROFUNDO
+// ══════════════════════════════════════════
+async function analizarMensajesIA() {
+  if (!KEY) { toast('Necesitás la API Key en Config para el análisis IA','err'); return; }
+  const todos = Object.values(leads);
+  if (todos.length < 2) { toast('Necesitás al menos 2 leads para analizar','err'); return; }
+
+  const wrap = document.getElementById('an_ia_wrap');
+  const loader = document.getElementById('an_ia_loader');
+  const result = document.getElementById('an_ia_result');
+  const btn = document.getElementById('btnAnalizarIA');
+
+  wrap.style.display = 'block';
+  loader.style.display = 'flex';
+  result.innerHTML = '';
+  btn.disabled = true;
+  btn.textContent = 'Analizando…';
+
+  // Construir resumen estadístico + muestra de conversaciones para la IA
+  const activos = todos.filter(l => l.estado !== 'perdido');
+  const perdidos = todos.filter(l => l.estado === 'perdido');
+  const hoy = todayISO();
+
+  // Ejemplos de mensajes enviados por Dami (máx 8, variedad de canales)
+  const muestras = [];
+  todos.forEach(l => {
+    if (muestras.length >= 8) return;
+    const hist = (l.historial||[]).filter(h => h.tipo !== 'nota' && h.contenido);
+    hist.slice(-2).forEach(h => {
+      if (muestras.length >= 8) return;
+      muestras.push(`[${l.empresa} · ${h.tipo}]: ${(h.contenido||'').substring(0,300)}`);
+    });
+  });
+
+  // Stats básicos para contexto
+  const origenTop = (() => {
+    const cnt = {};
+    todos.forEach(l => { const k=l.origen||'sin categoría'; cnt[k]=(cnt[k]||0)+1; });
+    return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`${k}: ${v}`).join(', ');
+  })();
+
+  const prompt = `Sos un consultor de ventas analizando el proceso comercial de Dami Guelman, director de Enfoco Films (productora audiovisual, Buenos Aires).
+
+DATOS DEL CRM:
+- Total leads: ${todos.length} (${activos.length} activos, ${perdidos.length} perdidos)
+- Leads sin próxima fecha: ${activos.filter(l=>!l.proxFecha).length}
+- Leads atrasados: ${activos.filter(l=>l.proxFecha && l.proxFecha < hoy).length}
+- Orígenes principales: ${origenTop}
+- Leads con historial de conversación: ${todos.filter(l=>(l.historial||[]).length>0).length}
+
+MUESTRA DE CONVERSACIONES RECIENTES:
+${muestras.join('\n\n')}
+
+TAREA: Hacé un diagnóstico comercial completo. Organizalo en estas secciones:
+
+**🎯 Diagnóstico rápido**
+2-3 observaciones sobre el estado actual del pipeline. Concreto.
+
+**✉️ Análisis de mensajes**
+¿Qué patrones ves en los mensajes de Dami? ¿Funcionan bien? ¿Qué mejorar en tono, longitud, timing?
+
+**📊 Oportunidades detectadas**
+¿Qué leads o segmentos parecen tener más potencial? ¿Dónde hay energía desperdiciada?
+
+**⚡ 3 acciones concretas esta semana**
+Específicas, ejecutables, ordenadas por impacto. No genéricas.
+
+**💡 Ideas de mejora del proceso**
+Sugerencias para mejorar el flujo comercial de Enfoco a mediano plazo.
+
+Hablale de vos a Dami. Tono directo, sin relleno.`;
+
+  try {
+    const r = await aiCall(prompt);
+    loader.style.display = 'none';
+    // Convertir markdown básico a HTML
+    const formatted = r
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^## (.+)$/gm, '<div style="font-size:14px;font-weight:700;color:var(--gold);margin:14px 0 6px">$1</div>')
+      .replace(/^\*\*(.+?)\*\*/gm, '<div style="font-size:13px;font-weight:700;color:var(--paper);margin:12px 0 5px">$1</div>')
+      .replace(/^- (.+)$/gm, '<div style="padding:4px 0 4px 16px;border-left:2px solid var(--line);margin:3px 0;color:var(--fog2)">$1</div>')
+      .replace(/^(\d+\. .+)$/gm, '<div style="padding:5px 0;margin:3px 0">$1</div>')
+      .replace(/\n/g, '<br>');
+    result.innerHTML = formatted;
+    toast('✅ Análisis IA listo','ok');
+  } catch(e) {
+    loader.style.display = 'none';
+    result.innerHTML = `<span style="color:var(--rose)">Error: ${e.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Análisis IA profundo';
+  }
 }
 
 // ══════════════════════════════════════════
