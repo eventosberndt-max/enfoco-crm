@@ -2156,20 +2156,44 @@ function saveLead() {
 
 
 // ── Detección automática de canal en notas ──
+function detectarCanal(txt) {
+  if (!txt || txt.length < 5) return { canal: '', icon: '' };
+
+  // ── WPP: "[HH:MM, D/M/AAAA] Nombre: mensaje" ──────────────
+  // Formato real de WhatsApp exportado
+  if (/^\[\d{1,2}:\d{2},\s*\d{1,2}\/\d{1,2}\/\d{2,4}\]/m.test(txt)) {
+    return { canal: 'wpp', icon: '💬 WhatsApp detectado' };
+  }
+
+  // ── LinkedIn: "Nombre  HH:MM" o "ha enviado los siguientes mensajes" ──
+  // Formato real de LinkedIn mensajes
+  if (/^.+\s{2,}\d{1,2}:\d{2}\s*$/m.test(txt) ||
+      /ha enviado los siguientes mensajes/i.test(txt) ||
+      /Visto por .+ en \d{1,2}:\d{2}/i.test(txt)) {
+    return { canal: 'linkedin', icon: '💼 LinkedIn detectado' };
+  }
+
+  // ── Mail: "Nombre <email>" o "para email@" o "hace N minutos" ──
+  // Formato real de Gmail
+  if (/<[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}>/.test(txt) ||
+      /^para\s+\S+@/im.test(txt) ||
+      /hace \d+ (minuto|hora)/i.test(txt) ||
+      /^(De:|Para:|Asunto:|From:|To:|Subject:)/im.test(txt)) {
+    return { canal: 'mail', icon: '📧 Mail detectado' };
+  }
+
+  // ── Texto largo sin formato = nota interna ──────────────────
+  if (txt.length > 20) {
+    return { canal: 'nota', icon: '📝 Nota interna' };
+  }
+  return { canal: '', icon: '' };
+}
+
 function notaDetectarCanal(txt) {
   const el = document.getElementById('notaCanalDetectado');
-  if (!el || !txt) return;
-  let canal = '', icon = '';
-  // Detectar por marcadores del formato
-  if (/\d{1,2}:\d{2}.*\n|ha enviado.*mensaje|Damian Guelman|Ver el perfil de/i.test(txt)) {
-    canal = 'linkedin'; icon = '💼 LinkedIn detectado';
-  } else if (/\+?54|\d{2,4}[-\s]\d{4}[-\s]\d{4}|WhatsApp|wpp/i.test(txt) && /\d{1,2}:\d{2}/.test(txt)) {
-    canal = 'wpp'; icon = '💬 WhatsApp detectado';
-  } else if (/@|Asunto:|Subject:|De:|Para:/i.test(txt)) {
-    canal = 'mail'; icon = '📧 Mail detectado';
-  } else if (txt.length > 20) {
-    canal = 'nota'; icon = '📝 Nota interna';
-  }
+  if (!el) return;
+  if (!txt || !txt.trim()) { el.textContent = ''; el._canal = ''; return; }
+  const { canal, icon } = detectarCanal(txt);
   el.textContent = icon;
   el._canal = canal;
 }
@@ -2222,20 +2246,15 @@ function saveNotaUnificada() {
   const txt = document.getElementById('msg_ctx')?.value.trim();
   if (!txt) { toast('Escribí o pegá algo primero', 'err'); return; }
 
+  // Usar detectarCanal() centralizado (o lo que ya detectó el oninput)
   const canalEl = document.getElementById('notaCanalDetectado');
-  const canal = canalEl?._canal || 'nota';
+  let canal = canalEl?._canal || '';
+  if (!canal) canal = detectarCanal(txt).canal || 'nota';
 
-  // Detectar quién habla en la conversación
   const l = leads[currentId];
-  let quien = 'dami';
-  if (canal !== 'nota') {
-    // Si el texto contiene el nombre del contacto como "hablando", es del cliente
-    const nombreCliente = (l?.contacto||'').split(' ')[0].toLowerCase();
-    const lines = txt.split('\n').slice(0,5).join(' ').toLowerCase();
-    if (nombreCliente && lines.includes(nombreCliente) && !lines.includes('damian')) {
-      quien = 'mixto'; // conversación con ambos
-    }
-  }
+  // Determinar quien: conversación siempre es "mixto" (hay mensajes de ambos lados)
+  // las notas internas son de "dami"
+  let quien = canal === 'nota' ? 'dami' : 'mixto';
 
   addHist(currentId, { tipo: canal, quien, contenido: txt });
   document.getElementById('msg_ctx').value = '';
@@ -2243,7 +2262,7 @@ function saveNotaUnificada() {
   limpiarResumenPerfil(currentId);
   limpiarResumenCache(currentId);
   drawHistorial(leads[currentId]);
-  toast('✓ Guardado', 'ok');
+  toast('✓ Guardado como ' + (canal === 'wpp' ? '💬 WhatsApp' : canal === 'linkedin' ? '💼 LinkedIn' : canal === 'mail' ? '📧 Mail' : '📝 Nota'), 'ok');
 }
 
 function saveNota() {
@@ -2625,55 +2644,93 @@ async function genResumenPerfil(l) {
     return;
   }
 
-  // ── Preprocesar historial: clasificar cada entrada ──────────
-  // Separar notas internas de conversaciones reales
-  // Parsear fechas dentro del texto WPP (DD/MM/AA, DD-MM-AA, etc.)
+  // ── Preprocesar historial: clasificar y parsear cada entrada ─
   function clasificarEntrada(h) {
-    const txt = (h.contenido || '').trim();
+    const rawTxt = (h.contenido || '').trim();
     const tipo = h.tipo || 'nota';
+    const contactoNombre = (l.contacto || '').trim();
 
-    // Notas internas: todo mayúsculas, sin formato de chat, o canal 'nota'
-    if (tipo === 'nota') return { tipo: 'interna', txt };
+    // ── NOTAS INTERNAS ──────────────────────────────────────
+    if (tipo === 'nota') return { tipo: 'interna', txt: rawTxt };
 
-    // Conversación WPP: detectar líneas con formato "[HH:MM, DD/M/AAAA] Nombre:"
-    const esWPP = /\[\d{1,2}:\d{2}[, ]+\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\]/.test(txt);
+    // ── WHATSAPP ─────────────────────────────────────────────
+    // Formato real: "[15:17, 8/4/2026] Nombre Apellido: mensaje"
+    const esWPP = /^\[\d{1,2}:\d{2},\s*\d{1,2}\/\d{1,2}\/\d{2,4}\]/m.test(rawTxt);
     if (esWPP || tipo === 'wpp') {
-      // Parsear líneas para identificar quién habla
-      const lineas = txt.split('\n').filter(l => l.trim());
-      const parsed = lineas.map(ln => {
-        // Formato WPP: [HH:MM, DD/MM/AAAA] Nombre: mensaje
-        const m = ln.match(/^\[?(\d{1,2}:\d{2})[,\s]+(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})\]?\s*([^:]+?):\s*(.+)/);
+      const lineas = rawTxt.split('\n');
+      const parsed = [];
+      for (const ln of lineas) {
+        const m = ln.match(/^\[(\d{1,2}:\d{2}),\s*(\d{1,2}\/\d{1,2}\/\d{2,4})\]\s*([^:]+?):\s*(.+)/);
         if (m) {
           const [, hora, fecha, nombre, msg] = m;
-          // Normalizar fecha DD/MM/AA → DD/MM/AAAA
-          const fechaNorm = fecha.replace(/(\d{1,2}[\/\-]\d{1,2}[\/\-])(\d{2})$/, (_, pre, yy) => pre + '20' + yy);
           const esDami = /enfoco|dami|damian/i.test(nombre);
-          return `[${fechaNorm} ${hora}] ${esDami ? 'DAMI' : l.contacto}: ${msg.trim()}`;
+          const speaker = esDami ? 'DAMI' : contactoNombre || nombre.trim();
+          parsed.push(`[${fecha} ${hora}] ${speaker}: ${msg.trim()}`);
         }
-        return ln.trim() ? `  ${ln.trim()}` : null;
-      }).filter(Boolean);
-      return { tipo: 'wpp', txt: parsed.join('\n') };
+        // Ignorar líneas sin formato (continuación, etc.)
+      }
+      return { tipo: 'wpp', txt: parsed.length ? parsed.join('\n') : rawTxt };
     }
 
-    // LinkedIn: detectar frases características
-    const esLI = /ver el perfil|ha enviado|linkedin|conectar/i.test(txt);
+    // ── LINKEDIN ──────────────────────────────────────────────
+    // Formatos: "Nombre  HH:MM" (header de speaker) y "ha enviado los siguientes mensajes"
+    const esLI = /^.+\s{2,}\d{1,2}:\d{2}\s*$/m.test(rawTxt) ||
+                 /ha enviado los siguientes mensajes/i.test(rawTxt) ||
+                 /Visto por .+ en \d{1,2}:\d{2}/i.test(rawTxt);
     if (esLI || tipo === 'linkedin') {
-      // Limpiar metadatos de LinkedIn, mantener solo mensajes reales
-      const lineas = txt.split('\n').filter(ln => {
-        const l2 = ln.trim();
-        return l2 && !/^(Ver el perfil|Minimiza|Cierra|Estado:|Conectar|Seguir|Mensaje|Pendiente|Móvil|Correo|\d+er grado|\d+ contacto|Hace \d+|Hoy|Ayer)/i.test(l2);
-      });
-      return { tipo: 'linkedin', txt: lineas.join('\n') };
+      const lineas = rawTxt.split('\n');
+      const parsed = [];
+      let currentSpeaker = null;
+      const skipRe = /^(Visto por|Ver el perfil|Minimiza|Cierra|Estado:|lunes|martes|miércoles|jueves|viernes|sábado|domingo|Hoy|Ayer|Conectar|Seguir|Mensaje|Pendiente)/i;
+      const emojiRe = /^[\u{1F300}-\u{1FFFF}\u{2600}-\u{26FF}\s]+$/u;
+      for (const ln of lineas) {
+        const s = ln.trim();
+        if (!s || skipRe.test(s) || emojiRe.test(s)) continue;
+        // Header "ha enviado los siguientes mensajes a las HH:MM"
+        const mEnvio = s.match(/^(.+?)\s+ha enviado los siguientes mensajes/i);
+        if (mEnvio) {
+          const nombre = mEnvio[1].trim();
+          currentSpeaker = /damian|dami|enfoco/i.test(nombre) ? 'DAMI' : contactoNombre || nombre;
+          continue;
+        }
+        // Header "Nombre  HH:MM"
+        const mHeader = s.match(/^(.+?)\s{2,}(\d{1,2}:\d{2})\s*$/);
+        if (mHeader) {
+          const nombre = mHeader[1].trim();
+          currentSpeaker = /damian guelman|dami|enfoco/i.test(nombre) ? 'DAMI' : contactoNombre || nombre;
+          continue;
+        }
+        // Mensaje normal — usar speaker actual
+        if (currentSpeaker) {
+          parsed.push(`  ${currentSpeaker}: ${s}`);
+        }
+      }
+      return { tipo: 'linkedin', txt: parsed.length ? parsed.join('\n') : rawTxt };
     }
 
-    // Mail: detectar De:/Para:/Asunto:
-    const esMail = /@|De:|Para:|Asunto:|Subject:/i.test(txt);
+    // ── MAIL ──────────────────────────────────────────────────
+    // Formato real Gmail: "Nombre <email>\nHH:MM (hace N min)\npara email"
+    const esMail = /<[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}>/.test(rawTxt) ||
+                   /^para\s+\S+@/im.test(rawTxt) ||
+                   /hace \d+ (minuto|hora)/i.test(rawTxt) ||
+                   /^(De:|Para:|From:|To:|Asunto:|Subject:)/im.test(rawTxt);
     if (esMail || tipo === 'mail') {
-      return { tipo: 'mail', txt };
+      // Detectar si lo mandó Dami o el cliente
+      const firstLine = rawTxt.split('\n')[0];
+      const esDami = /enfoco|dami|damian/i.test(firstLine);
+      const speaker = esDami ? 'DAMI' : contactoNombre;
+      // Extraer cuerpo del mail (saltar headers)
+      const lineas = rawTxt.split('\n');
+      let bodyStart = 0;
+      for (let i = 0; i < Math.min(lineas.length, 5); i++) {
+        if (/<.+@.+>/.test(lineas[i]) || /hace \d+|^para\s/i.test(lineas[i])) bodyStart = i + 1;
+      }
+      const cuerpo = lineas.slice(bodyStart).join('\n').trim();
+      return { tipo: 'mail', txt: `${speaker}: ${cuerpo}` };
     }
 
-    // Texto libre sin formato — tratarlo como nota contextual
-    return { tipo: 'contexto', txt };
+    // ── CONTEXTO (texto libre) ────────────────────────────────
+    return { tipo: 'contexto', txt: rawTxt };
   }
 
   // Tomar hasta las últimas 10 entradas para mejor contexto
