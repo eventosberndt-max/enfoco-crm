@@ -957,7 +957,10 @@ body::before{
 
     <!-- 2. RESUMEN IA -->
     <div class="msec" id="pf_resumen_sec">
-      <div class="msec-label">Resumen</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div class="msec-label" style="margin:0">Resumen</div>
+        <button class="btn btn-ghost btn-sm" onclick="reanalizarResumen()" style="margin-left:auto;font-size:11px">🔄 Re-analizar</button>
+      </div>
       <div class="resumen-box">
         <div class="resumen-loader" id="resumenLoader">Analizando historial…</div>
         <div class="resumen-txt" id="resumenTxt" style="display:none"></div>
@@ -1007,7 +1010,8 @@ body::before{
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           <button class="btn btn-ghost btn-sm" id="btnVozNota" onclick="toggleVoz()">🎤 Voz</button>
           <button class="btn btn-gold btn-sm" onclick="saveNotaUnificada()">+ Guardar</button>
-          <button class="btn btn-ghost btn-sm" onclick="genMsgDesdeNota()">✨ Generar mensaje con esto</button>
+          <button class="btn btn-ghost btn-sm" onclick="saveNotaYReanalizar()" title="Guarda la nota y re-analiza el resumen">+ Guardar y re-analizar</button>
+          <button class="btn btn-ghost btn-sm" onclick="genMsgDesdeNota()">✨ Generar mensaje</button>
         </div>
       </div>
 
@@ -1614,19 +1618,38 @@ function parseFechaToISO(str) {
   str = str.trim().replace(/\r/g,'');
   // Ya es YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.substring(0,10);
-  // DD/MM/YYYY o D/M/YYYY (formato AR del Sheets)
-  const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+
+  const MESES = {
+    ene:1,enero:1, feb:2,febrero:2, mar:3,marzo:3,
+    abr:4,abril:4, may:5,mayo:5,  jun:6,junio:6,
+    jul:7,julio:7, ago:8,agosto:8, sep:9,sept:9,septiembre:9,
+    oct:10,octubre:10, nov:11,noviembre:11, dic:12,diciembre:12
+  };
+  const anoActual = new Date().getFullYear();
+
+  // DD/MM/YYYY o D/M/YYYY o D/M/YY — formato AR (día primero)
+  const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
   if (slashMatch) {
     let [,d,m,y] = slashMatch;
-    if (y.length===2) y='20'+y;
+    y = y ? (y.length===2 ? '20'+y : y) : String(anoActual);
     return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
   }
-  // DD-MM-YYYY o D-M-YY
+  // DD-MM-YYYY o D-M-YY — formato AR con guiones
   const dashMatch = str.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})/);
   if (dashMatch) {
     let [,d,m,y] = dashMatch;
     if (y.length===2) y='20'+y;
     return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  // "25 abr", "25 de abril", "25 abril 2026"
+  const textoMatch = str.match(/^(\d{1,2})\s+(?:de\s+)?([a-záéíóú]+)(?:\s+(\d{2,4}))?/i);
+  if (textoMatch) {
+    const [,d,mesStr,y] = textoMatch;
+    const m = MESES[mesStr.toLowerCase().substring(0,3)];
+    if (m) {
+      const yFinal = y ? (y.length===2?'20'+y:y) : String(anoActual);
+      return `${yFinal}-${String(m).padStart(2,'0')}-${d.padStart(2,'0')}`;
+    }
   }
   return '';
 }
@@ -2602,15 +2625,84 @@ async function genResumenPerfil(l) {
     return;
   }
 
-  // Armar hilo con quién habla
-  const hiloTexto = hist.slice(-6).map(h => {
-    const quien = h.quien === 'cliente' ? l.contacto : 'Dami (Enfoco)';
-    const fecha = h.fecha ? new Date(h.fecha).toLocaleDateString('es-AR',{day:'numeric',month:'short'}) : '';
-    return `[${fecha}] ${quien} (${h.tipo}): ${(h.contenido||'').substring(0,200)}`;
-  }).join('\n');
+  // ── Preprocesar historial: clasificar cada entrada ──────────
+  // Separar notas internas de conversaciones reales
+  // Parsear fechas dentro del texto WPP (DD/MM/AA, DD-MM-AA, etc.)
+  function clasificarEntrada(h) {
+    const txt = (h.contenido || '').trim();
+    const tipo = h.tipo || 'nota';
 
+    // Notas internas: todo mayúsculas, sin formato de chat, o canal 'nota'
+    if (tipo === 'nota') return { tipo: 'interna', txt };
+
+    // Conversación WPP: detectar líneas con formato "[HH:MM, DD/M/AAAA] Nombre:"
+    const esWPP = /\[\d{1,2}:\d{2}[, ]+\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\]/.test(txt);
+    if (esWPP || tipo === 'wpp') {
+      // Parsear líneas para identificar quién habla
+      const lineas = txt.split('\n').filter(l => l.trim());
+      const parsed = lineas.map(ln => {
+        // Formato WPP: [HH:MM, DD/MM/AAAA] Nombre: mensaje
+        const m = ln.match(/^\[?(\d{1,2}:\d{2})[,\s]+(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})\]?\s*([^:]+?):\s*(.+)/);
+        if (m) {
+          const [, hora, fecha, nombre, msg] = m;
+          // Normalizar fecha DD/MM/AA → DD/MM/AAAA
+          const fechaNorm = fecha.replace(/(\d{1,2}[\/\-]\d{1,2}[\/\-])(\d{2})$/, (_, pre, yy) => pre + '20' + yy);
+          const esDami = /enfoco|dami|damian/i.test(nombre);
+          return `[${fechaNorm} ${hora}] ${esDami ? 'DAMI' : l.contacto}: ${msg.trim()}`;
+        }
+        return ln.trim() ? `  ${ln.trim()}` : null;
+      }).filter(Boolean);
+      return { tipo: 'wpp', txt: parsed.join('\n') };
+    }
+
+    // LinkedIn: detectar frases características
+    const esLI = /ver el perfil|ha enviado|linkedin|conectar/i.test(txt);
+    if (esLI || tipo === 'linkedin') {
+      // Limpiar metadatos de LinkedIn, mantener solo mensajes reales
+      const lineas = txt.split('\n').filter(ln => {
+        const l2 = ln.trim();
+        return l2 && !/^(Ver el perfil|Minimiza|Cierra|Estado:|Conectar|Seguir|Mensaje|Pendiente|Móvil|Correo|\d+er grado|\d+ contacto|Hace \d+|Hoy|Ayer)/i.test(l2);
+      });
+      return { tipo: 'linkedin', txt: lineas.join('\n') };
+    }
+
+    // Mail: detectar De:/Para:/Asunto:
+    const esMail = /@|De:|Para:|Asunto:|Subject:/i.test(txt);
+    if (esMail || tipo === 'mail') {
+      return { tipo: 'mail', txt };
+    }
+
+    // Texto libre sin formato — tratarlo como nota contextual
+    return { tipo: 'contexto', txt };
+  }
+
+  // Tomar hasta las últimas 10 entradas para mejor contexto
+  const histReciente = hist.slice(-10);
   const nMensajes = hist.length;
   const ultimoQuien = hist.length ? (hist[hist.length-1].quien==='cliente'?l.contacto:'Dami') : '';
+
+  // Construir el hilo clasificado para la IA
+  const bloques = histReciente.map((h, i) => {
+    const c = clasificarEntrada(h);
+    const fechaEntrada = h.fecha
+      ? (() => {
+          // h.fecha puede ser string como "31/3/2026, 16:38:00" o similar
+          try {
+            // Intentar parsear formato es-AR: "DD/M/AAAA, HH:MM:SS"
+            const partes = h.fecha.split(',')[0].trim();
+            const [d, m, y] = partes.split('/');
+            if (d && m && y) return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
+          } catch(e) {}
+          return h.fecha.substring(0, 10);
+        })()
+      : '';
+
+    if (c.tipo === 'interna') {
+      return `[${fechaEntrada}] 📌 NOTA INTERNA DE DAMI: ${c.txt}`;
+    }
+    const tipoLabel = {wpp:'💬 WhatsApp', linkedin:'💼 LinkedIn', mail:'📧 Mail', contexto:'📝 Contexto'}[c.tipo] || c.tipo;
+    return `[${fechaEntrada}] ${tipoLabel}:\n${c.txt}`;
+  }).join('\n\n');
 
   // Fecha de hoy en texto para que la IA la use como referencia
   const hoyStr = new Date().toLocaleDateString('es-AR', {day:'numeric', month:'long', year:'numeric'});
@@ -2621,29 +2713,31 @@ async function genResumenPerfil(l) {
 
 TAREA: Analizar el historial de este contacto y producir un resumen útil y accionable.
 
-FORMATO DE ENTRADA — las notas pueden tener:
-1. Mensajes de WhatsApp: "[HH:MM, DD/M/AAAA] Nombre del contacto: mensaje" o "[HH:MM, DD/M/AAAA] Enfoco Films: mensaje"
-   - Si dice "Enfoco Films" o "Dami" → lo mandó DAMI
-   - Cualquier otro nombre → lo mandó EL CLIENTE
-2. Notas/indicaciones internas: texto en mayúsculas o frases como "HABLARLE EN X", "LLAMAR EN", "ESPERAR HASTA"
-   → Son instrucciones internas de Dami, no mensajes al cliente. Usarlas para sugerir fecha.
-3. Mensajes libres sin formato especial → tratar como notas del contexto
+CÓMO INTERPRETAR CADA BLOQUE:
+- 💬 WhatsApp / 💼 LinkedIn / 📧 Mail → conversaciones reales. Las líneas dicen "DAMI: ..." o "${l.contacto}: ..."
+  - "DAMI" = Dami Guelman envió ese mensaje
+  - "${l.contacto}" o cualquier otro nombre = el cliente envió ese mensaje
+- 📌 NOTA INTERNA → instrucción o recordatorio de Dami para sí mismo. NO es un mensaje enviado.
+  Ejemplos: "HABLARLE EN UN MES", "LLAMAR EN ABRIL", "ESPERAR RESPUESTA"
+  → Usarlas para definir la fecha sugerida de próxima acción
+- 📝 Contexto → información de fondo, no es un intercambio directo
 
-REGLAS DE ANÁLISIS:
-- Ignorar completamente: asteriscos, "Ver el perfil de", metadatos de LinkedIn, emojis solos, horarios del sistema
-- Identificar el ESTADO REAL: qué se acordó, qué prometió el cliente, cuándo hay que volver a contactar
-- Si el cliente dijo "el mes que viene", "en X semanas", "cuando termine X" → calcular fecha aproximada desde hoy
-- Si hay una indicación interna con fecha → usarla como referencia para la fecha sugerida
+REGLAS CLAVE:
+- Fechas en el texto: el formato siempre es DD/MM/AA o DD/MM/AAAA (día primero, luego mes)
+  Ejemplo: "31/3/2026" = 31 de marzo de 2026. "25/4" = 25 de abril.
+- Ignorar: asteriscos, metadatos de LinkedIn, emojis solos, líneas vacías
+- Si el cliente dijo "el mes que viene", "en X semanas", "cuando terminemos X" → calcular fecha desde hoy
+- Si hay una nota interna con fecha → usarla como referencia principal para la próxima acción
 
-RESPUESTA — exactamente en este formato (sin variaciones):
-ESTADO: [1 oración: qué pasó hasta acá — quién hizo qué, concretamente]
+RESPUESTA — exactamente en este formato (sin variaciones, sin intro):
+ESTADO: [qué pasó hasta acá — quién hizo qué — concreto y directo]
 ÚLTIMO: [quién habló último y qué dijo en pocas palabras]
-ACCIÓN: [qué hacer y cuándo — fecha concreta si se puede calcular, ej: "Contactar ~25 abr" o "Esperar respuesta"]
+ACCIÓN: [qué hacer y cuándo — fecha concreta ej: "Contactar ~25 abr" o "Esperar respuesta del cliente"]
 
-Empresa: ${l.empresa} | Contacto: ${l.contacto} | Estado CRM: ${estadoToStr(l.estado)}
+Empresa: ${l.empresa} | Contacto: ${l.contacto}
 
-Historial (${nMensajes} entradas — las más recientes son las más importantes):
-${hiloTexto}`
+Historial (${nMensajes} entradas totales — mostrando las ${histReciente.length} más recientes):
+${bloques}`
     );
 
     const txt = resumen.trim();
@@ -2680,13 +2774,41 @@ ${hiloTexto}`
 function limpiarResumenPerfil(id) {
   delete _perfilResumenCache[id];
 }
+
+// Limpiar caché y regenerar resumen en pantalla
+function reanalizarResumen() {
+  const l = leads[currentId]; if (!l) return;
+  limpiarResumenPerfil(currentId);
+  limpiarResumenCache(currentId);
+  // Mostrar loader y volver a correr
+  const loaderEl = document.getElementById('resumenLoader');
+  const txtEl    = document.getElementById('resumenTxt');
+  if (loaderEl) { loaderEl.textContent = 'Re-analizando…'; loaderEl.style.display = 'block'; }
+  if (txtEl)    { txtEl.style.display = 'none'; }
+  genResumenPerfil(l);
+}
+
+// Guardar nota y luego re-analizar el resumen automáticamente
+async function saveNotaYReanalizar() {
+  saveNotaUnificada();  // guarda la nota
+  // Esperar un tick para que el historial se actualice
+  await new Promise(r => setTimeout(r, 80));
+  reanalizarResumen();
+}
 async function genSugerencia(l, promptLibre) {
   document.getElementById('pf_ai_wrap').style.display='none';
   document.getElementById('aiLoader').classList.add('on');
 
-  const hist=(l.historial||[]).slice(-6); // más historial para mejor contexto
+  const hist=(l.historial||[]).slice(-8); // más historial para mejor contexto
+  // Clasificar las entradas para distinguir conversaciones reales de notas internas
   const histTxt=hist.length
-    ? hist.map(h=>`[${h.quien} via ${h.tipo}]: ${h.contenido}`).join('\n')
+    ? hist.map(h => {
+        const txt = (h.contenido||'').substring(0, 300);
+        if (h.tipo === 'nota') return `[NOTA INTERNA de Dami]: ${txt}`;
+        const quien = h.quien === 'cliente' ? l.contacto : 'Dami';
+        const tipoLabel = {wpp:'WhatsApp', linkedin:'LinkedIn', mail:'Mail', reunion:'Reunión'}[h.tipo] || h.tipo;
+        return `[${tipoLabel}] ${quien}: ${txt}`;
+      }).join('\n')
     : `Último paso: ${l.proxPaso||'ninguno'}`;
   const ci=canalInfo(l);
 
