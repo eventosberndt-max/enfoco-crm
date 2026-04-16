@@ -198,6 +198,7 @@ body::before{
 .origen-dot.paracaidas{background:#9b72cf}
 .origen-dot.referenciado{background:#d4607a}
 .origen-dot.otro{background:#888}
+.origen-dot.cliente{background:#f0c040}
 .pill-emp{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill-con{font-size:10px;color:var(--fog);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill-ch{font-size:9px;font-family:'DM Mono',monospace;margin-top:3px}
@@ -660,6 +661,7 @@ body::before{
         <!-- Leyenda de orígenes -->
         <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0 2px;border-top:1px solid var(--line);margin-top:6px;align-items:center">
           <span style="font-size:9px;color:var(--fog);font-family:'DM Mono',monospace;letter-spacing:.5px;text-transform:uppercase">Origen:</span>
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-family:'DM Mono',monospace;color:#f0c040;cursor:pointer" onclick="goPanel('clientes',document.querySelector('[onclick*=clientes]'))" title="Ver panel Clientes"><span style="width:7px;height:7px;border-radius:50%;background:#f0c040;display:inline-block;flex-shrink:0"></span>Clientes</span>
           <span style="display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-family:'DM Mono',monospace;color:#5a8fd4"><span style="width:7px;height:7px;border-radius:50%;background:#5a8fd4;display:inline-block;flex-shrink:0"></span>Vistage</span>
           <span style="display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-family:'DM Mono',monospace;color:#5db87a"><span style="width:7px;height:7px;border-radius:50%;background:#5db87a;display:inline-block;flex-shrink:0"></span>Cliente Enfoco</span>
           <span style="display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-family:'DM Mono',monospace;color:#e07b3a"><span style="width:7px;height:7px;border-radius:50%;background:#e07b3a;display:inline-block;flex-shrink:0"></span>Red Alim.</span>
@@ -1034,6 +1036,7 @@ body::before{
         <span style="font-size:11px;color:var(--fog)">Origen:</span>
         <select class="qc-sel" id="pf_origen" onchange="toggleRefOrigenPerfil()">
           <option value="">— Sin categoría —</option>
+          <option value="cliente">🟡 Cliente Activo</option>
           <option value="vistage">🔵 Vistage</option>
           <option value="enfoco">🟢 Cliente Enfoco</option>
           <option value="alimentaria">🟠 Red Alimentaria</option>
@@ -1200,6 +1203,7 @@ body::before{
         <div class="field"><label>Origen</label>
           <select id="nl_origen" onchange="toggleRefOrigen('nl')">
             <option value="">— Sin categoría —</option>
+            <option value="cliente">🟡 Cliente Activo</option>
             <option value="vistage">🔵 Vistage</option>
             <option value="enfoco">🟢 Cliente Enfoco</option>
             <option value="alimentaria">🟠 Red Alimentaria</option>
@@ -1242,6 +1246,7 @@ body::before{
         <div class="field"><label>Origen</label>
           <select id="ed_origen" onchange="toggleRefOrigen('ed')">
             <option value="">— Sin categoría —</option>
+            <option value="cliente">🟡 Cliente Activo</option>
             <option value="vistage">🔵 Vistage</option>
             <option value="enfoco">🟢 Cliente Enfoco</option>
             <option value="alimentaria">🟠 Red Alimentaria</option>
@@ -1821,6 +1826,7 @@ function canalInfo(lead) {
 
 // Información de origen para etiquetas de color en calendario
 const ORIGENES = {
+  cliente:      { label:'Cliente Activo',   color:'#f0c040', bg:'rgba(240,192,64,.15)',  cls:'cliente'     },
   vistage:      { label:'Vistage',          color:'#5a8fd4', bg:'rgba(90,143,212,.15)',  cls:'vistage'     },
   enfoco:       { label:'Cliente Enfoco',   color:'#5db87a', bg:'rgba(93,184,122,.15)',  cls:'enfoco'      },
   alimentaria:  { label:'Red Alimentaria',  color:'#e07b3a', bg:'rgba(224,123,58,.15)',  cls:'alimentaria' },
@@ -1957,7 +1963,7 @@ function drawWeek() {
 
   // Agrupar
   const all = Object.values(leads).filter(l=>{
-    if (l.tipo === 'cliente') return false; // clientes activos van a su propio panel
+    if (l.origen === 'cliente') return false; // clientes activos van a su propio panel
     return !q||l.empresa.toLowerCase().includes(q)||l.contacto.toLowerCase().includes(q);
   });
   const porDia=Array.from({length:5},()=>[]);
@@ -2013,7 +2019,7 @@ function drawLeads() {
   const grid=document.getElementById('leadsGrid');
   if(!grid)return;
   const all=Object.values(leads).filter(l=>{
-    if (l.tipo === 'cliente') return false;
+    if (l.origen === 'cliente') return false;
     return !q||l.empresa.toLowerCase().includes(q)||l.contacto.toLowerCase().includes(q);
   });
   // Ordenar: primero los que tienen fecha próxima, sin fecha al final
@@ -2230,8 +2236,9 @@ function saveLead() {
   const l=leads[currentId];
   // estado: preservar el que ya tenía (solo se cambia con botón Perdido)
   l.proxFecha  = (document.getElementById('pf_fecha').value||'').trim();
-  // Si es perdido, limpiar fecha del calendario
+  // Si es perdido o cliente activo, limpiar fecha del calendario
   if (l.estado === 'perdido') l.proxFecha = '';
+  if (l.origen === 'cliente') l.proxFecha = ''; // clientes activos no tienen fecha
   const pasoEl = document.getElementById('pf_paso');
   if (pasoEl) l.proxPaso = pasoEl.value;
   l._lastEdit  = Date.now();
@@ -3297,6 +3304,7 @@ function drawAtrasados() {
   const hoy = todayISO();
   const atrasados = Object.values(leads)
     .filter(l => {
+      if (l.origen === 'cliente') return false; // clientes activos no van a atrasados
       if (l.estado === 'perdido' || l.estado === 'no-potencial') return false;
       if (!l.proxFecha) return false;
       return l.proxFecha < hoy;
@@ -3614,12 +3622,48 @@ function toggleRefOrigen(prefix) {
   const wrap = document.getElementById(prefix + '_ref_wrap');
   if (!sel || !wrap) return;
   wrap.style.display = sel.value === 'referenciado' ? '' : 'none';
+
+  // Chip informativo para Cliente Activo
+  const esCliente = sel.value === 'cliente';
+  const chipId = prefix + '_cliente_chip';
+  let chip = document.getElementById(chipId);
+  if (esCliente && !chip) {
+    chip = document.createElement('div');
+    chip.id = chipId;
+    chip.style.cssText = "font-size:11px;background:rgba(240,192,64,.12);color:#f0c040;border:1px solid rgba(240,192,64,.3);border-radius:8px;padding:6px 10px;margin-top:4px;font-family:'DM Mono',monospace";
+    chip.textContent = '🤝 Se creará como Cliente Activo — irá al panel Clientes, sin fecha de seguimiento';
+    sel.closest('.field')?.insertAdjacentElement('afterend', chip);
+  } else if (!esCliente && chip) {
+    chip.remove();
+  }
 }
 function toggleRefOrigenPerfil() {
   const sel = document.getElementById('pf_origen');
   const inp = document.getElementById('pf_ref_origen');
+  const fechaRow = document.getElementById('pf_fecha')?.closest('div[style*="flex"]') ||
+                   document.getElementById('pf_fecha')?.parentElement;
   if (!sel || !inp) return;
   inp.style.display = sel.value === 'referenciado' ? '' : 'none';
+
+  // Si eligió Cliente Activo: mostrar nota y ocultar campo fecha
+  const esCliente = sel.value === 'cliente';
+  const fechaEl = document.getElementById('pf_fecha');
+  if (fechaEl) {
+    fechaEl.disabled = esCliente;
+    fechaEl.style.opacity = esCliente ? '.35' : '';
+    fechaEl.title = esCliente ? 'Los clientes activos no tienen fecha de seguimiento' : '';
+  }
+  // Mostrar/ocultar chip informativo
+  let chip = document.getElementById('chip_cliente_activo');
+  if (esCliente && !chip) {
+    chip = document.createElement('span');
+    chip.id = 'chip_cliente_activo';
+    chip.style.cssText = "font-size:11px;background:rgba(240,192,64,.15);color:#f0c040;border:1px solid rgba(240,192,64,.3);border-radius:8px;padding:2px 9px;font-family:'DM Mono',monospace";
+    chip.textContent = '🤝 Irá al panel Clientes — sin fecha';
+    fechaEl?.insertAdjacentElement('afterend', chip);
+  } else if (!esCliente && chip) {
+    chip.remove();
+  }
 }
 
 function eliminarLead() {
@@ -3955,7 +3999,7 @@ function drawClientes() {
   if (!grid) return;
 
   const clientes = Object.values(leads)
-    .filter(l => l.tipo === 'cliente')
+    .filter(l => l.origen === 'cliente')
     .sort((a,b) => (b.creadoEn||0) - (a.creadoEn||0));
 
   if (!clientes.length) {
@@ -4007,20 +4051,24 @@ function drawClientes() {
 }
 
 function nuevoClienteActivo() {
-  // Abrir modal nuevo lead pero presetear tipo=cliente
   openNewLead();
-  // Marcar como cliente al crear — se intercepta en crearNuevoLead
-  window._nextTipo = 'cliente';
-  toast('Completá los datos — se creará como Cliente Activo', 'ok');
+  // Pre-seleccionar origen = cliente
+  setTimeout(() => {
+    const sel = document.getElementById('nl_origen');
+    if (sel) {
+      sel.value = 'cliente';
+      toggleRefOrigen('nl');
+    }
+  }, 80);
 }
 
 function finalizarCliente(id) {
   const l = leads[id]; if (!l) return;
   const fecha = prompt(`Finalizar proyecto de ${l.empresa}\n\n¿Cuándo querés recontactar? (DD/MM/AAAA)`, '');
   const fechaISO = fecha ? (parseFechaToISO(fecha) || addDaysISO(todayISO(), 90)) : addDaysISO(todayISO(), 90);
-  l.tipo = 'lead'; // vuelve al flujo normal de leads
+  l.origen = ''; // deja de ser cliente activo, vuelve al flujo normal
   l.proxFecha = fechaISO;
-  l._editados = [...new Set([...(l._editados||[]), 'tipo','proxFecha'])];
+  l._editados = [...new Set([...(l._editados||[]), 'origen','proxFecha'])];
   l._lastEdit = Date.now();
   saveLocal();
   drawClientes();
