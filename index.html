@@ -600,6 +600,7 @@ body::before{
       <button class="nav-link" onclick="goPanel('tabla',this)"><span class="ico">📋</span>Tabla / Editar</button>
       <button class="nav-link" onclick="goPanel('atrasados',this)"><span class="ico">⏰</span>Atrasados</button>
       <button class="nav-link" onclick="goPanel('perdidos',this)"><span class="ico">🗃️</span>Perdidos</button>
+      <button class="nav-link" onclick="goPanel('clientes',this)"><span class="ico">🤝</span>Clientes</button>
       <button class="nav-link" onclick="goPanel('analytics',this)"><span class="ico">📊</span>Analytics</button>
       <button class="nav-link" onclick="goPanel('config',this)"><span class="ico">⚙️</span>Config</button>
     </div>
@@ -626,7 +627,12 @@ body::before{
       <!-- SEMANA -->
       <div class="panel on" id="panel-semana">
         <div style="display:flex;gap:10px;align-items:center">
-          <div class="search" style="flex:1"><input type="text" id="semSearch" placeholder="Buscar..." oninput="drawWeek()" /></div>
+          <div class="search" style="flex:1;position:relative">
+            <input type="text" id="semSearch" placeholder="Buscar empresa o contacto..." 
+              oninput="buscarGlobal(this.value)"
+              onkeydown="if(event.key==='Escape'){this.value='';buscarGlobal('')}"
+              autocomplete="off" />
+          </div>
           <div class="week-nav">
             <button class="btn btn-ghost btn-sm" style="font-size:16px;padding:4px 11px" onclick="weekOff--;drawWeek()">‹</button>
             <div id="weekLabel" class="week-label" style="min-width:160px"></div>
@@ -634,6 +640,12 @@ body::before{
           </div>
           <button class="btn btn-ghost btn-sm" id="todayBtn" style="display:none;font-size:11px" onclick="weekOff=0;drawWeek()">Hoy</button>
         </div>
+        <!-- Resultados de búsqueda global -->
+        <div id="searchResultsWrap" style="display:none;flex-direction:column;gap:8px">
+          <div style="font-size:11px;color:var(--fog);font-family:'DM Mono',monospace" id="searchResultsLabel"></div>
+          <div id="searchResultsGrid" class="leads-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))"></div>
+        </div>
+
         <!-- Headers fijos -->
         <div id="weekHeads" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px"></div>
         <!-- Columnas fijas — NUNCA se recrean, solo se actualiza innerHTML -->
@@ -907,6 +919,18 @@ body::before{
       </div>
 
       <!-- ══════════════════════════════════════════ -->
+      <!-- PANEL: CLIENTES ACTIVOS                   -->
+      <!-- ══════════════════════════════════════════ -->
+      <div class="panel" id="panel-clientes">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--sage)">🤝 Clientes Activos</div>
+          <button class="btn btn-gold btn-sm" onclick="nuevoClienteActivo()">+ Cliente</button>
+        </div>
+        <div style="font-size:12px;color:var(--fog);margin-top:-6px">Proyectos en curso. Sin fecha de seguimiento hasta que terminen.</div>
+        <div id="clientesGrid" class="leads-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin-top:4px"></div>
+      </div>
+
+      <!-- ══════════════════════════════════════════ -->
       <!-- PANEL: ANALYTICS                          -->
       <!-- ══════════════════════════════════════════ -->
       <div class="panel" id="panel-analytics">
@@ -984,7 +1008,10 @@ body::before{
         <div style="margin-top:4px" id="pf_origen_badge"></div>
         <div class="modal-hbadges" id="pf_badges"></div>
       </div>
-      <button class="modal-close" onclick="closeModal('mPerfil')">×</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn btn-ghost btn-sm" onclick="abrirModalContactos(currentId)" style="font-size:11px">👥 Contactos</button>
+        <button class="modal-close" onclick="closeModal('mPerfil')">×</button>
+      </div>
     </div>
 
     <!-- 1. FECHAS Y ORIGEN -->
@@ -1322,6 +1349,8 @@ function mkLead(d={}) {
     wpp:        d.wpp        || '',
     mail:       d.mail       || '',
     medio:      d.medio      || '',
+    tipo:       d.tipo       || 'lead',   // 'lead' | 'cliente'
+    contactos:  d.contactos  || [],       // array de {nombre, cargo, wpp, mail, linkedin}
     estado:     d.estado     || 'nuevo',
     semaforo:   d.semaforo   || 'ok',
     origen:     d.origen     || '',      // vistage / enfoco / alimentaria / paracaidas / referenciado / otro
@@ -1474,6 +1503,8 @@ function boot() {
   loadEjemplos();
   drawAll(); // Render inmediato con datos locales
   syncFromSheets(true); // Luego sync async — drawAll() se llama de nuevo adentro
+  // Iniciar polling para sync cross-device (cada 90s, silencioso)
+  if (SCRIPT) iniciarSyncPoll();
 }
 
 // ══════════════════════════════════════════
@@ -1925,7 +1956,10 @@ function drawWeek() {
   }).join('');
 
   // Agrupar
-  const all = Object.values(leads).filter(l=>!q||l.empresa.toLowerCase().includes(q)||l.contacto.toLowerCase().includes(q));
+  const all = Object.values(leads).filter(l=>{
+    if (l.tipo === 'cliente') return false; // clientes activos van a su propio panel
+    return !q||l.empresa.toLowerCase().includes(q)||l.contacto.toLowerCase().includes(q);
+  });
   const porDia=Array.from({length:5},()=>[]);
   const datesISO=dias.map(d=>d.toISOString().split('T')[0]);
 
@@ -1978,7 +2012,10 @@ function drawLeads() {
   const q=(document.getElementById('leadsSearch')?.value||'').toLowerCase();
   const grid=document.getElementById('leadsGrid');
   if(!grid)return;
-  const all=Object.values(leads).filter(l=>!q||l.empresa.toLowerCase().includes(q)||l.contacto.toLowerCase().includes(q));
+  const all=Object.values(leads).filter(l=>{
+    if (l.tipo === 'cliente') return false;
+    return !q||l.empresa.toLowerCase().includes(q)||l.contacto.toLowerCase().includes(q);
+  });
   // Ordenar: primero los que tienen fecha próxima, sin fecha al final
   all.sort((a,b) => {
     if (!a.proxFecha && !b.proxFecha) return 0;
@@ -2044,7 +2081,8 @@ function abrirPerfil(id) {
   currentId=id;
 
   document.getElementById('pf_name').textContent=l.empresa;
-  document.getElementById('pf_sub').textContent=[l.contacto,l.cargo,l.rubro].filter(Boolean).join(' · ');
+  const contactosExtra = (l.contactos||[]).map(c=>c.nombre).join(', ');
+  document.getElementById('pf_sub').textContent=[l.contacto,l.cargo,l.rubro, contactosExtra?'+ '+contactosExtra:''].filter(Boolean).join(' · ');
   // Badge de origen en header perfil
   const pfOrigenEl = document.getElementById('pf_origen_badge');
   if (pfOrigenEl) pfOrigenEl.innerHTML = origenBadgeHTML(l);
@@ -2102,11 +2140,13 @@ function moverALeads(i) {
     id,empresa:r[0]||r[2]||'',contacto:r[2]||'',
     wpp:(r[7]||'').trim(),mail:(r[8]||'').trim(),
     medio:'Vistage',rubro:(r[4]||'').trim(),
+    tipo: window._nextTipo || 'lead',
     estado:'activo',semaforo:'ok',
     proxFecha:addDaysISO(todayISO(),0),
     proxPaso:'Respondió en Vistage'
   });
   saveLocal();
+  window._nextTipo = null;
   drawAll();
   toast(`${leads[id].empresa} → Leads ✓`,'ok');
 }
@@ -2712,6 +2752,11 @@ async function genResumenPerfil(l) {
     const rawTxt = (h.contenido || '').trim();
     const tipo = h.tipo || 'nota';
     const contactoNombre = (l.contacto || '').trim();
+    // Todos los contactos conocidos de la empresa (para identificar en chats)
+    const todosContactos = [
+      { nombre: contactoNombre, cargo: l.cargo || 'contacto principal' },
+      ...(l.contactos || [])
+    ].filter(c => c.nombre);
 
     // ── NOTAS INTERNAS ──────────────────────────────────────
     if (tipo === 'nota') return { tipo: 'interna', txt: rawTxt };
@@ -2727,7 +2772,12 @@ async function genResumenPerfil(l) {
         if (m) {
           const [, hora, fecha, nombre, msg] = m;
           const esDami = /enfoco|dami|damian/i.test(nombre);
-          const speaker = esDami ? 'DAMI' : contactoNombre || nombre.trim();
+          // Buscar si el nombre matchea algún contacto conocido de la empresa
+          const contactoConocido = todosContactos.find(c =>
+            nombre.toLowerCase().includes(c.nombre.split(' ')[0].toLowerCase()) ||
+            c.nombre.toLowerCase().includes(nombre.trim().split(' ')[0].toLowerCase())
+          );
+          const speaker = esDami ? 'DAMI' : (contactoConocido ? contactoConocido.nombre + (contactoConocido.cargo?' ('+contactoConocido.cargo+')':'') : nombre.trim());
           parsed.push(`[${fecha} ${hora}] ${speaker}: ${msg.trim()}`);
         }
         // Ignorar líneas sin formato (continuación, etc.)
@@ -2760,7 +2810,9 @@ async function genResumenPerfil(l) {
         const mHeader = s.match(/^(.+?)\s{2,}(\d{1,2}:\d{2})\s*$/);
         if (mHeader) {
           const nombre = mHeader[1].trim();
-          currentSpeaker = /damian guelman|dami|enfoco/i.test(nombre) ? 'DAMI' : contactoNombre || nombre;
+          const esDamiH = /damian guelman|dami|enfoco/i.test(nombre);
+          const ctcH = !esDamiH && todosContactos.find(c => nombre.toLowerCase().includes(c.nombre.split(' ')[0].toLowerCase()));
+          currentSpeaker = esDamiH ? 'DAMI' : (ctcH ? ctcH.nombre+(ctcH.cargo?' ('+ctcH.cargo+')':'') : nombre);
           continue;
         }
         // Mensaje normal — usar speaker actual
@@ -2854,7 +2906,14 @@ ESTADO: [qué pasó hasta acá — quién hizo qué — concreto y directo]
 ÚLTIMO: [quién habló último y qué dijo en pocas palabras]
 ACCIÓN: [qué hacer y cuándo — fecha concreta ej: "Contactar ~25 abr" o "Esperar respuesta del cliente"]
 
-Empresa: ${l.empresa} | Contacto: ${l.contacto}
+Empresa: ${l.empresa}
+Contacto principal: ${l.contacto}${l.cargo?' ('+l.cargo+')':''}
+${(l.contactos||[]).length ? 'Otros contactos en la empresa: ' + (l.contactos||[]).map(c=>c.nombre+(c.cargo?' ('+c.cargo+')':'')).join(', ') : ''}
+
+IMPORTANTE: En las conversaciones, identificar correctamente quién habla:
+- "DAMI" o "Enfoco" = Damian Guelman
+- "${l.contacto}" = contacto principal
+${(l.contactos||[]).map(c=>`- "${c.nombre}" = ${c.cargo||'contacto adicional'} de la empresa`).join('\n')}
 
 Historial (${nMensajes} entradas totales — mostrando las ${histReciente.length} más recientes):
 ${bloques}`
@@ -3186,7 +3245,8 @@ function goPanel(name, btn) {
   if(name==='atrasados') drawAtrasados();
   if(name==='tono') initTono();
   if(name==='analytics') drawAnalytics();
-  const titles={semana:'Plan <em>Semanal</em>',leads:'<em>Leads</em> 2026',vistage:'<em>Vistage</em> 2026',nuevo:'Cargar desde <em>LinkedIn</em>',tabla:'<em>Tabla</em> — Edición rápida',tono:'<em>Tono IA</em> — Identidad de voz',analytics:'📊 <em>Analytics</em>',config:'<em>Configuración</em>'};
+  if(name==='clientes') drawClientes();
+  const titles={semana:'Plan <em>Semanal</em>',leads:'<em>Leads</em> 2026',vistage:'<em>Vistage</em> 2026',nuevo:'Cargar desde <em>LinkedIn</em>',tabla:'<em>Tabla</em> — Edición rápida',tono:'<em>Tono IA</em> — Identidad de voz',clientes:'🤝 <em>Clientes</em> Activos',analytics:'📊 <em>Analytics</em>',config:'<em>Configuración</em>'};
   document.getElementById('pgTitle').innerHTML=titles[name]||name;
 }
 
@@ -3802,6 +3862,301 @@ function guardarContacto(campo) {
   toast(valor ? '✓ Guardado' : 'Campo eliminado', 'ok');
 }
 
+
+
+// ══════════════════════════════════════════
+// BÚSQUEDA GLOBAL
+// ══════════════════════════════════════════
+function buscarGlobal(q) {
+  q = (q||'').trim().toLowerCase();
+  const weekWrap = document.getElementById('weekHeads');
+  const weekCols = document.querySelector('.week-cols');
+  const weekNote = document.getElementById('weekNote');
+  const origenLey = document.querySelector('#panel-semana [style*="Origen:"]');
+  const resultsWrap = document.getElementById('searchResultsWrap');
+  const resultsGrid = document.getElementById('searchResultsGrid');
+  const resultsLabel = document.getElementById('searchResultsLabel');
+
+  if (!q) {
+    // Sin búsqueda: mostrar calendario normal
+    if (resultsWrap) resultsWrap.style.display = 'none';
+    if (weekWrap)   weekWrap.style.display = '';
+    if (weekCols)   weekCols.style.display = '';
+    if (weekNote)   weekNote.style.display = '';
+    if (origenLey)  origenLey.style.display = '';
+    drawWeek();
+    return;
+  }
+
+  // Con búsqueda: ocultar calendario, mostrar resultados globales
+  if (weekWrap)   weekWrap.style.display = 'none';
+  if (weekCols)   weekCols.style.display = 'none';
+  if (weekNote)   weekNote.style.display = 'none';
+  if (origenLey)  origenLey.style.display = 'none';
+  if (resultsWrap) resultsWrap.style.display = 'flex';
+
+  const todos = Object.values(leads);
+  const matches = todos.filter(l => {
+    const campos = [
+      l.empresa, l.contacto, l.cargo, l.rubro, l.mail, l.wpp,
+      l.proxPaso, l.origen, l.refOrigen,
+      ...(l.contactos||[]).map(c => [c.nombre,c.cargo,c.wpp,c.mail].join(' ')),
+      ...(l.historial||[]).slice(-3).map(h=>h.contenido||'')
+    ].join(' ').toLowerCase();
+    return campos.includes(q);
+  });
+
+  if (resultsLabel) {
+    resultsLabel.textContent = matches.length
+      ? `${matches.length} resultado${matches.length!==1?'s':''} para "${q}"`
+      : `Sin resultados para "${q}"`;
+  }
+
+  if (!matches.length) {
+    resultsGrid.innerHTML = '<div style="color:var(--fog);font-size:13px;padding:20px;grid-column:1/-1">Sin resultados. Probá con otro término.</div>';
+    return;
+  }
+
+  // Renderizar cards — igual que drawLeads pero con fecha más visible
+  resultsGrid.innerHTML = matches.map(l => {
+    const oi = origenInfo(l);
+    const histN = (l.historial||[]).length;
+    const fechaStr = l.proxFecha ? `📅 ${fmtFechaDisplay(l.proxFecha)}` : '📅 Sin fecha';
+    const contactosExtra = (l.contactos||[]).map(c =>
+      `<span class="lc-badge" style="background:var(--ink4);color:var(--fog);border:1px solid var(--line)">${c.nombre}${c.cargo?' · '+c.cargo:''}</span>`
+    ).join('');
+    return `<div class="lcard" onclick="abrirPerfil('${l.id}')" style="cursor:pointer">
+      <div class="lc-top">
+        <div>
+          <div class="lc-name">${l.empresa}</div>
+          <div class="lc-who">${l.contacto}${l.cargo?' · '+l.cargo:''}</div>
+        </div>
+        ${oi ? origenBadgeHTML(l) : ''}
+      </div>
+      <div class="lc-contacts" style="flex-wrap:wrap;gap:4px;margin-top:6px">
+        ${l.wpp&&l.wpp!=='nan'?`<span class="lc-badge b-wpp">💬 ${l.wpp}</span>`:''}
+        ${l.mail&&l.mail!=='nan'?`<span class="lc-badge b-mail">📧 ${l.mail}</span>`:''}
+        ${contactosExtra}
+      </div>
+      ${l.proxPaso?`<div class="lc-paso" style="margin-top:6px">${l.proxPaso}</div>`:''}
+      <div class="lc-foot" style="margin-top:8px">
+        <span style="font-size:11px;color:var(--fog)">${fechaStr}</span>
+        ${histN?`<span class="lc-hist">📋 ${histN}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// CLIENTES ACTIVOS
+// ══════════════════════════════════════════
+function drawClientes() {
+  const grid = document.getElementById('clientesGrid');
+  if (!grid) return;
+
+  const clientes = Object.values(leads)
+    .filter(l => l.tipo === 'cliente')
+    .sort((a,b) => (b.creadoEn||0) - (a.creadoEn||0));
+
+  if (!clientes.length) {
+    grid.innerHTML = `<div style="color:var(--fog);font-size:13px;padding:24px;grid-column:1/-1;text-align:center">
+      <div style="font-size:32px;margin-bottom:8px">🤝</div>
+      <div>Aún no hay clientes activos.</div>
+      <div style="font-size:11px;margin-top:6px">Los clientes activos son proyectos en curso — sin fecha de seguimiento hasta que terminen.</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = clientes.map(l => {
+    const histN = (l.historial||[]).length;
+    const contactosPrincipal = `${l.contacto}${l.cargo?' · '+l.cargo:''}`;
+    const contactosExtra = (l.contactos||[]);
+    const badgeOrigen = origenBadgeHTML(l);
+    const diasDesdeCreacion = l.creadoEn
+      ? Math.floor((Date.now()-l.creadoEn)/86400000)
+      : 0;
+
+    return `<div class="lcard" style="border-left:3px solid var(--sage);cursor:pointer" onclick="abrirPerfil('${l.id}')">
+      <div class="lc-top">
+        <div>
+          <div class="lc-name">${l.empresa}</div>
+          <div class="lc-who">${contactosPrincipal}</div>
+        </div>
+        <span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--sage);background:rgba(93,184,122,.1);padding:2px 7px;border-radius:8px;white-space:nowrap">🤝 Activo</span>
+      </div>
+      ${contactosExtra.length ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
+        ${contactosExtra.map(c=>`<span class="lc-badge" style="background:var(--ink4);color:var(--fog);border:1px solid var(--line)">${c.nombre}${c.cargo?' ('+c.cargo+')':''}</span>`).join('')}
+      </div>` : ''}
+      <div class="lc-contacts" style="margin-top:6px">
+        ${l.wpp&&l.wpp!=='nan'?`<span class="lc-badge b-wpp">💬 ${l.wpp}</span>`:''}
+        ${l.mail&&l.mail!=='nan'?`<span class="lc-badge b-mail">📧 ${l.mail}</span>`:''}
+      </div>
+      ${l.proxPaso?`<div class="lc-paso" style="margin-top:6px">${l.proxPaso}</div>`:''}
+      <div class="lc-foot" style="margin-top:10px">
+        <span style="font-size:11px;color:var(--fog)">Cliente hace ${diasDesdeCreacion} días</span>
+        ${histN?`<span class="lc-hist">📋 ${histN}</span>`:''}
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;font-size:11px"
+          onclick="event.stopPropagation();abrirPerfil('${l.id}')">👤 Ver</button>
+        <button class="btn btn-ghost btn-sm" style="font-size:11px;border-color:var(--amber);color:var(--amber)"
+          onclick="event.stopPropagation();finalizarCliente('${l.id}')">✓ Finalizar proyecto</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function nuevoClienteActivo() {
+  // Abrir modal nuevo lead pero presetear tipo=cliente
+  openNewLead();
+  // Marcar como cliente al crear — se intercepta en crearNuevoLead
+  window._nextTipo = 'cliente';
+  toast('Completá los datos — se creará como Cliente Activo', 'ok');
+}
+
+function finalizarCliente(id) {
+  const l = leads[id]; if (!l) return;
+  const fecha = prompt(`Finalizar proyecto de ${l.empresa}\n\n¿Cuándo querés recontactar? (DD/MM/AAAA)`, '');
+  const fechaISO = fecha ? (parseFechaToISO(fecha) || addDaysISO(todayISO(), 90)) : addDaysISO(todayISO(), 90);
+  l.tipo = 'lead'; // vuelve al flujo normal de leads
+  l.proxFecha = fechaISO;
+  l._editados = [...new Set([...(l._editados||[]), 'tipo','proxFecha'])];
+  l._lastEdit = Date.now();
+  saveLocal();
+  drawClientes();
+  drawAll();
+  toast(`${l.empresa} — proyecto finalizado. Recontacto: ${fmtFechaDisplay(fechaISO)}`, 'ok');
+}
+
+// ══════════════════════════════════════════
+// SYNC CROSS-DEVICE (polling automático)
+// ══════════════════════════════════════════
+// BroadcastChannel solo funciona en el mismo browser/dispositivo.
+// Para sync entre dispositivos distintos (tu PC y la de tu socio)
+// la fuente compartida es Google Sheets. Si está configurado,
+// hacemos polling cada 90 segundos y mergeamos silenciosamente.
+let _syncPollInterval = null;
+
+function iniciarSyncPoll() {
+  if (_syncPollInterval) return; // ya corriendo
+  _syncPollInterval = setInterval(async () => {
+    try {
+      await syncFromSheets(true); // silent=true, no muestra loading
+      // Si el panel activo cambió, redraw
+      const panelActivo = document.querySelector('.panel.on')?.id?.replace('panel-','');
+      if (panelActivo === 'semana') drawWeek();
+      else if (panelActivo === 'leads') drawLeads();
+      else if (panelActivo === 'tabla') drawTabla();
+      else if (panelActivo === 'clientes') drawClientes();
+    } catch(e) {}
+  }, 90000); // cada 90 segundos
+}
+
+function detenerSyncPoll() {
+  if (_syncPollInterval) { clearInterval(_syncPollInterval); _syncPollInterval = null; }
+}
+
+// ══════════════════════════════════════════
+// CONTACTOS MÚLTIPLES
+// ══════════════════════════════════════════
+function abrirModalContactos(id) {
+  const l = leads[id]; if (!l) return;
+  const contactos = l.contactos || [];
+
+  // Generar HTML del modal dinámico
+  const modalHtml = `
+    <div class="overlay on" id="mContactos" onclick="if(event.target===this)closeModal('mContactos')">
+      <div class="modal" style="max-width:520px">
+        <div class="modal-h">
+          <div class="modal-h-info">
+            <div class="modal-hname" style="font-size:15px">👥 Contactos — ${l.empresa}</div>
+          </div>
+          <button class="modal-close" onclick="closeModal('mContactos')">×</button>
+        </div>
+        <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+          <!-- Contacto principal -->
+          <div style="background:var(--ink3);border:1px solid var(--gold);border-radius:10px;padding:12px">
+            <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Contacto principal</div>
+            <div style="font-size:13px;font-weight:600;color:var(--paper)">${l.contacto||'—'}</div>
+            <div style="font-size:11px;color:var(--fog)">${l.cargo||''}</div>
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+              ${l.wpp&&l.wpp!=='nan'?`<span class="lc-badge b-wpp" style="font-size:11px">💬 ${l.wpp}</span>`:''}
+              ${l.mail&&l.mail!=='nan'?`<span class="lc-badge b-mail" style="font-size:11px">📧 ${l.mail}</span>`:''}
+            </div>
+          </div>
+          <!-- Contactos adicionales -->
+          <div id="contactosAdic" style="display:flex;flex-direction:column;gap:8px">
+            ${contactos.map((c,i) => `
+              <div style="background:var(--ink3);border:1px solid var(--line);border-radius:10px;padding:12px;position:relative">
+                <button onclick="eliminarContactoAdic(${i})" style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--fog);cursor:pointer;font-size:12px" title="Eliminar">✕</button>
+                <div style="font-size:12px;font-weight:600;color:var(--paper)">${c.nombre||'Sin nombre'}</div>
+                <div style="font-size:11px;color:var(--fog)">${c.cargo||''} ${c.area?'· '+c.area:''}</div>
+                <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap">
+                  ${c.wpp?`<span class="lc-badge b-wpp" style="font-size:11px">💬 ${c.wpp}</span>`:''}
+                  ${c.mail?`<span class="lc-badge b-mail" style="font-size:11px">📧 ${c.mail}</span>`:''}
+                  ${c.linkedin?`<span class="lc-badge b-li" style="font-size:11px">💼 LinkedIn</span>`:''}
+                </div>
+              </div>`).join('')}
+          </div>
+          <!-- Formulario nuevo contacto -->
+          <div style="background:var(--ink3);border:1px dashed var(--line);border-radius:10px;padding:12px">
+            <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--fog);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">+ Agregar contacto</div>
+            <div class="fg" style="gap:8px">
+              <div class="field"><label>Nombre *</label><input type="text" id="nc_nombre" placeholder="Nombre Apellido" /></div>
+              <div class="field"><label>Cargo / Área</label><input type="text" id="nc_cargo" placeholder="Gerente de MKT" /></div>
+              <div class="field"><label>WhatsApp</label><input type="text" id="nc_wpp" placeholder="11-1234-5678" /></div>
+              <div class="field"><label>Email</label><input type="email" id="nc_mail" placeholder="nombre@empresa.com" /></div>
+              <div class="field fw"><label>LinkedIn URL</label><input type="text" id="nc_li" placeholder="linkedin.com/in/..." /></div>
+            </div>
+            <button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="guardarContactoAdic()">+ Agregar</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  // Quitar modal anterior si existe
+  document.getElementById('mContactos')?.remove();
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  // Guardar id del lead activo en el modal para usarlo en guardarContactoAdic
+  document.getElementById('mContactos')._leadId = id;
+}
+
+function guardarContactoAdic() {
+  const modal = document.getElementById('mContactos');
+  const id = modal?._leadId || currentId;
+  const l = leads[id]; if (!l) return;
+  const nombre = document.getElementById('nc_nombre')?.value.trim();
+  if (!nombre) { toast('El nombre es requerido','err'); return; }
+  if (!l.contactos) l.contactos = [];
+  l.contactos.push({
+    nombre,
+    cargo:    document.getElementById('nc_cargo')?.value.trim() || '',
+    wpp:      document.getElementById('nc_wpp')?.value.trim()   || '',
+    mail:     document.getElementById('nc_mail')?.value.trim()  || '',
+    linkedin: document.getElementById('nc_li')?.value.trim()    || '',
+  });
+  l._lastEdit = Date.now();
+  saveLocal();
+  // Re-abrir modal con datos actualizados
+  closeModal('mContactos');
+  document.getElementById('mContactos')?.remove();
+  abrirModalContactos(id);
+  toast(`✓ ${nombre} agregado`, 'ok');
+}
+
+function eliminarContactoAdic(idx) {
+  const modal = document.getElementById('mContactos');
+  const id = modal?._leadId || currentId;
+  const l = leads[id]; if (!l || !l.contactos) return;
+  const nombre = l.contactos[idx]?.nombre || 'contacto';
+  if (!confirm(`¿Eliminás a ${nombre}?`)) return;
+  l.contactos.splice(idx, 1);
+  l._lastEdit = Date.now();
+  saveLocal();
+  closeModal('mContactos');
+  document.getElementById('mContactos')?.remove();
+  abrirModalContactos(id);
+}
 
 // ══════════════════════════════════════════
 // ANALYTICS
@@ -4444,6 +4799,9 @@ window.onload = checkSetup;
   <div class="mobile-nav-inner">
     <button class="mnav-btn on" id="mn_semana" onclick="goPanel('semana',this);syncMobileNav('semana')">
       <span class="mico">📅</span><span class="mlbl">Semana</span>
+    </button>
+    <button class="mnav-btn" id="mn_clientes" onclick="goPanel('clientes',this);syncMobileNav('clientes')">
+      <span class="mico">🤝</span><span class="mlbl">Clientes</span>
     </button>
     <button class="mnav-btn" id="mn_leads" onclick="goPanel('leads',this);syncMobileNav('leads')">
       <span class="mico">💼</span><span class="mlbl">Leads</span>
