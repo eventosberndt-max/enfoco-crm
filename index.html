@@ -562,6 +562,9 @@ body::before{
 }
 
 </style>
+  <!-- Firebase SDK (compat mode — funciona sin bundler) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -1380,26 +1383,137 @@ const UNDO_MAX = 20;
 let undoStack = [];
 
 // Canal de sincronización entre pestañas del mismo browser
-const _syncChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('efcrm_sync') : null;
-if (_syncChannel) {
-  _syncChannel.onmessage = (ev) => {
-    if (ev.data?.type === 'leads_updated') {
-      try {
-        const incoming = JSON.parse(ev.data.snap);
-        // Solo actualizar si es diferente a lo actual
-        if (JSON.stringify(leads) !== ev.data.snap) {
-          leads = incoming;
-          drawAll();
-          // Si hay perfil abierto, refrescarlo
-          if (currentId && leads[currentId]) {
-            const l = leads[currentId];
-            limpiarResumenPerfil(currentId);
-            drawHistorial(l);
-          }
-        }
-      } catch(e) {}
+// ══════════════════════════════════════════
+// FIREBASE — sync en tiempo real entre dispositivos
+// ══════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyAY0l06t8Le67rRHCOhu2KNkb9R2FN3ebE",
+  authDomain:        "enfoco-crm.firebaseapp.com",
+  databaseURL:       "https://enfoco-crm-default-rtdb.firebaseio.com",
+  projectId:         "enfoco-crm",
+  storageBucket:     "enfoco-crm.firebasestorage.app",
+  messagingSenderId: "314775467221",
+  appId:             "1:314775467221:web:a18595293c52ceeb8e9e5c"
+};
+
+let _fbApp = null, _fbDb = null, _fbRef = null;
+let _fbListening = false;
+let _fbSaving = false;        // flag para no re-triggear al recibir nuestros propios cambios
+let _fbLastSaveTs = 0;        // timestamp del último save para deduplicar
+let _fbIgnoreNext = false;    // ignorar el próximo evento remoto (es nuestro propio save)
+
+function initFirebase() {
+  try {
+    if (!firebase?.apps?.length) {
+      _fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+    } else {
+      _fbApp = firebase.apps[0];
     }
-  };
+    _fbDb  = firebase.database(_fbApp);
+    _fbRef = _fbDb.ref('leads');
+    console.log('🔥 Firebase conectado');
+    return true;
+  } catch(e) {
+    console.warn('Firebase init error:', e.message);
+    return false;
+  }
+}
+
+// Escuchar cambios en tiempo real desde otros dispositivos
+function startFirebaseListener() {
+  if (!_fbRef || _fbListening) return;
+  _fbListening = true;
+
+  // Presencia: registrar que este dispositivo está conectado
+  try {
+    const presenciaRef = _fbDb.ref('.info/connected');
+    const userRef = _fbDb.ref('presencia/' + Date.now());
+    presenciaRef.on('value', (snap) => {
+      if (snap.val() === true) {
+        userRef.set({ ts: Date.now(), ua: navigator.userAgent.substring(0,50) });
+        userRef.onDisconnect().remove();
+      }
+    });
+    // Contar usuarios activos (últimos 30 segundos)
+    _fbDb.ref('presencia').on('value', snap => {
+      const ahora = Date.now();
+      const activos = Object.values(snap.val() || {}).filter(u => ahora - (u.ts||0) < 30000);
+      if (activos.length > 1) {
+        const syncLbl = document.getElementById('syncLabel');
+        if (syncLbl) syncLbl.textContent = `☁️ ${activos.length} conectados`;
+      }
+    });
+  } catch(e) {}
+
+  _fbRef.on('value', (snapshot) => {
+    if (_fbIgnoreNext) { _fbIgnoreNext = false; return; }
+
+    const data = snapshot.val();
+    if (!data) return;
+
+    try {
+      const remoteLeads = data;
+      const localSnap   = JSON.stringify(leads);
+      const remoteSnap  = JSON.stringify(remoteLeads);
+
+      if (localSnap === remoteSnap) return; // sin cambios reales
+
+      // Merge: preservar cambios locales muy recientes (< 3 segundos)
+      const ahora = Date.now();
+      const leadsActualizados = { ...remoteLeads };
+
+      Object.values(leads).forEach(localLead => {
+        const editadoHace = ahora - (localLead._lastEdit || 0);
+        if (editadoHace < 3000) {
+          // Cambio local muy reciente — preservarlo sobre el remoto
+          leadsActualizados[localLead.id] = localLead;
+        }
+      });
+
+      leads = leadsActualizados;
+
+      // Guardar en localStorage como caché offline
+      try { localStorage.setItem('efcrm_leads', JSON.stringify(leads)); } catch(e) {}
+
+      // Refrescar UI
+      drawAll();
+      if (currentId && leads[currentId]) {
+        limpiarResumenPerfil(currentId);
+        drawHistorial(leads[currentId]);
+        renderBadgesPerfil(leads[currentId]);
+      }
+
+      // Indicador visual de sync
+      setSyncStatus('ok', 'Sincronizado ✓');
+      setTimeout(() => setSyncStatus('', ''), 2000);
+
+    } catch(e) {
+      console.warn('Firebase listener error:', e.message);
+    }
+  }, (err) => {
+    console.warn('Firebase listener failed:', err.message);
+    setSyncStatus('', 'Firebase desconectado');
+  });
+}
+
+// Guardar leads en Firebase (debounced para no saturar con cada keystroke)
+let _fbSaveTimer = null;
+function saveToFirebase() {
+  if (!_fbRef) return;
+  clearTimeout(_fbSaveTimer);
+  _fbSaveTimer = setTimeout(() => {
+    _fbIgnoreNext = true;  // el próximo evento es nuestro propio save
+    _fbRef.set(leads)
+      .then(() => {
+        setSyncStatus('ok', '☁️ Guardado');
+        setTimeout(() => setSyncStatus('', ''), 1500);
+      })
+      .catch(e => {
+        _fbIgnoreNext = false;
+        console.warn('Firebase save error:', e.message);
+        setSyncStatus('', '⚠️ Sin sync');
+      });
+  }, 800); // esperar 800ms antes de escribir (debounce)
 }
 
 function saveLocal() {
@@ -1410,11 +1524,10 @@ function saveLocal() {
       undoStack.push(prev);
       if (undoStack.length > UNDO_MAX) undoStack.shift();
     }
+    // Siempre guardar en localStorage como caché offline
     localStorage.setItem('efcrm_leads', snap);
-    // Avisar a otras pestañas del mismo browser
-    if (_syncChannel) {
-      _syncChannel.postMessage({ type: 'leads_updated', snap });
-    }
+    // Guardar en Firebase para sync en tiempo real
+    saveToFirebase();
   } catch(e) {}
 }
 
@@ -1428,6 +1541,10 @@ function addEliminado(id, empresa) {
   if (!ya) {
     lista.push({ id, empresa: (empresa||'').trim().toLowerCase() });
     localStorage.setItem('efcrm_eliminados', JSON.stringify(lista));
+    // Sincronizar eliminados en Firebase también
+    if (_fbDb) {
+      _fbDb.ref('eliminados').set(lista).catch(()=>{});
+    }
   }
 }
 function isEliminado(id, empresa) {
@@ -1459,10 +1576,60 @@ document.addEventListener('keydown', e => {
 });
 
 function loadLocal() {
+  // Cargar desde localStorage como caché inmediato (mientras Firebase carga)
   try {
     const raw = localStorage.getItem('efcrm_leads');
     if (raw) leads = JSON.parse(raw);
   } catch(e) { leads = {}; }
+}
+
+// Cargar desde Firebase y arrancar el listener en tiempo real
+async function loadFromFirebase() {
+  if (!_fbRef) return false;
+  try {
+    setSyncStatus('spin', 'Conectando...');
+    const snapshot = await _fbRef.once('value');
+    const data = snapshot.val();
+    if (data && Object.keys(data).length > 0) {
+      leads = data;
+      // Actualizar caché local
+      try { localStorage.setItem('efcrm_leads', JSON.stringify(leads)); } catch(e) {}
+      drawAll();
+      setSyncStatus('ok', '☁️ Conectado');
+    } else if (Object.keys(leads).length > 0) {
+      // Firebase vacío pero tenemos datos locales — subir al servidor
+      setSyncStatus('spin', 'Subiendo datos...');
+      await _fbRef.set(leads);
+      setSyncStatus('ok', '☁️ Datos subidos');
+    } else {
+      setSyncStatus('ok', '☁️ Conectado (vacío)');
+    }
+    // Cargar lista de eliminados del otro dispositivo
+    try {
+      const elimSnap = await _fbDb.ref('eliminados').once('value');
+      const elimData = elimSnap.val();
+      if (elimData && Array.isArray(elimData)) {
+        // Mergear con los locales
+        const locales = getEliminados();
+        const merged = [...locales];
+        elimData.forEach(x => {
+          const id = typeof x === 'object' ? x.id : x;
+          if (!merged.some(l => (typeof l === 'object' ? l.id : l) === id)) {
+            merged.push(x);
+          }
+        });
+        localStorage.setItem('efcrm_eliminados', JSON.stringify(merged));
+      }
+    } catch(e) {}
+
+    // Arrancar listener para cambios en tiempo real
+    startFirebaseListener();
+    return true;
+  } catch(e) {
+    console.warn('Firebase load error:', e.message);
+    setSyncStatus('', '⚠️ Offline — usando datos locales');
+    return false;
+  }
 }
 
 function addHist(id, entry) {
@@ -1503,16 +1670,23 @@ function checkSetup() {
   }
 }
 
-function boot() {
-  loadLocal();
+async function boot() {
+  loadLocal(); // carga inmediata desde localStorage (puede estar vacío o desactualizado)
   if (document.getElementById('cfg_key')) document.getElementById('cfg_key').value = KEY;
   if (document.getElementById('cfg_script')) document.getElementById('cfg_script').value = SCRIPT;
   loadConfigFields();
   loadEjemplos();
-  drawAll(); // Render inmediato con datos locales
-  syncFromSheets(true); // Luego sync async — drawAll() se llama de nuevo adentro
-  // Iniciar polling para sync cross-device (cada 90s, silencioso)
-  if (SCRIPT) iniciarSyncPoll();
+  drawAll(); // render inmediato con datos locales mientras carga Firebase
+
+  // Inicializar Firebase y cargar datos en tiempo real
+  const fbOk = initFirebase();
+  if (fbOk) {
+    await loadFromFirebase(); // carga desde la nube y activa el listener
+  } else {
+    // Fallback: sync desde Sheets y polling si hay SCRIPT
+    syncFromSheets(true);
+    if (SCRIPT) iniciarSyncPoll();
+  }
 }
 
 // ══════════════════════════════════════════
@@ -3325,6 +3499,10 @@ function limpiarCache() {
   if (!confirm('¿Limpiar todos los datos locales y re-sincronizar desde Sheets?\nEl historial de conversaciones guardado localmente se perderá.')) return;
   leads = {};
   localStorage.removeItem('efcrm_leads');
+  // También limpiar en Firebase
+  if (_fbRef && confirm('¿Borrar también en Firebase (afecta a TODOS los dispositivos)?')) {
+    _fbRef.set({}).then(() => toast('Firebase limpiado', 'info')).catch(()=>{});
+  }
   toast('Caché limpiado — sincronizando...', 'info');
   syncFromSheets(false);
 }
@@ -4777,6 +4955,21 @@ Hablale de vos a Dami. Tono directo, sin relleno.`;
   } finally {
     btn.disabled = false;
     btn.textContent = '✨ Análisis IA profundo';
+  }
+}
+
+async function testFirebaseConn() {
+  toast('Probando conexión Firebase…', 'ok');
+  try {
+    if (!_fbDb) {
+      const ok = initFirebase();
+      if (!ok) { toast('❌ Firebase no pudo inicializarse', 'err'); return; }
+    }
+    await _fbDb.ref('.info/serverTimeOffset').once('value');
+    const count = Object.keys(leads).length;
+    toast(`✅ Firebase OK — ${count} leads sincronizados`, 'ok');
+  } catch(e) {
+    toast('❌ Firebase error: ' + e.message, 'err');
   }
 }
 
