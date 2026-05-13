@@ -1354,6 +1354,23 @@ let weekOff = 0;
 // ══════════════════════════════════════════
 function mkId() { return 'l' + Date.now() + Math.random().toString(36).slice(2,6); }
 
+// Sanitizar lead antes de render — previene crashes por datos corruptos de Firebase
+function sanitizeLead(l) {
+  if (!l) return null;
+  if (!l.empresa || typeof l.empresa !== 'string') return null;
+  if (!Array.isArray(l.historial)) l.historial = [];
+  if (!Array.isArray(l.contactos)) l.contactos = [];
+  if (typeof l.contacto !== 'string') l.contacto = '';
+  if (typeof l.cargo !== 'string') l.cargo = '';
+  if (typeof l.wpp !== 'string') l.wpp = '';
+  if (typeof l.mail !== 'string') l.mail = '';
+  if (typeof l.proxFecha !== 'string') l.proxFecha = '';
+  if (typeof l.proxPaso !== 'string') l.proxPaso = '';
+  if (typeof l.origen !== 'string') l.origen = '';
+  if (!l.id) l.id = mkId();
+  return l;
+}
+
 function mkLead(d={}) {
   return {
     id:         d.id         || mkId(),
@@ -1408,18 +1425,28 @@ let _fbSaveVersion = 0;       // versión incremental de cada save nuestro
 
 function initFirebase() {
   try {
-    if (!firebase?.apps?.length) {
-      _fbApp = firebase.initializeApp(FIREBASE_CONFIG);
-    } else {
+    // Si ya existe una app con el nombre default, usarla
+    if (firebase.apps && firebase.apps.length > 0) {
       _fbApp = firebase.apps[0];
+    } else {
+      _fbApp = firebase.initializeApp(FIREBASE_CONFIG);
     }
     _fbDb  = firebase.database(_fbApp);
     _fbRef = _fbDb.ref('leads');
     console.log('🔥 Firebase conectado');
     return true;
   } catch(e) {
-    console.warn('Firebase init error:', e.message);
-    return false;
+    // Si falla porque ya existe, intentar obtenerla
+    try {
+      _fbApp = firebase.app();
+      _fbDb  = firebase.database(_fbApp);
+      _fbRef = _fbDb.ref('leads');
+      console.log('🔥 Firebase reconectado');
+      return true;
+    } catch(e2) {
+      console.warn('Firebase init error:', e2.message);
+      return false;
+    }
   }
 }
 
@@ -1483,7 +1510,13 @@ function startFirebaseListener() {
         // Si remoto es más nuevo o local es viejo → ya está en merged (del spread)
       });
 
-      leads = merged;
+      // Sanitizar todos los leads antes de usarlos
+      const mergedSano = {};
+      Object.entries(merged).forEach(([k, v]) => {
+        const s = sanitizeLead(v);
+        if (s) mergedSano[k] = s;
+      });
+      leads = mergedSano;
 
       // Actualizar caché local
       try { localStorage.setItem('efcrm_leads', JSON.stringify(leads)); } catch(e) {}
@@ -1587,10 +1620,18 @@ document.addEventListener('keydown', e => {
 });
 
 function loadLocal() {
-  // Cargar desde localStorage como caché inmediato (mientras Firebase carga)
   try {
     const raw = localStorage.getItem('efcrm_leads');
-    if (raw) leads = JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Sanitizar al cargar
+      const sano = {};
+      Object.entries(parsed).forEach(([k, v]) => {
+        const s = sanitizeLead(v);
+        if (s) sano[k] = s;
+      });
+      leads = sano;
+    }
   } catch(e) { leads = {}; }
 }
 
@@ -1602,8 +1643,13 @@ async function loadFromFirebase() {
     const snapshot = await _fbRef.once('value');
     const data = snapshot.val();
     if (data && Object.keys(data).length > 0) {
-      leads = data;
-      // Actualizar caché local
+      // Sanitizar al cargar desde Firebase
+      const sano = {};
+      Object.entries(data).forEach(([k, v]) => {
+        const s = sanitizeLead(v);
+        if (s) sano[k] = s;
+      });
+      leads = sano;
       try { localStorage.setItem('efcrm_leads', JSON.stringify(leads)); } catch(e) {}
       drawAll();
       setSyncStatus('ok', '☁️ Conectado');
@@ -1683,7 +1729,7 @@ function checkSetup() {
 }
 
 async function boot() {
-  loadLocal(); // carga inmediata desde localStorage (puede estar vacío o desactualizado)
+  loadLocal(); // carga inmediata desde localStorage
   if (document.getElementById('cfg_key')) document.getElementById('cfg_key').value = KEY;
   if (document.getElementById('cfg_openai_key')) document.getElementById('cfg_openai_key').value = OPENAI_KEY;
   if (document.getElementById('cfg_script')) document.getElementById('cfg_script').value = SCRIPT;
@@ -1691,14 +1737,29 @@ async function boot() {
   loadEjemplos();
   drawAll(); // render inmediato con datos locales mientras carga Firebase
 
-  // Inicializar Firebase y cargar datos en tiempo real
-  const fbOk = initFirebase();
+  // Inicializar Firebase con reintentos automáticos
+  let fbOk = initFirebase();
+  if (!fbOk) {
+    await new Promise(r => setTimeout(r, 2000));
+    fbOk = initFirebase(); // segundo intento
+  }
+
   if (fbOk) {
-    await loadFromFirebase(); // carga desde la nube y activa el listener
+    await loadFromFirebase(); // carga desde la nube y activa listener en tiempo real
+    // Reconexión automática si se pierde y recupera la conexión
+    if (_fbDb) {
+      _fbDb.ref('.info/connected').on('value', async (snap) => {
+        if (snap.val() === true && !_fbListening) {
+          console.log('🔥 Reconectado — recargando Firebase');
+          _fbListening = false;
+          await loadFromFirebase();
+        }
+      });
+    }
   } else {
-    // Fallback: sync desde Sheets y polling si hay SCRIPT
     syncFromSheets(true);
     if (SCRIPT) iniciarSyncPoll();
+    setSyncStatus('', '⚠️ Firebase no disponible');
   }
 }
 
@@ -2231,6 +2292,7 @@ function drawLeads() {
   if(!all.length){grid.innerHTML='<div class="empty"><div class="empty-ico">📭</div>Sin leads</div>';return;}
   grid.innerHTML=all.map(l=>{
     const ci=canalInfo(l);
+    if(!l.historial||!Array.isArray(l.historial)) l.historial=[];
     const histN=l.historial.length;
     return `<div class="lcard" onclick="abrirPerfil('${l.id}')">
       <div class="lc-top">
