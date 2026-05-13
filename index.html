@@ -918,6 +918,7 @@ body::before{
             <div style="margin-top:8px;padding-top:12px;border-top:1px solid var(--line)">
               <div style="font-size:11px;color:var(--fog);margin-bottom:8px">Si los leads no se actualizan correctamente, limpiá el caché local y volvé a sincronizar.</div>
               <button class="btn btn-ghost btn-sm" onclick="limpiarCache()" style="border-color:var(--rose);color:var(--rose)">🗑 Limpiar caché y re-sincronizar</button>
+              <button class="btn btn-ghost btn-sm" onclick="verBackups()" style="border-color:var(--amber);color:var(--amber)">💾 Ver y restaurar backups</button>
             </div>
             <div style="background:var(--ink3);border:1px solid var(--line);border-radius:8px;padding:14px;font-size:12px;color:var(--fog);line-height:1.7">
               <strong style="color:var(--paper)">Abrir Sheets directo:</strong><br>
@@ -1568,8 +1569,9 @@ function saveLocal() {
       undoStack.push(prev);
       if (undoStack.length > UNDO_MAX) undoStack.shift();
     }
-    // Siempre guardar en localStorage como caché offline
     localStorage.setItem('efcrm_leads', snap);
+    // Backup rolling en cada save real
+    guardarBackupRolling();
     // Guardar en Firebase para sync en tiempo real
     saveToFirebase();
   } catch(e) {}
@@ -1643,12 +1645,30 @@ async function loadFromFirebase() {
     const snapshot = await _fbRef.once('value');
     const data = snapshot.val();
     if (data && Object.keys(data).length > 0) {
+      // Guardar snapshot de emergencia ANTES de pisar con Firebase
+      snapshotEmergencia();
+
       // Sanitizar al cargar desde Firebase
       const sano = {};
       Object.entries(data).forEach(([k, v]) => {
         const s = sanitizeLead(v);
         if (s) sano[k] = s;
       });
+
+      // Merge inteligente: si el local tiene cambios más recientes, preservarlos
+      const ahora = Date.now();
+      const localActual = JSON.parse(localStorage.getItem('efcrm_leads') || '{}');
+      Object.entries(localActual).forEach(([k, localLead]) => {
+        const editLocal = localLead?._lastEdit || 0;
+        const editRemoto = sano[k]?._lastEdit || 0;
+        // Si el local fue editado más tarde Y en los últimos 7 días → preservar
+        const diasAtras7 = ahora - 7 * 24 * 60 * 60 * 1000;
+        if (editLocal > editRemoto && editLocal > diasAtras7) {
+          const s = sanitizeLead(localLead);
+          if (s) sano[k] = s;
+        }
+      });
+
       leads = sano;
       try { localStorage.setItem('efcrm_leads', JSON.stringify(leads)); } catch(e) {}
       drawAll();
@@ -2129,21 +2149,47 @@ function addDaysISO(iso, n) {
 // ══════════════════════════════════════════
 
 // ══════════════════════════════════════════
-// BACKUP AUTOMÁTICO 24HS
+// BACKUP ROLLING — últimos 5 snapshots
 // ══════════════════════════════════════════
-function checkAutoBackup() {
+// Se guarda cada vez que hay un cambio real, con rotación de 5 versiones
+// Así siempre hay un backup reciente disponible
+
+function guardarBackupRolling() {
   try {
-    const lastBackup = parseInt(localStorage.getItem('efcrm_lastBackup') || '0');
-    const now = Date.now();
-    const hs24 = 24 * 60 * 60 * 1000;
-    if (now - lastBackup > hs24) {
-      // Hacer backup silencioso
-      const snap = JSON.stringify({ leads, fecha: new Date().toISOString(), version: 2 });
-      localStorage.setItem('efcrm_backup_auto', snap);
-      localStorage.setItem('efcrm_lastBackup', now.toString());
-      console.log('[CRM] Backup automático guardado:', new Date().toLocaleString('es-AR'));
+    const ahora = Date.now();
+    const ultimoBackup = parseInt(localStorage.getItem('efcrm_lastBackup') || '0');
+    // Guardar máximo una vez cada 2 minutos para no saturar
+    if (ahora - ultimoBackup < 2 * 60 * 1000) return;
+
+    const snap = JSON.stringify(leads);
+    const fecha = new Date().toLocaleString('es-AR');
+
+    // Rotar: backup_4 → eliminar, backup_3 → backup_4, etc.
+    for (let i = 4; i >= 1; i--) {
+      const prev = localStorage.getItem('efcrm_backup_' + i);
+      if (prev) localStorage.setItem('efcrm_backup_' + (i+1 <= 5 ? i+1 : 5), prev);
     }
+    // Guardar el más nuevo en backup_1
+    localStorage.setItem('efcrm_backup_1', JSON.stringify({ snap, fecha, ts: ahora }));
+    localStorage.setItem('efcrm_backup_auto', snap); // compatibilidad con código anterior
+    localStorage.setItem('efcrm_lastBackup', ahora.toString());
   } catch(e) {}
+}
+
+// Snapshot de emergencia ANTES de que Firebase pise los datos locales
+function snapshotEmergencia() {
+  try {
+    const snap = localStorage.getItem('efcrm_leads');
+    if (!snap || snap === '{}') return;
+    const fecha = new Date().toLocaleString('es-AR');
+    localStorage.setItem('efcrm_backup_emergencia', JSON.stringify({
+      snap, fecha, ts: Date.now()
+    }));
+  } catch(e) {}
+}
+
+function checkAutoBackup() {
+  guardarBackupRolling();
 }
 
 function descargarBackup() {
@@ -5030,6 +5076,67 @@ Hablale de vos a Dami. Tono directo, sin relleno.`;
   } finally {
     btn.disabled = false;
     btn.textContent = '✨ Análisis IA profundo';
+  }
+}
+
+function verBackups() {
+  const ahora = Date.now();
+  const fmt = ts => ts ? new Date(ts).toLocaleString('es-AR') : '—';
+  let info = '💾 BACKUPS DISPONIBLES\n\n';
+
+  // Ver los 5 backups rolling
+  for (let i = 1; i <= 5; i++) {
+    const raw = localStorage.getItem('efcrm_backup_' + i);
+    if (raw) {
+      try {
+        const b = JSON.parse(raw);
+        const leads = JSON.parse(b.snap || '{}');
+        const n = Object.keys(leads).length;
+        const conHist = Object.values(leads).filter(l=>(l.historial||[]).length>0).length;
+        const conFecha = Object.values(leads).filter(l=>l.proxFecha).length;
+        info += `Backup ${i}: ${fmt(b.ts)}\n  → ${n} leads | ${conHist} con historial | ${conFecha} con fecha\n\n`;
+      } catch(e) { info += `Backup ${i}: corrupto\n\n`; }
+    }
+  }
+
+  // Snapshot de emergencia
+  const emer = localStorage.getItem('efcrm_backup_emergencia');
+  if (emer) {
+    try {
+      const b = JSON.parse(emer);
+      const leads = JSON.parse(b.snap || '{}');
+      info += `Emergencia: ${fmt(b.ts)}\n  → ${Object.keys(leads).length} leads\n\n`;
+    } catch(e) {}
+  }
+
+  info += '¿Qué número de backup querés restaurar? (1-5, o "e" para emergencia, o Cancelar)';
+  const resp = prompt(info);
+  if (!resp) return;
+
+  let snapRaw = null;
+  if (resp === 'e') {
+    const b = JSON.parse(localStorage.getItem('efcrm_backup_emergencia') || 'null');
+    snapRaw = b?.snap;
+  } else {
+    const n = parseInt(resp);
+    if (n >= 1 && n <= 5) {
+      const b = JSON.parse(localStorage.getItem('efcrm_backup_' + n) || 'null');
+      snapRaw = b?.snap;
+    }
+  }
+
+  if (!snapRaw) { toast('No hay backup en esa posición', 'err'); return; }
+  if (!confirm('¿Restaurar este backup? Esto reemplaza los datos actuales.')) return;
+
+  try {
+    const restored = JSON.parse(snapRaw);
+    localStorage.setItem('efcrm_leads', snapRaw);
+    window.leads = restored;
+    drawAll();
+    saveToFirebase(); // sincronizar en Firebase también
+    toast('✅ Backup restaurado — ' + Object.keys(restored).length + ' leads', 'ok');
+  } catch(e) {
+    toast('Error al restaurar: ' + e.message, 'err');
   }
 }
 
