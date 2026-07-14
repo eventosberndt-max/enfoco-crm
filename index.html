@@ -2962,7 +2962,17 @@ function crearNuevoLead() {
 // ══════════════════════════════════════════
 // CARGAR VISTAGE DESDE LINKEDIN
 // ══════════════════════════════════════════
-async function analizarLI() {
+// Corta cualquier nota/aclaracion interna que la IA agregue despues del mensaje real
+// (a veces el modelo ignora el formato y suma "---" + "**Nota:**..." al final, y eso
+// terminaba filtrandose al mensaje que se copia y se manda al cliente)
+function limpiarMensajeIA(txt) {
+  if (!txt) return txt;
+    const cutRegex = /\n\s*-{3,}\s*\n|\n\s*\*{0,2}\s*NOTA[S]?(\s+OPERATIVAS?)?\s*:?\*{0,2}/i;
+      const idx = txt.search(cutRegex);
+        return (idx === -1 ? txt : txt.slice(0, idx)).trim();
+        }
+        
+        async function analizarLI() {
   const txt=document.getElementById('li_texto').value.trim();
   const url=document.getElementById('li_url').value.trim();
   const rub=document.getElementById('li_rubro').value.trim();
@@ -2981,7 +2991,7 @@ async function analizarLI() {
     document.getElementById('li_empresa').value=g('EMPRESA');
     document.getElementById('li_cargo').value=g('CARGO');
     document.getElementById('li_rub2').value=g('RUBRO')||rub;
-    document.getElementById('li_msg').value=msgM?msgM[1].trim():'';
+    document.getElementById('li_msg').value=msgM?limpiarMensajeIA(msgM[1]):'';
     document.getElementById('liForm').style.display='flex';
   } catch(e){toast('Error: '+e.message,'err');}
   finally{document.getElementById('liLoader').classList.remove('on');}
@@ -3422,7 +3432,7 @@ async function genSugerencia(l, promptLibre) {
     promptExtra += `\n${pasoCtx}`;
   }
 
-  const prompt=CTX+promptExtra+`\n\nLEAD:\nEmpresa: ${l.empresa}\nContacto: ${l.contacto}${l.cargo?' — '+l.cargo:''}\nCanal: ${ci.key==='wpp'?'WhatsApp':ci.key==='mail'?'Email':'LinkedIn'}\nEstado: ${estadoToStr(l.estado)}\n\nINTERACCIONES RECIENTES:\n${histTxt}\n\nGenerá un mensaje listo para enviar. ESTILO OBLIGATORIO:\n- Directo, sin intro, sin \"Espero que estés bien\"\n- Empresarial pero cercano, serio sin rigidez, juvenil sin slang\n- Sin humo: nada de \"potenciar\", \"sinergia\", \"soluciones innovadoras\"\n- Máx 4 líneas en WPP/LinkedIn, puede ser más en mail\n- Si ya hubo contacto, mencioná el hilo brevemente\n- Si el resumen indica una fecha o acción sugerida, reflejalo en el mensaje\n- Terminar con UNA sola pregunta concreta\n\nFormato EXACTO:\nANÁLISIS: [1 línea: situación actual del contacto]\nSIGUIENTE: [1 línea: qué proponer y cuándo]\nMENSAJE:\n[el mensaje listo para copiar]`;
+  const prompt=CTX+promptExtra+`\n\nLEAD:\nEmpresa: ${l.empresa}\nContacto: ${l.contacto}${l.cargo?' — '+l.cargo:''}\nCanal: ${ci.key==='wpp'?'WhatsApp':ci.key==='mail'?'Email':'LinkedIn'}\nEstado: ${estadoToStr(l.estado)}\n\nINTERACCIONES RECIENTES:\n${histTxt}\n\nGenerá un mensaje listo para enviar. ESTILO OBLIGATORIO:\n- Directo, sin intro, sin \"Espero que estés bien\"\n- Empresarial pero cercano, serio sin rigidez, juvenil sin slang\n- Sin humo: nada de \"potenciar\", \"sinergia\", \"soluciones innovadoras\"\n- Máx 4 líneas en WPP/LinkedIn, puede ser más en mail\n- Si ya hubo contacto, mencioná el hilo brevemente\n- Si el resumen indica una fecha o acción sugerida, reflejalo en el mensaje\n- Terminar con UNA sola pregunta concreta\n- Después de escribir el mensaje NO agregues nada más: nada de notas, aclaraciones, alternativas o comentarios tuyos. El mensaje termina donde termina el texto a copiar.\n\nFormato EXACTO:\nANÁLISIS: [1 línea: situación actual del contacto]\nSIGUIENTE: [1 línea: qué proponer y cuándo]\nMENSAJE:\n[el mensaje listo para copiar, y nada después]`;
 
   try {
     const r=await aiCall(prompt);
@@ -3442,7 +3452,7 @@ async function genSugerencia(l, promptLibre) {
     if (!ctxHtml) ctxHtml = r.replace(/MENSAJE:[\s\S]*/i,'').trim().substring(0,120);
 
     document.getElementById('pf_ai_ctx').textContent = ctxHtml;
-    document.getElementById('pf_ai_msg').textContent = msgM ? msgM[1].trim() : r.trim();
+    document.getElementById('pf_ai_msg').textContent = msgM ? limpiarMensajeIA(msgM[1]) : r.trim();
     document.getElementById('pf_ai_wrap').style.display = 'block';
   } catch(e){
     const esKey = !KEY || e.message.includes('Key') || e.message.includes('401');
@@ -3748,8 +3758,7 @@ function drawAtrasados() {
         <span style="font-size:11px;color:var(--fog)">📅 ${fmtFechaDisplay(l.proxFecha)}</span>
       </div>
       ${l.proxPaso?`<div style="font-size:11.5px;color:var(--fog2);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.proxPaso}</div>`:''}
-      ${l.origen?`<div style="margin-top:5px">${origenBadgeHTML(l)}</div>`:''}
-      <div style="margin-top:10px;display:flex;gap:5px">
+            <div style="margin-top:10px;display:flex;gap:5px">
         <button class="btn btn-gold btn-sm" style="flex:1;justify-content:center;font-size:11px"
           onclick="event.stopPropagation();reprogramarAtrasado('${l.id}')">📅 Reprogramar</button>
         <button class="btn btn-ghost btn-sm" style="font-size:11px"
