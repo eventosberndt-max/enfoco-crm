@@ -621,7 +621,8 @@ body::before{
     <div class="topbar">
       <div class="topbar-title" id="pgTitle">Plan <em>Semanal</em></div>
       <div class="topbar-right">
-        <button class="btn btn-ghost btn-sm" onclick="syncFromSheets()" style="font-family:'DM Mono',monospace;font-size:10px">⟳ Sync Sheets</button>
+        <button class="btn btn-ghost btn-sm" onclick="mostrarResumenDiario()" style="font-family:'DM Mono',monospace;font-size:10px">Resumen dia/semana</button>
+                <button class="btn btn-ghost btn-sm" onclick="syncFromSheets()" style="font-family:'DM Mono',monospace;font-size:10px">⟳ Sync Sheets</button>
         <button class="btn btn-gold btn-sm" onclick="openNewLead()">+ Lead</button>
       </div>
     </div>
@@ -798,7 +799,8 @@ body::before{
         <div class="card">
           <div class="card-h" style="justify-content:space-between">
             <div class="card-title">Mensajes de referencia <span style="color:var(--fog);font-weight:400;font-size:9px;margin-left:6px">la IA aprende de estos</span></div>
-            <button class="btn btn-gold btn-sm" onclick="abrirNuevoEjemplo()">+ Agregar</button>
+            <button class="btn btn-ghost btn-sm" onclick="autoEntrenarTono()">Auto-detectar de mi historial</button>
+                          <button class="btn btn-gold btn-sm" onclick="abrirNuevoEjemplo()">+ Agregar</button>
           </div>
           <div id="tonoEjemplos" style="display:flex;flex-direction:column;gap:0"></div>
           <div id="tonoEjEmpty" style="padding:28px;text-align:center;color:var(--fog);font-size:12px;display:none">
@@ -856,7 +858,33 @@ body::before{
         </div>
       </div>
 
-      <!-- CONFIG -->
+      <!-- MODAL: RESUMEN DIARIO / SEMANAL -->
+             <div class="overlay" id="mResumen">
+                     <div class="modal" style="max-width:560px">
+                               <div class="modal-h">
+                                           <div class="modal-h-info">
+                                                         <div class="modal-hname" style="font-size:16px">Resumen dia / semana</div>
+                                                                       <div class="modal-hsub">Se genera con lo que ya esta cargado en el CRM ahora mismo</div>
+                                                                                   </div>
+                                                                                               <button class="modal-close" onclick="closeModal('mResumen')">&times;</button>
+                                                                                                         </div>
+                                                                                                                   <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+                                                                                                                               <div>
+                                                                                                                                             <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--fog);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Hoy</div>
+                                                                                                                                                           <div id="resumenDiaTxt" style="white-space:pre-wrap;font-size:13.5px;line-height:1.6;background:var(--paper2);border:1px solid var(--line);border-radius:8px;padding:12px"></div>
+                                                                                                                                                                         <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="copiarResumenBloque('resumenDiaTxt')">Copiar resumen del dia</button>
+                                                                                                                                                                                     </div>
+                                                                                                                                                                                                 <div>
+                                                                                                                                                                                                               <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--fog);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Esta semana</div>
+                                                                                                                                                                                                                             <div id="resumenSemanaTxt" style="white-space:pre-wrap;font-size:13.5px;line-height:1.6;background:var(--paper2);border:1px solid var(--line);border-radius:8px;padding:12px"></div>
+                                                                                                                                                                                                                                           <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="copiarResumenBloque('resumenSemanaTxt')">Copiar resumen semanal</button>
+                                                                                                                                                                                                                                                       </div>
+                                                                                                                                                                                                                                                                   <div style="font-size:11px;color:var(--fog)">Cuando conectemos WhatsApp, este resumen te va a llegar solo cada manana. Por ahora se copia manual.</div>
+                                                                                                                                                                                                                                                                             </div>
+                                                                                                                                                                                                                                                                                     </div>
+                                                                                                                                                                                                                                                                                           </div>
+                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                 <!-- CONFIG -->
       <!-- PANEL ATRASADOS -->
       <div class="panel" id="panel-atrasados">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -3170,7 +3198,30 @@ async function genResumenPerfil(l) {
     }
 
     // ── CONTEXTO (texto libre) ────────────────────────────────
-    return { tipo: 'contexto', txt: rawTxt };
+    // texto pegado a mano por Dami: si tiene lineas tipo "Nombre: mensaje" (sin timestamp)
+        // igual separar turnos aunque no siga el formato exacto de exportacion
+            {
+                  const lineasCtx = rawTxt.split('\n');
+                        const turnos = [];
+                              let matchedAlguna = false;
+                                    for (const ln of lineasCtx) {
+                                            const s = ln.trim();
+                                                    if (!s) continue;
+                                                            const m = s.match(/^([A-Za-zÁÉÍÓÚÑáéíóúñ.]{2,25}(?:\s[A-Za-zÁÉÍÓÚÑáéíóúñ.]{2,25})?)\s*:\s*(.+)/);
+                                                                    if (m) {
+                                                                              const nombre = m[1].trim();
+                                                                                        const esDami = /damian|dami|enfoco/i.test(nombre);
+                                                                                                  const ctc = !esDami && todosContactos.find(c => nombre.toLowerCase().includes(c.nombre.split(' ')[0].toLowerCase()));
+                                                                                                            const speaker = esDami ? 'DAMI' : (ctc ? ctc.nombre+(ctc.cargo?' ('+ctc.cargo+')':'') : nombre);
+                                                                                                                      turnos.push(speaker + ': ' + m[2].trim());
+                                                                                                                                matchedAlguna = true;
+                                                                                                                                        } else if (turnos.length) {
+                                                                                                                                                  turnos[turnos.length-1] += ' ' + s;
+                                                                                                                                                          }
+                                                                                                                                                                }
+                                                                                                                                                                      if (matchedAlguna) return { tipo: 'contexto', txt: turnos.join('\n') };
+                                                                                                                                                                          }
+                                                                                                                                                                          return { tipo: 'contexto', txt: rawTxt };
   }
 
   // Tomar hasta las últimas 10 entradas para mejor contexto
@@ -3217,14 +3268,22 @@ CÓMO INTERPRETAR CADA BLOQUE:
 - 📌 NOTA INTERNA → instrucción o recordatorio de Dami para sí mismo. NO es un mensaje enviado.
   Ejemplos: "HABLARLE EN UN MES", "LLAMAR EN ABRIL", "ESPERAR RESPUESTA"
   → Usarlas para definir la fecha sugerida de próxima acción
-- 📝 Contexto → información de fondo, no es un intercambio directo
+- 📝 Contexto → texto pegado a mano por Dami, sin formato prolijo. Puede ser un resumen suyo de una llamada,
+  texto copiado sin timestamps, o solo fragmentos sueltos. Puede mezclar turnos sin dejarlo clarisimo.
+    Hace tu mejor esfuerzo para separar quien dijo que usando el sentido comun:
+      - Frases en primera persona sobre acciones propias ("le mande", "le propuse", "quedamos en") son de Dami
+        - Frases que suenan a respuesta, pregunta o pedido del cliente son del contacto
+          - Si de verdad no se puede saber quien dijo una parte puntual, no inventes: describila como "se comento que..." en vez de atribuirla a alguien
 
-REGLAS CLAVE:
-- Fechas en el texto: el formato siempre es DD/MM/AA o DD/MM/AAAA (día primero, luego mes)
-  Ejemplo: "31/3/2026" = 31 de marzo de 2026. "25/4" = 25 de abril.
-- Ignorar: asteriscos, metadatos de LinkedIn, emojis solos, líneas vacías
-- Si el cliente dijo "el mes que viene", "en X semanas", "cuando terminemos X" → calcular fecha desde hoy
-- Si hay una nota interna con fecha → usarla como referencia principal para la próxima acción
+          REGLAS CLAVE:
+          - Fechas en el texto: el formato siempre es DD/MM/AA o DD/MM/AAAA (dia primero, luego mes)
+            Ejemplo: "31/3/2026" = 31 de marzo de 2026. "25/4" = 25 de abril.
+            - Ignorar: asteriscos, metadatos de LinkedIn, emojis solos, lineas vacias
+            - Si el cliente dijo "el mes que viene", "en X semanas", "cuando terminemos X" calcular fecha desde hoy
+            - Si hay una nota interna con fecha usarla como referencia principal para la proxima accion
+            - Si el historial es muy corto o ambiguo (una sola nota suelta, por ejemplo), NO fuerces un resumen generico
+              tipo "se esta evaluando la propuesta" - deci concretamente lo poco que hay, aunque sea una linea. Es mejor
+                un resumen corto y preciso que uno largo e inventado.
 
 RESPUESTA — exactamente en este formato (sin variaciones, sin intro):
 ESTADO: [qué pasó hasta acá — quién hizo qué — concreto y directo]
@@ -3660,7 +3719,57 @@ function loadConfigFields() {
 // ══════════════════════════════════════════
 // UI HELPERS
 // ══════════════════════════════════════════
-function goPanel(name, btn) {
+// ══════════════════════════════════════════
+// RESUMEN DIARIO / SEMANAL
+// ══════════════════════════════════════════
+function mostrarResumenDiario() {
+  const hoy = todayISO();
+    const finSemana = addDaysISO(hoy, 6);
+      const activos = l => l.estado !== 'perdido' && l.estado !== 'no-potencial';
+      
+        const atrasadosLeads = Object.values(leads).filter(l => activos(l) && l.proxFecha && l.proxFecha < hoy);
+          const hoyLeads = Object.values(leads).filter(l => activos(l) && l.proxFecha === hoy);
+          
+            let diaTxt = '';
+              if (atrasadosLeads.length) {
+                  diaTxt += 'Atrasados (' + atrasadosLeads.length + '): ' +
+                        atrasadosLeads.slice(0,8).map(l=>l.empresa).join(', ') +
+                              (atrasadosLeads.length>8?', +'+(atrasadosLeads.length-8)+' mas':'') + '\n\n';
+                                }
+                                  if (hoyLeads.length) {
+                                      diaTxt += 'Para hoy (' + hoyLeads.length + '):\n' +
+                                            hoyLeads.map(l=>'- '+l.empresa + (l.proxPaso?' - '+l.proxPaso:'')).join('\n');
+                                              } else {
+                                                  diaTxt += 'Nada agendado puntualmente para hoy (aparte de los atrasados de arriba).';
+                                                    }
+                                                      if (!atrasadosLeads.length && !hoyLeads.length) diaTxt = 'Nada pendiente para hoy.';
+                                                      
+                                                        const semanaLeads = Object.values(leads).filter(l => activos(l) && l.proxFecha && l.proxFecha >= hoy && l.proxFecha <= finSemana);
+                                                          let semTxt = '';
+                                                            if (semanaLeads.length) {
+                                                                const porDia = {};
+                                                                    semanaLeads.forEach(l => { (porDia[l.proxFecha] = porDia[l.proxFecha]||[]).push(l); });
+                                                                        semTxt = Object.keys(porDia).sort().map(f =>
+                                                                              fmtFechaDisplay(f) + ': ' + porDia[f].map(l=>l.empresa).join(', ')
+                                                                                  ).join('\n');
+                                                                                    } else {
+                                                                                        semTxt = 'Sin fechas agendadas en los proximos 7 dias.';
+                                                                                          }
+                                                                                          
+                                                                                            document.getElementById('resumenDiaTxt').textContent = diaTxt.trim();
+                                                                                              document.getElementById('resumenSemanaTxt').textContent = semTxt.trim();
+                                                                                                openModal('mResumen');
+                                                                                                }
+                                                                                                
+                                                                                                function copiarResumenBloque(id) {
+                                                                                                  const txt = document.getElementById(id)?.textContent || '';
+                                                                                                    if (!txt) return;
+                                                                                                      navigator.clipboard.writeText(txt)
+                                                                                                          .then(()=>toast('Copiado','ok'))
+                                                                                                              .catch(()=>toast('No se pudo copiar','err'));
+                                                                                                              }
+                                                                                                              
+                                                                                                              function goPanel(name, btn) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-link').forEach(b=>b.classList.remove('on'));
   document.getElementById('panel-'+name)?.classList.add('on');
@@ -5308,7 +5417,75 @@ function renderEjemplos() {
     </div>`).join('');
 }
 
-async function regenerarTono() {
+async function autoEntrenarTono() {
+  if (!KEY) { toast('Necesitas la API Key en Config','err'); return; }
+  
+    const candidatos = [];
+      Object.values(leads).forEach(l => {
+          (l.historial||[]).forEach(h => {
+                if (h.tipo === 'nota') return;
+                      const txt = (h.contenido||'').trim();
+                            if (txt.length < 25) return;
+                                  candidatos.push({ empresa: l.empresa, tipo: h.tipo, txt: txt.slice(0,600), fecha: h.fecha||'' });
+                                      });
+                                        });
+                                          if (!candidatos.length) {
+                                              toast('Todavia no hay suficiente historial guardado para entrenar','err');
+                                                  return;
+                                                    }
+                                                    
+                                                      candidatos.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+                                                        const muestra = candidatos.slice(0, 25);
+                                                          const bloque = muestra.map((c,i) => '--- '+(i+1)+' ('+c.tipo+', con '+c.empresa+') ---\n'+c.txt).join('\n\n');
+                                                          
+                                                            document.getElementById('tonoStatus').textContent = 'Buscando tus mejores mensajes en el historial...';
+                                                            
+                                                              const prompt = 'Sos el asistente de Dami Guelman (Enfoco Films, productora audiovisual). Te paso fragmentos de historial real de conversaciones con leads/clientes (algunos son solo de Dami, otros mezclan ambos lados de la charla).\n\n'
+                                                                  + 'TAREA: Elegi hasta 4 fragmentos donde se note mas claramente COMO ESCRIBE DAMI (su tono, sus muletillas, como pide cosas, como cierra mensajes). No elijas mensajes del cliente ni fragmentos ambiguos donde no se pueda distinguir bien quien escribio que.\n\n'
+                                                                      + 'Para cada uno que elijas, devolve SOLO el texto que efectivamente escribio Dami (si el fragmento mezcla ambos lados, extrae nada mas que sus lineas).\n\n'
+                                                                          + 'Responde en JSON puro, sin texto alrededor ni backticks, con este formato exacto:\n'
+                                                                              + '[{"canal":"wpp|linkedin|mail","contexto":"breve contexto en 4-8 palabras","mensaje":"texto exacto que escribio dami"}]\n\n'
+                                                                                  + 'Si ningun fragmento sirve, responde: []\n\n'
+                                                                                      + 'FRAGMENTOS:\n' + bloque;
+                                                                                      
+                                                                                        try {
+                                                                                            const r = await aiCall(prompt);
+                                                                                                const jsonMatch = r.match(/\[[\s\S]*\]/);
+                                                                                                    if (!jsonMatch) throw new Error('La IA no devolvio un formato valido');
+                                                                                                        const elegidos = JSON.parse(jsonMatch[0]);
+                                                                                                        
+                                                                                                            loadEjemplos();
+                                                                                                                let agregados = 0;
+                                                                                                                    elegidos.forEach(e => {
+                                                                                                                          if (!e.mensaje || e.mensaje.trim().length < 15) return;
+                                                                                                                                if (tonoEjemplos.some(ex => ex.msg === e.mensaje.trim())) return;
+                                                                                                                                      tonoEjemplos.unshift({
+                                                                                                                                              id: 'ej' + Date.now() + agregados,
+                                                                                                                                                      tipo: 'enviado',
+                                                                                                                                                              canal: ['wpp','linkedin','mail'].includes(e.canal) ? e.canal : 'wpp',
+                                                                                                                                                                      ctx: (e.contexto||'').trim(),
+                                                                                                                                                                              msg: e.mensaje.trim(),
+                                                                                                                                                                                      nota: 'Sumado automaticamente desde tu historial real',
+                                                                                                                                                                                              fecha: new Date().toLocaleDateString('es-AR'),
+                                                                                                                                                                                                    });
+                                                                                                                                                                                                          agregados++;
+                                                                                                                                                                                                              });
+                                                                                                                                                                                                                  saveEjemplos();
+                                                                                                                                                                                                                      renderEjemplos();
+                                                                                                                                                                                                                      
+                                                                                                                                                                                                                          document.getElementById('tonoStatus').textContent = agregados
+                                                                                                                                                                                                                                ? 'Sume ' + agregados + ' ejemplo(s) nuevo(s) de tu historial real'
+                                                                                                                                                                                                                                      : 'No encontre ejemplos nuevos y claros para sumar';
+                                                                                                                                                                                                                                          toast(agregados ? (agregados + ' ejemplo(s) agregado(s)') : 'Sin novedades esta vez', agregados?'ok':'info');
+                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                              if (agregados) await regenerarTono();
+                                                                                                                                                                                                                                                } catch(e) {
+                                                                                                                                                                                                                                                    document.getElementById('tonoStatus').textContent = '';
+                                                                                                                                                                                                                                                        toast('Error: ' + e.message, 'err');
+                                                                                                                                                                                                                                                          }
+                                                                                                                                                                                                                                                          }
+                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                          async function regenerarTono() {
   loadEjemplos();
   if (!tonoEjemplos.length) {
     toast('Agregá al menos un mensaje de referencia primero','err');
