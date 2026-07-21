@@ -5611,5 +5611,259 @@ window.addEventListener('focus', function() {
   window._syncWeekScrollInit = syncWeekScroll;
 })();
 
+  
+<!-- ============ PANEL SEGUIMIENTOS (outreach en frio, separado de Leads) ============ -->
+<script>
+(function(){
+  var css = ""
+    + "#panel-seguimientos .os-stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}"
+    + "#panel-seguimientos .os-stat{flex:1;min-width:140px;background:var(--ink3);border:1px solid var(--line);border-radius:10px;padding:12px 14px}"
+    + "#panel-seguimientos .os-stat .n{font-family:'DM Serif Display',serif;font-size:26px;color:var(--gold)}"
+    + "#panel-seguimientos .os-stat .l{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--fog);text-transform:uppercase;letter-spacing:.5px}"
+    + "#panel-seguimientos .os-bucket-title{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--fog);text-transform:uppercase;letter-spacing:.8px;margin:16px 0 8px}"
+    + "#panel-seguimientos .os-card{background:var(--ink3);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px}"
+    + "#panel-seguimientos .os-card.due{border-color:var(--gold)}"
+    + "#panel-seguimientos .os-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}"
+    + "#panel-seguimientos .os-name{font-weight:600;font-size:14px;color:var(--paper)}"
+    + "#panel-seguimientos .os-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--fog);margin-top:2px}"
+    + "#panel-seguimientos .os-resumen{font-size:12px;color:var(--fog);margin-top:6px;line-height:1.4}"
+    + "#panel-seguimientos .os-badge{font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}"
+    + "#panel-seguimientos .os-badge.enviado{background:var(--gold-dim);color:var(--gold)}"
+    + "#panel-seguimientos .os-badge.seguimiento_enviado{background:#1e2a3a;color:#5a8fd4}"
+    + "#panel-seguimientos .os-badge.respondio{background:var(--sage-dim);color:var(--sage)}"
+    + "#panel-seguimientos .os-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}"
+    + "#panel-seguimientos .os-empty{font-family:'DM Mono',monospace;font-size:11px;color:var(--fog);padding:20px;text-align:center}"
+    + ".os-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999}"
+    + ".os-modal{background:var(--ink2);border:1px solid var(--line);border-radius:12px;padding:20px;width:420px;max-width:92vw;max-height:86vh;overflow:auto}"
+    + ".os-modal h3{font-family:'DM Serif Display',serif;color:var(--gold);margin:0 0 14px;font-size:18px}"
+    + ".os-modal label{display:block;font-family:'DM Mono',monospace;font-size:9.5px;color:var(--fog);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px}"
+    + ".os-modal input,.os-modal textarea{width:100%;background:var(--ink3);border:1px solid var(--line);color:var(--paper);padding:8px 10px;border-radius:8px;font-size:12.5px;outline:none;box-sizing:border-box}"
+    + ".os-modal textarea{resize:vertical;font-family:inherit}"
+    + ".os-modal .os-modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}";
+  var styleTag = document.createElement('style');
+  styleTag.textContent = css;
+  document.head.appendChild(styleTag);
+
+  function addNavButton(){
+    var navLinks = document.querySelector('.nav-links');
+    if (!navLinks || document.getElementById('navSeguimientos')) return;
+    var btn = document.createElement('button');
+    btn.className = 'nav-link';
+    btn.id = 'navSeguimientos';
+    btn.innerHTML = '<span class="ico">📨</span>Seguimientos';
+    btn.onclick = function(){ goPanel('seguimientos', btn); drawSeguimientos(); };
+    navLinks.appendChild(btn);
+  }
+
+  function addPanelMarkup(){
+    if (document.getElementById('panel-seguimientos')) return;
+    var content = document.querySelector('.content');
+    if (!content) return;
+    var div = document.createElement('div');
+    div.className = 'panel';
+    div.id = 'panel-seguimientos';
+    div.innerHTML =
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
+      + '<div class="search" style="flex:1;min-width:140px"><input type="text" id="osSearch" placeholder="Buscar institucion..." oninput="drawSeguimientos()" /></div>'
+      + '<button class="btn btn-gold btn-sm" onclick="abrirModalOutreach()">+ Nuevo envio</button>'
+      + '</div>'
+      + '<div class="os-stats" id="osStats"></div>'
+      + '<div id="osBody"></div>';
+    content.appendChild(div);
+  }
+
+  var outreach = {};
+  var _osDb = null;
+
+  function sumarDias(fechaStr, dias){
+    var d = new Date(fechaStr + 'T00:00:00');
+    d.setDate(d.getDate() + dias);
+    return d.toISOString().slice(0,10);
+  }
+
+  function mkOutreach(d){
+    d = d || {};
+    var fecha = d.fechaEnvio || new Date().toISOString().slice(0,10);
+    return {
+      id: d.id || ('o' + Date.now().toString(36) + Math.random().toString(36).slice(2,7)),
+      empresa: d.empresa || '',
+      contacto: d.contacto || '',
+      email: d.email || '',
+      emailCc: d.emailCc || '',
+      fechaEnvio: fecha,
+      resumen: d.resumen || '',
+      estado: d.estado || 'enviado',
+      proxSeguimiento: d.proxSeguimiento || sumarDias(fecha, 7),
+      tanda: d.tanda || '',
+      historial: d.historial || [],
+      creadoEn: d.creadoEn || Date.now()
+    };
+  }
+
+  function initOutreachFirebase(){
+    try {
+      if (typeof firebase === 'undefined') { setTimeout(initOutreachFirebase, 800); return; }
+      var app = (firebase.apps && firebase.apps.length) ? firebase.apps[0] : null;
+      if (!app) { setTimeout(initOutreachFirebase, 800); return; }
+      _osDb = firebase.database(app).ref('outreach');
+      _osDb.on('value', function(snap){
+        outreach = snap.val() || {};
+        try { localStorage.setItem('efcrm_outreach', JSON.stringify(outreach)); } catch(e){}
+        var p = document.getElementById('panel-seguimientos');
+        if (p && p.classList.contains('on')) { drawSeguimientos(); }
+      });
+    } catch(e){ console.warn('outreach fb init error', e); }
+  }
+
+  window.guardarOutreach = function(o){
+    if (_osDb) { _osDb.child(o.id).set(o); }
+    outreach[o.id] = o;
+    try { localStorage.setItem('efcrm_outreach', JSON.stringify(outreach)); } catch(e){}
+  };
+
+  window.marcarSeguimientoEnviado = function(id){
+    var o = outreach[id]; if (!o) return;
+    o.estado = 'seguimiento_enviado';
+    o.historial = o.historial || [];
+    o.historial.push({fecha: new Date().toISOString().slice(0,10), accion: 'Seguimiento enviado'});
+    o.proxSeguimiento = sumarDias(new Date().toISOString().slice(0,10), 7);
+    guardarOutreach(o);
+    drawSeguimientos();
+  };
+
+  window.marcarRespondio = function(id){
+    var o = outreach[id]; if (!o) return;
+    o.estado = 'respondio';
+    o.historial = o.historial || [];
+    o.historial.push({fecha: new Date().toISOString().slice(0,10), accion: 'Respondio'});
+    guardarOutreach(o);
+    drawSeguimientos();
+  };
+
+  window.abrirModalOutreach = function(id){
+    var o = id ? outreach[id] : mkOutreach();
+    var back = document.createElement('div');
+    back.className = 'os-modal-backdrop';
+    var esc = function(s){ return (s||'').replace(/"/g,'&quot;'); };
+    back.innerHTML =
+      '<div class="os-modal">'
+      + '<h3>' + (id ? 'Editar envio' : 'Nuevo envio') + '</h3>'
+      + '<label>Institucion</label><input id="osEmpresa" value="' + esc(o.empresa) + '" />'
+      + '<label>Contacto</label><input id="osContacto" value="' + esc(o.contacto) + '" />'
+      + '<label>Email</label><input id="osEmail" value="' + esc(o.email) + '" />'
+      + '<label>Fecha de envio</label><input id="osFecha" type="date" value="' + o.fechaEnvio + '" />'
+      + '<label>Proximo seguimiento</label><input id="osProx" type="date" value="' + o.proxSeguimiento + '" />'
+      + '<label>Resumen</label><textarea id="osResumen" rows="3">' + (o.resumen||'') + '</textarea>'
+      + '<div class="os-modal-actions">'
+      + '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'.os-modal-backdrop\').remove()">Cancelar</button>'
+      + '<button class="btn btn-gold btn-sm" onclick="guardarModalOutreach(\'' + o.id + '\')">Guardar</button>'
+      + '</div></div>';
+    document.body.appendChild(back);
+    window._osEditing = o;
+  };
+
+  window.guardarModalOutreach = function(id){
+    var o = window._osEditing || mkOutreach();
+    o.id = id || o.id;
+    o.empresa = document.getElementById('osEmpresa').value.trim();
+    o.contacto = document.getElementById('osContacto').value.trim();
+    o.email = document.getElementById('osEmail').value.trim();
+    o.fechaEnvio = document.getElementById('osFecha').value;
+    o.proxSeguimiento = document.getElementById('osProx').value;
+    o.resumen = document.getElementById('osResumen').value.trim();
+    guardarOutreach(o);
+    var m = document.querySelector('.os-modal-backdrop');
+    if (m) m.remove();
+    drawSeguimientos();
+  };
+
+  function diasEntre(fechaStr){
+    var hoy = new Date(new Date().toISOString().slice(0,10)+'T00:00:00');
+    var f = new Date(fechaStr+'T00:00:00');
+    return Math.round((f-hoy)/86400000);
+  }
+
+  window.drawSeguimientos = function(){
+    var statsEl = document.getElementById('osStats');
+    var bodyEl = document.getElementById('osBody');
+    if (!statsEl || !bodyEl) return;
+    var qEl = document.getElementById('osSearch');
+    var q = qEl ? qEl.value.toLowerCase() : '';
+    var allVals = Object.values(outreach).filter(function(o){
+      return !q || (o.empresa||'').toLowerCase().indexOf(q)>=0 || (o.contacto||'').toLowerCase().indexOf(q)>=0;
+    });
+
+    var total = Object.values(outreach).length;
+    var respondieron = Object.values(outreach).filter(function(o){return o.estado==='respondio';}).length;
+    var pendientes = Object.values(outreach).filter(function(o){return o.estado!=='respondio' && diasEntre(o.proxSeguimiento)<=0;}).length;
+
+    statsEl.innerHTML =
+      '<div class="os-stat"><div class="n">' + total + '</div><div class="l">Total enviados</div></div>'
+      + '<div class="os-stat"><div class="n">' + pendientes + '</div><div class="l">Necesitan seguimiento</div></div>'
+      + '<div class="os-stat"><div class="n">' + respondieron + '</div><div class="l">Respondieron</div></div>';
+
+    if (!allVals.length) { bodyEl.innerHTML = '<div class="os-empty">No hay envios cargados todavia.</div>'; return; }
+
+    var buckets = { atrasado: [], semana: [], despues: [], respondieron: [] };
+    allVals.forEach(function(o){
+      if (o.estado === 'respondio') { buckets.respondieron.push(o); return; }
+      var d = diasEntre(o.proxSeguimiento);
+      if (d <= 0) buckets.atrasado.push(o);
+      else if (d <= 7) buckets.semana.push(o);
+      else buckets.despues.push(o);
+    });
+    Object.keys(buckets).forEach(function(k){
+      buckets[k].sort(function(a,b){ return (a.proxSeguimiento||'').localeCompare(b.proxSeguimiento||''); });
+    });
+
+    function badge(o){
+      var label = o.estado==='respondio' ? 'Respondio' : (o.estado==='seguimiento_enviado' ? 'Seguimiento enviado' : 'Enviado');
+      return '<span class="os-badge ' + o.estado + '">' + label + '</span>';
+    }
+    function card(o, due){
+      var html = '<div class="os-card ' + (due?'due':'') + '">'
+        + '<div class="os-row"><div>'
+        + '<div class="os-name">' + (o.empresa || '(sin nombre)') + '</div>'
+        + '<div class="os-meta">' + (o.contacto ? o.contacto+' - ' : '') + (o.email || '') + '</div>'
+        + '<div class="os-meta">Enviado: ' + (o.fechaEnvio || '-') + '  |  Prox. seguimiento: ' + (o.proxSeguimiento || '-') + (o.tanda ? ' - '+o.tanda : '') + '</div>'
+        + '</div>' + badge(o) + '</div>';
+      if (o.resumen) html += '<div class="os-resumen">' + o.resumen + '</div>';
+      html += '<div class="os-actions">';
+      if (o.estado !== 'respondio') {
+        html += '<button class="btn btn-ghost btn-sm" onclick="marcarSeguimientoEnviado(\'' + o.id + '\')">Marcar seguimiento enviado</button>';
+        html += '<button class="btn btn-sage btn-sm" onclick="marcarRespondio(\'' + o.id + '\')">Marcar respondio</button>';
+      }
+      html += '<button class="btn btn-ghost btn-sm" onclick="abrirModalOutreach(\'' + o.id + '\')">Editar</button>';
+      html += '</div></div>';
+      return html;
+    }
+
+    var outHtml = '';
+    if (buckets.atrasado.length) outHtml += '<div class="os-bucket-title">Atrasados / hoy (' + buckets.atrasado.length + ')</div>' + buckets.atrasado.map(function(o){return card(o,true);}).join('');
+    if (buckets.semana.length) outHtml += '<div class="os-bucket-title">Proximos 7 dias (' + buckets.semana.length + ')</div>' + buckets.semana.map(function(o){return card(o,false);}).join('');
+    if (buckets.despues.length) outHtml += '<div class="os-bucket-title">Mas adelante (' + buckets.despues.length + ')</div>' + buckets.despues.map(function(o){return card(o,false);}).join('');
+    if (buckets.respondieron.length) outHtml += '<div class="os-bucket-title">Respondieron (' + buckets.respondieron.length + ')</div>' + buckets.respondieron.map(function(o){return card(o,false);}).join('');
+    bodyEl.innerHTML = outHtml;
+  };
+
+  function boot(){
+    addNavButton();
+    addPanelMarkup();
+    try {
+      var cached = localStorage.getItem('efcrm_outreach');
+      if (cached) { outreach = JSON.parse(cached); }
+    } catch(e){}
+    initOutreachFirebase();
+  }
+
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(boot, 300);
+  } else {
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 300); });
+  }
+})();
+</script>
+
+
 </body>
 </html>
