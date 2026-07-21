@@ -5858,11 +5858,12 @@ window.addEventListener('focus', function() {
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setTimeout(boot, 300);
-  } else {
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 300); });
+  }     else {
+            document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 300); });
   }
 })();
 </script>
+  <!-- redeploy trigger -->
 
 
 </body>
