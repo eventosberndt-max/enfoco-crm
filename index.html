@@ -5895,7 +5895,109 @@ window.addEventListener('focus', function() {
 })();
 </script>
   <!-- redeploy trigger -->
+<script>
+/* ===== ENFOCO ADD-ON v1 — semaforo por fecha + prioridad ex-clientes + buscador Semana =====
+   Bloque autocontenido, no modifica funciones existentes. Para revertir, borrar este <script>. */
+(function(){
+  if (window.__enfAddon) return; window.__enfAddon = true;
+  var WARM = { enfoco:1, cliente:1, referenciado:1 }; // ex-clientes / contactos calidos
+  var COLORS = { venc:'#e05a6d', hoy:'#e0a13a', fut:'#5fa87d', nofecha:'#8a8f98' };
+  var TITL   = { venc:'Vencido', hoy:'Vence hoy', fut:'Al dia', nofecha:'Sin fecha' };
 
+  function todayStr(){
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function statusOf(l){
+    if (!l) return null;
+    if (!l.proxFecha) return 'nofecha';
+    var t = todayStr();
+    if (l.proxFecha < t) return 'venc';
+    if (l.proxFecha === t) return 'hoy';
+    return 'fut';
+  }
+  function getLead(id){ try { return leads[id]; } catch(e){ return null; } }
+  function idFromCard(card){
+    var id = card.getAttribute('data-id');
+    if (id) return id;
+    var oc = card.getAttribute('onclick') || '';
+    var m = oc.match(/abrirPerfil\('([^']+)'\)/);
+    return m ? m[1] : null;
+  }
+  function decorate(card){
+    var id = idFromCard(card); if (!id) return;
+    var l = getLead(id); if (!l) return;
+    var st = statusOf(l);
+    card.style.borderLeft = '4px solid ' + (COLORS[st] || COLORS.nofecha);
+    card.title = (card.title ? card.title + ' | ' : '') + TITL[st];
+    if (l.origen && WARM[l.origen] && !card.querySelector('.enf-warm')){
+      var s = document.createElement('span');
+      s.className = 'enf-warm';
+      s.textContent = '★';
+      s.title = 'Ex-cliente / contacto calido (' + l.origen + ')';
+      s.style.cssText = 'color:#d9a441;margin-left:5px;font-size:11px;flex-shrink:0;';
+      var nameEl = card.querySelector('.pill-emp, .lc-name');
+      (nameEl || card).appendChild(s);
+    }
+    card.setAttribute('data-enf','1');
+  }
+  var obs;
+  function scan(){
+    if (obs) obs.disconnect();
+    try {
+      document.querySelectorAll('.pill:not([data-enf]), .lcard:not([data-enf])').forEach(decorate);
+    } catch(e){}
+    if (obs) obs.observe(document.body, { childList:true, subtree:true });
+  }
+  obs = new MutationObserver(function(){
+    clearTimeout(window.__enfT);
+    window.__enfT = setTimeout(scan, 80);
+  });
+  obs.observe(document.body, { childList:true, subtree:true });
+  scan();
+
+  /* ---- Buscador de Semana: saltar directo a la semana del lead ---- */
+  function monday(d){
+    var x = new Date(d); x.setHours(12,0,0,0);
+    var dow = x.getDay();
+    x.setDate(x.getDate() - (dow === 0 ? 6 : dow - 1));
+    x.setHours(12,0,0,0);
+    return x;
+  }
+  function weekOffFor(iso){
+    var p = iso.split('-');
+    var target = new Date(+p[0], +p[1]-1, +p[2], 12, 0, 0, 0);
+    var diff = Math.round((monday(target) - monday(new Date())) / 86400000);
+    return Math.round(diff / 7);
+  }
+  var si = document.getElementById('semSearch');
+  if (si){
+    si.addEventListener('keydown', function(e){
+      if (e.key !== 'Enter') return;
+      var q = (si.value || '').trim().toLowerCase();
+      if (!q) return;
+      var matches = Object.values(leads).filter(function(l){
+        return l.origen !== 'cliente' && l.proxFecha &&
+          (((l.empresa||'').toLowerCase().indexOf(q) >= 0) || ((l.contacto||'').toLowerCase().indexOf(q) >= 0));
+      });
+      if (!matches.length) return;
+      matches.sort(function(a,b){ return a.proxFecha.localeCompare(b.proxFecha); });
+      var target = matches[0];
+      try { weekOff = weekOffFor(target.proxFecha); } catch(_){}
+      try { if (window.drawWeek) window.drawWeek(); } catch(_){}
+      setTimeout(function(){
+        var c = document.querySelector('.pill[data-id="' + target.id + '"]');
+        if (c){
+          c.scrollIntoView({ block:'center', behavior:'smooth' });
+          c.style.outline = '2px solid #d9a441';
+          setTimeout(function(){ c.style.outline = ''; }, 1800);
+        }
+      }, 150);
+    });
+    si.setAttribute('placeholder', 'Buscar y Enter para saltar al lead...');
+  }
+})();
+</script>
 
 </body>
 </html>
