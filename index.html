@@ -139,7 +139,7 @@ body::before{
 
 /* ── CARDS ── */
 .card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r2)}
-.card-h{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:var(--ink3);border-radius:var(--r2) var(--r2) 0 0}
+.card-h{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content: space-between;background:var(--ink3);border-radius:var(--r2) var(--r2) 0 0}
 .card-title{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--fog);letter-spacing:1.2px;text-transform:uppercase;display:flex;align-items:center;gap:7px}
 .card-title::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--gold)}
 .card-body{padding:16px}
@@ -5999,5 +5999,122 @@ window.addEventListener('focus', function() {
 })();
 </script>
 
+  <script>
+/* ===== ENFOCO PANORAMA v1 — pestana tablero. Bloque autocontenido, no modifica funciones existentes.
+   Para revertir, borrar este <script>. ===== */
+(function(){
+  if (window.__enfPanorama) return; window.__enfPanorama = true;
+  var WARM = { enfoco:1, referenciado:1 };
+
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function daysBetween(a,b){ return Math.round((new Date(a)-new Date(b))/86400000); }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function allLeads(){ try { return Object.values(leads); } catch(e){ return []; } }
+  function activo(l){ return l.estado!=='perdido' && l.estado!=='no-potencial'; }
+
+  function waLink(wpp, msg){
+    var d = (wpp||'').replace(/\D/g,'');
+    if(!d) return null;
+    if(d.indexOf('54')!==0) d = '54'+d;
+    return 'https://wa.me/'+d+'?text='+encodeURIComponent(msg);
+  }
+  function mailLink(mail, subj, body){ return mail ? ('mailto:'+mail+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body)) : null; }
+  function msgFor(l){
+    var nombre = (l.contacto||'').split(' ')[0] || '';
+    return 'Hola '+nombre+', como andas? Tanto tiempo. Te escribo de Enfoco para retomar contacto y ver si hay algo en lo que te podamos dar una mano estos meses. Un abrazo, Dami';
+  }
+  function statCard(num, label, color){
+    return '<div style="background:var(--ink2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:110px;flex:1">'+
+      '<div style="font-size:26px;font-family:\'DM Serif Display\',serif;color:'+(color||'var(--paper)')+'">'+num+'</div>'+
+      '<div style="font-size:11px;color:var(--fog);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">'+label+'</div></div>';
+  }
+  function rowFor(l){
+    var hoy = todayStr();
+    var st  = !l.proxFecha ? 'sin fecha' : (l.proxFecha<hoy ? (daysBetween(hoy,l.proxFecha)+'d atraso') : (l.proxFecha===hoy?'hoy':'futuro'));
+    var col = !l.proxFecha ? 'var(--fog)' : (l.proxFecha<hoy ? '#e05a6d' : (l.proxFecha===hoy?'#e0a13a':'#5fa87d'));
+    var warm = WARM[l.origen] ? '<span title="Ex-cliente" style="color:#d9a441">&#9733;</span> ' : '';
+    var msg = msgFor(l);
+    var wa = waLink(l.wpp, msg), ml = mailLink(l.mail, 'Retomamos contacto - Enfoco', msg);
+    var btns = '';
+    if(wa) btns += '<a href="'+wa+'" target="_blank" rel="noopener" style="background:#25d366;color:#04361d;text-decoration:none;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-right:4px">WhatsApp</a>';
+    if(ml) btns += '<a href="'+ml+'" style="background:var(--ink4);color:var(--paper);text-decoration:none;padding:3px 8px;border-radius:6px;font-size:11px;margin-right:4px">Mail</a>';
+    btns += '<button data-id="'+esc(l.id)+'" class="enf-copy" style="background:var(--ink3);color:var(--fog);border:1px solid var(--line);padding:3px 8px;border-radius:6px;font-size:11px;cursor:pointer">Copiar msj</button>';
+    return '<tr style="border-bottom:1px solid var(--line)">'+
+      '<td style="padding:8px 6px">'+warm+esc(l.empresa)+'</td>'+
+      '<td style="padding:8px 6px;color:var(--fog)">'+esc(l.contacto||'')+'</td>'+
+      '<td style="padding:8px 6px;color:'+col+';font-size:12px;white-space:nowrap">'+st+'</td>'+
+      '<td style="padding:8px 6px;text-align:right;white-space:nowrap">'+btns+'</td></tr>';
+  }
+  function tableFor(list, emptyMsg){
+    if(!list.length) return '<div style="color:var(--fog);font-size:13px;padding:8px 0">'+emptyMsg+'</div>';
+    return '<table style="width:100%;border-collapse:collapse;font-size:13px"><tbody>'+list.map(rowFor).join('')+'</tbody></table>';
+  }
+  function renderPanorama(){
+    var cont = document.getElementById('panorama-body'); if(!cont) return;
+    var hoy = todayStr(), all = allLeads();
+    var actNoCli = all.filter(function(l){ return l.origen!=='cliente' && activo(l); });
+    var vencidos = actNoCli.filter(function(l){ return l.proxFecha && l.proxFecha<hoy; });
+    var vencenHoy = actNoCli.filter(function(l){ return l.proxFecha===hoy; });
+    var sinFecha = actNoCli.filter(function(l){ return !l.proxFecha; });
+    var exCli = all.filter(function(l){ return l.origen==='enfoco' && activo(l); });
+    var clientes = all.filter(function(l){ return l.origen==='cliente'; });
+    var trabajar = vencidos.concat(vencenHoy).sort(function(a,b){
+      return (WARM[b.origen]?1:0)-(WARM[a.origen]?1:0) || (a.proxFecha||'').localeCompare(b.proxFecha||'');
+    });
+    var reactivar = all.filter(function(l){ return (l.origen==='enfoco'||l.origen==='cliente') && activo(l) && !l.proxFecha; });
+    var html = '';
+    html += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">'+
+      statCard(vencenHoy.length,'Vencen hoy','#e0a13a')+
+      statCard(vencidos.length,'Vencidos','#e05a6d')+
+      statCard(sinFecha.length,'Sin fecha','var(--fog2)')+
+      statCard(exCli.length,'Ex-clientes activos','#d9a441')+
+      statCard(clientes.length,'Clientes activos','#5fa87d')+'</div>';
+    html += '<div style="font-family:\'DM Serif Display\',serif;font-size:17px;color:var(--paper);margin:6px 0 4px">Para trabajar hoy <span style="font-size:12px;color:var(--fog);font-family:\'DM Mono\',monospace">'+trabajar.length+'</span></div>';
+    html += '<div style="font-size:11px;color:var(--fog);margin-bottom:8px">Ex-clientes (&#9733;) primero. Los botones abren el mensaje prellenado listo para enviar.</div>';
+    html += tableFor(trabajar,'Nada para trabajar hoy. Buen laburo.');
+    html += '<div style="font-family:\'DM Serif Display\',serif;font-size:17px;color:var(--paper);margin:24px 0 4px">Ex-clientes a reactivar <span style="font-size:12px;color:var(--fog);font-family:\'DM Mono\',monospace">'+reactivar.length+'</span></div>';
+    html += '<div style="font-size:11px;color:var(--fog);margin-bottom:8px">Sin proxima fecha agendada. Ideal contactarlos cada 2-3 meses cuando no tienen laburo.</div>';
+    html += tableFor(reactivar,'Todos los ex-clientes tienen proxima fecha.');
+    cont.innerHTML = html;
+    cont.querySelectorAll('.enf-copy').forEach(function(b){
+      b.addEventListener('click', function(){
+        var l = leads[b.getAttribute('data-id')]; if(!l) return;
+        try { navigator.clipboard.writeText(msgFor(l)); } catch(e){}
+        var t=b.textContent; b.textContent='Copiado'; setTimeout(function(){ b.textContent=t; }, 1200);
+      });
+    });
+  }
+  window.renderPanorama = renderPanorama;
+
+  function showPanorama(btn){
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
+    document.querySelectorAll('.nav-link').forEach(function(n){ n.classList.remove('on'); });
+    var p = document.getElementById('panel-panorama'); if(p) p.classList.add('on');
+    if(btn) btn.classList.add('on');
+    var t = document.getElementById('pgTitle'); if(t) t.innerHTML = 'Panorama';
+    renderPanorama();
+  }
+  window.showPanorama = showPanorama;
+
+  ready(function(){
+    var nav = document.querySelector('.nav-links');
+    if(nav && !document.getElementById('nav-panorama')){
+      var b = document.createElement('button');
+      b.id='nav-panorama'; b.className='nav-link';
+      b.innerHTML='<span class="ico">&#9670;</span>Panorama';
+      b.addEventListener('click', function(){ showPanorama(b); });
+      nav.insertBefore(b, nav.firstChild);
+    }
+    var anyPanel = document.querySelector('.panel');
+    if(anyPanel && !document.getElementById('panel-panorama')){
+      var d = document.createElement('div');
+      d.className='panel'; d.id='panel-panorama';
+      d.innerHTML='<div style="padding:4px 2px 16px"><div style="font-family:\'DM Serif Display\',serif;font-size:20px;color:var(--gold)">Panorama</div><div style="font-size:12px;color:var(--fog);margin-bottom:14px">Vista general y accion rapida</div><div id="panorama-body"></div></div>';
+      anyPanel.parentNode.appendChild(d);
+    }
+  });
+})();
+</script>
 </body>
 </html>
