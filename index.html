@@ -599,6 +599,7 @@ body::before{
     <div class="nav-links">
       <button class="nav-link on" onclick="goPanel('semana',this)"><span class="ico">📅</span>Semana</button>
       <button class="nav-link" onclick="goPanel('leads',this)"><span class="ico">💼</span>Leads</button>
+      <button class="nav-link" onclick="goPanel('vistage',this)"><span class="ico">🌐</span>Vistage</button>
       <div class="nav-sep"></div>
       <button class="nav-link" onclick="goPanel('tono',this)"><span class="ico">🎙️</span>Tono IA</button>
       <button class="nav-link" onclick="goPanel('tabla',this)"><span class="ico">📋</span>Tabla / Editar</button>
@@ -3780,6 +3781,7 @@ function mostrarResumenDiario() {
   if(name==='tono') initTono();
   if(name==='analytics') drawAnalytics();
   if(name==='clientes') drawClientes();
+  if(name==='vistage') drawVistage();
   const titles={semana:'Plan <em>Semanal</em>',leads:'<em>Leads</em> 2026',vistage:'<em>Vistage</em> 2026',nuevo:'Cargar desde <em>LinkedIn</em>',tabla:'<em>Tabla</em> — Edición rápida',tono:'<em>Tono IA</em> — Identidad de voz',clientes:'🤝 <em>Clientes</em> Activos',analytics:'📊 <em>Analytics</em>',config:'<em>Configuración</em>'};
   document.getElementById('pgTitle').innerHTML=titles[name]||name;
 }
