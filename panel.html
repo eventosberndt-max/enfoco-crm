@@ -235,7 +235,7 @@ function chatHTML(){
     return `<div class="msg ${who}">${esc(m.texto)}<span class="t">${who==='dami'?'Vos':'Asistente'} · ${d}</span></div>`;
   }).join('');
   return `<div class="chatbox">
-    <div class="chatinfo">El asistente lee este chat una vez por hora (y en cada corrida diaria).<br>Escribí pedidos, cambios, aprobaciones o novedades de reuniones.</div>
+    <div class="chatinfo">El asistente pasa cada 15 minutos (9 a 21) a leer este chat y los envíos aprobados.<br>Escribí pedidos, cambios, aprobaciones o novedades de reuniones.</div>
     ${list||'<div class="empty">Todavía no hay mensajes.<br>Escribime acá abajo 👇</div>'}
     <div class="chatform">
       <textarea id="chatmsg" placeholder="Escribile al asistente…"></textarea>
