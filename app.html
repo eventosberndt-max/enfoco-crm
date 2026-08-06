@@ -184,14 +184,37 @@ function openLead(k){
     `<option value="${o}" ${o===(val||'')?'selected':''}>${o||'—'}</option>`).join('')}</select>`;
   const hist=(Array.isArray(l.historial)?l.historial.slice().reverse():[]).slice(0,25).map(h=>
     `<div class="hitem"><span class="hf">${esc(h.fecha||'')}</span>${esc((h.contenido||h.texto||'').toString())}</div>`).join('');
+  const tp=TEMPL[l.temp]?l.temp:'frio';
+  const TNAME={ex:'⭐ EX-CLIENTE',caliente:'🔥 CALIENTE',tibio:'🌡️ TIBIO',frio:'❄️ FRÍO'};
+  const dr=(l.borrador||'').trim(), resTx=(l.resumen||'').trim();
+  const esCliente=norm(l.origen)==='cliente';
+  const waDraft=ph?('https://wa.me/'+ph+(dr?('?text='+encodeURIComponent(dr)):'')):'';
   $('#sheet').innerHTML=`
     <div class="sheethdr"><div class="brand" style="font-size:1.1rem">${k?esc(l.empresa):'Nuevo lead'}</div>
       <button class="x" id="close">Cerrar</button></div>
     <div class="quick">
-      ${ph?`<a class="qbtn wa" target="_blank" href="https://wa.me/${ph}">WhatsApp</a>`:''}
+      ${waDraft?`<a class="qbtn wa" target="_blank" href="${esc(waDraft)}">WhatsApp</a>`:''}
       ${mail?`<a class="qbtn" href="mailto:${mail}">✉️ Mail</a>`:''}
       ${(l.linkedin||'').trim()?`<a class="qbtn" target="_blank" href="${esc(l.linkedin)}">in LinkedIn</a>`:''}
     </div>
+    ${k?`
+    <div id="compact">
+      <div style="margin-bottom:8px">${esCliente
+        ?'<span class="b" style="background:rgba(87,180,106,.15);color:#7ed194;font-size:.75rem;padding:5px 10px;border-radius:9px;font-weight:700">🤝 CLIENTE ACTIVO — no se le vende</span>'
+        :['ex','caliente','tibio','frio'].map(kk=>`<span data-tmp="${kk}" class="b" style="cursor:pointer;margin-right:6px;font-size:.72rem;padding:5px 10px;border-radius:9px;font-weight:700;${kk===tp?'background:rgba(212,180,106,.14);color:var(--gold);border:1px solid rgba(212,180,106,.4)':'background:var(--card2);color:var(--tx2);border:1px solid var(--line)'}">${TNAME[kk]}</span>`).join('')}
+      </div>
+      <div style="font-size:.9rem;line-height:1.55;margin-bottom:8px">${resTx?('💬 '+esc(resTx)):'<span style="color:var(--tx2)">Sin resumen aún — lo completa el asistente.</span>'}</div>
+      ${dr?`<div class="lbl" style="font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tx2);margin:8px 0 4px">Mensaje propuesto</div>
+      <div style="background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.88rem;line-height:1.5;white-space:pre-wrap">${esc(dr)}</div>`:''}
+      <div class="quick" style="margin-top:10px">
+        ${dr?`<span class="qbtn" id="c_copy">📋 Copiar</span>`:''}
+        ${dr&&!l.aprobado&&!esCliente?`<span class="qbtn" id="c_approve" style="color:var(--gold);border-color:rgba(212,180,106,.4)">🤖 Mandalo vos</span>`:''}
+        ${l.aprobado?`<span class="qbtn" style="color:#7ed194;border-color:rgba(87,180,106,.4)">✓ Aprobado (${esc(l.aprobado)})</span>`:''}
+        ${!esCliente?`<span class="qbtn" id="c_cliente" style="color:#7ed194;border-color:rgba(87,180,106,.35)">🤝 A Clientes activos</span>`:''}
+      </div>
+      <div id="c_toggle" style="margin:10px 0 4px;font-size:.78rem;color:var(--tx2);cursor:pointer">▾ Ver ficha completa (editar datos, historial)</div>
+    </div>
+    <div id="fullsec" style="display:none">`:''}
     <div class="f"><label>Empresa</label><input id="f_empresa" value="${esc(l.empresa)}"></div>
     <div class="grid2">
       <div class="f"><label>Contacto</label><input id="f_contacto" value="${esc(l.contacto)}"></div>
@@ -218,11 +241,45 @@ function openLead(k){
       <div class="addnote"><textarea id="newnote" placeholder="Agregar nota al historial…"></textarea>
       <button id="addnote">＋</button></div>
       ${hist||'<div class="empty" style="padding:14px">Sin historial.</div>'}
-    </div>`;
+    </div>
+    ${k?'</div>':''}`;
   $('#modal').classList.add('open');
   $('#close').onclick=()=>{$('#modal').classList.remove('open');};
   $('#save').onclick=saveLead;
   $('#addnote').onclick=addNote;
+  if(k){
+    const tg=$('#c_toggle');
+    if(tg) tg.onclick=()=>{const f=$('#fullsec');const open=f.style.display==='none';
+      f.style.display=open?'':'none';
+      tg.textContent=open?'▴ Ocultar ficha completa':'▾ Ver ficha completa (editar datos, historial)';};
+    document.querySelectorAll('[data-tmp]').forEach(ch=>ch.onclick=async()=>{
+      const nt=ch.getAttribute('data-tmp');
+      const r=await fetch(DB+'/leads/'+k+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({temp:nt,_lastEdit:Date.now()})});
+      if(r.ok){l.temp=nt;LEADS[k].temp=nt;openLead(k);render();}else toast('Error');
+    });
+    const cc=$('#c_copy');
+    if(cc) cc.onclick=async()=>{try{await navigator.clipboard.writeText(dr);cc.textContent='✓ Copiado';
+      setTimeout(()=>{cc.textContent='📋 Copiar';},1500);}catch(e){toast('No pude copiar');}};
+    const ca=$('#c_approve');
+    if(ca) ca.onclick=async()=>{
+      const canal=ph?'wpp':(mail?'mail':((l.linkedin||'').trim()?'linkedin':''));
+      if(!canal) return toast('Sin canal');
+      if(!confirm('El asistente manda este mensaje tal cual por '+canal+' a '+(l.empresa||'')+'. ¿Confirmás?')) return;
+      const r=await fetch(DB+'/leads/'+k+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({aprobado:canal,aprobadoTs:Date.now(),_lastEdit:Date.now()})});
+      if(r.ok){l.aprobado=canal;LEADS[k].aprobado=canal;openLead(k);}else toast('Error');
+    };
+    const cl=$('#c_cliente');
+    if(cl) cl.onclick=async()=>{
+      if(!confirm('¿Pasar "'+(l.empresa||'')+'" a CLIENTES ACTIVOS?\nMientras esté ahí no se le manda nada comercial.')) return;
+      const hist2=Array.isArray(l.historial)?l.historial.slice():[];
+      hist2.push({fecha:todayISO(),contenido:'Pasado a Clientes activos (contrato en marcha). Se pausa el contacto comercial.'});
+      const body={origen:'cliente',historial:hist2,borrador:'',aprobado:'',proxPaso:'Cliente activo — sin acciones comerciales.',_lastEdit:Date.now()};
+      const r=await fetch(DB+'/leads/'+k+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(r.ok){Object.assign(LEADS[k],body);toast('🤝 Ahora es Cliente activo');openLead(k);render();}else toast('Error');
+    };
+  }
 }
 
 function toast(m){const el=$('#toast');el.textContent=m;el.classList.add('show');
