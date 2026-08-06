@@ -14,17 +14,23 @@
   --bg:#0e0f12; --card:#17181d; --card2:#1d1f26; --line:#262933;
   --tx:#e8e6e1; --tx2:#9a9890; --gold:#d4b46a;
   --ex:#d4b46a; --cal:#e0704f; --tib:#dfa93d; --fri:#5f8dd3;
-  --ok:#57b46a;
+  --ok:#57b46a; --li:#6fa8dc;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{background:var(--bg)}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;padding-bottom:70px}
 .wrap{max-width:640px;margin:0 auto;padding:0 14px}
-header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px;display:flex;justify-content:space-between;align-items:flex-end}
-.brand{font-family:'Fraunces',serif;font-style:italic;font-size:1.45rem;color:var(--gold)}
-.sub{color:var(--tx2);font-size:.8rem;margin-top:2px}
-.applink{color:var(--tx2);font-size:.78rem;text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:7px 11px}
-.stats{display:flex;gap:8px;margin:14px 0 4px;overflow-x:auto;scrollbar-width:none}
+header{padding:calc(env(safe-area-inset-top,0px) + 16px) 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.brand{font-family:'Fraunces',serif;font-style:italic;font-size:1.35rem;color:var(--gold);line-height:1.1}
+.sub{color:var(--tx2);font-size:.75rem;margin-top:2px}
+.hbtns{display:flex;gap:8px;align-items:center}
+.chatbtn{position:relative;display:flex;align-items:center;gap:6px;background:rgba(212,180,106,.12);
+  border:1px solid rgba(212,180,106,.35);color:var(--gold);border-radius:12px;padding:10px 14px;
+  font-size:.9rem;font-weight:700;cursor:pointer}
+.chatbtn .bdg{position:absolute;top:-7px;right:-7px;background:#e0704f;color:#fff;border-radius:10px;
+  min-width:19px;height:19px;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;padding:0 5px}
+.applink{color:var(--tx2);font-size:.75rem;text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:8px 10px;white-space:nowrap}
+.stats{display:flex;gap:8px;margin:12px 0 4px;overflow-x:auto;scrollbar-width:none}
 .stats::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--tx2);
   border-radius:20px;padding:8px 14px;font-size:.82rem;font-weight:600;cursor:pointer;user-select:none}
@@ -33,7 +39,7 @@ header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px;display:flex;jus
 .search{width:100%;margin:10px 0 2px;padding:11px 14px;border-radius:12px;border:1px solid var(--line);
   background:var(--card);color:var(--tx);font-size:16px;outline:none}
 .search::placeholder{color:var(--tx2)}
-.sec{margin-top:18px}
+.sec{margin-top:16px}
 .sec h2{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--tx2);
   margin-bottom:8px;display:flex;align-items:center;gap:8px}
 .sec h2 .cnt{background:var(--card2);border-radius:10px;padding:1px 8px;color:var(--tx)}
@@ -43,10 +49,11 @@ header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px;display:flex;jus
 .card.t-caliente{border-left-color:var(--cal)}
 .card.t-tibio{border-left-color:var(--tib)}
 .card.t-frio{border-left-color:var(--fri)}
+.tophdr{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .emp{font-weight:700;font-size:1rem;line-height:1.25}
-.con{color:var(--tx2);font-size:.85rem;margin-top:2px}
+.con{color:var(--tx2);font-size:.8rem;margin-top:1px}
 .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.b{font-size:.7rem;font-weight:700;border-radius:8px;padding:3px 8px;letter-spacing:.03em}
+.b{font-size:.68rem;font-weight:700;border-radius:8px;padding:3px 8px;letter-spacing:.03em}
 .b.ex{background:rgba(212,180,106,.14);color:var(--ex)}
 .b.caliente{background:rgba(224,112,79,.14);color:var(--cal)}
 .b.tibio{background:rgba(223,169,61,.14);color:var(--tib)}
@@ -54,21 +61,24 @@ header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px;display:flex;jus
 .b.late{background:rgba(224,112,79,.12);color:#e58f74}
 .b.today{background:rgba(87,180,106,.14);color:var(--ok)}
 .b.approved{background:rgba(87,180,106,.2);color:var(--ok)}
-.resumen{margin-top:10px;font-size:.86rem;line-height:1.45;color:var(--tx)}
-.resumen .hace{color:var(--tx2);font-size:.78rem;display:block;margin-bottom:3px}
-.note{margin-top:10px;background:var(--card2);border-radius:10px;padding:10px 12px;font-size:.86rem;
+.resumen{margin-top:9px;font-size:.87rem;line-height:1.45;color:var(--tx)}
+.resumen .hace{color:var(--tx2);font-size:.76rem;display:block;margin-bottom:2px}
+.note{margin-top:9px;background:var(--card2);border-radius:10px;padding:10px 12px;font-size:.86rem;
   color:var(--tx);line-height:1.45;white-space:pre-wrap;word-break:break-word}
 .note.small{color:var(--tx2);font-size:.8rem}
-.lbl{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tx2);margin:10px 0 4px}
-.acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.btn{flex:1 1 auto;min-width:86px;display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:11px 10px;border-radius:11px;border:1px solid var(--line);background:var(--card2);
-  color:var(--tx);font-size:.84rem;font-weight:600;cursor:pointer;text-decoration:none;text-align:center}
+.lbl{font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tx2);margin:9px 0 3px}
+.acts{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}
+.btn{flex:1 1 auto;min-width:84px;display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:11px 8px;border-radius:11px;border:1px solid var(--line);background:var(--card2);
+  color:var(--tx);font-size:.83rem;font-weight:600;cursor:pointer;text-decoration:none;text-align:center}
 .btn:active{transform:scale(.97)}
 .btn.wa{background:rgba(87,180,106,.12);border-color:rgba(87,180,106,.3);color:#7ed194}
-.btn.approve{background:rgba(95,141,211,.12);border-color:rgba(95,141,211,.3);color:#8fb2e8}
+.btn.li{background:rgba(111,168,220,.12);border-color:rgba(111,168,220,.3);color:var(--li)}
+.btn.approve{background:rgba(212,180,106,.1);border-color:rgba(212,180,106,.3);color:var(--gold)}
 .btn.done{background:var(--card2);border-color:var(--line);color:var(--tx2)}
 .btn.copied{background:rgba(87,180,106,.2);color:var(--ok)}
+.more{margin-top:9px;color:var(--tx2);font-size:.78rem;cursor:pointer;user-select:none}
+.more:active{color:var(--tx)}
 .empty{color:var(--tx2);text-align:center;padding:40px 10px;font-size:.9rem}
 .foot{color:var(--tx2);text-align:center;font-size:.75rem;margin-top:26px}
 .reload{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);width:48px;height:48px;
@@ -97,9 +107,12 @@ header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px;display:flex;jus
   <header>
     <div>
       <div class="brand">Enfoco Films</div>
-      <div class="sub" id="sub">Panel de seguimientos</div>
+      <div class="sub" id="sub">Panel</div>
     </div>
-    <a class="applink" href="app.html">CRM completo →</a>
+    <div class="hbtns">
+      <div class="chatbtn" id="chatbtn">💬 Chat<span class="bdg" id="chatbdg" style="display:none">0</span></div>
+      <a class="applink" href="app.html">CRM →</a>
+    </div>
   </header>
 
   <div class="stats" id="chips"></div>
@@ -116,7 +129,7 @@ header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px;display:flex;jus
 const DB='https://enfoco-crm-default-rtdb.firebaseio.com';
 const TEMPS={ex:{label:'EX-CLIENTE',order:0,next:75},caliente:{label:'CALIENTE',order:1,next:10},
   tibio:{label:'TIBIO',order:2,next:21},frio:{label:'FRÍO',order:3,next:30}};
-let LEADS={}, CHAT={}, filter='cola', query='';
+let LEADS={}, CHAT={}, filter='cola', query='', expanded={};
 
 const $=s=>document.querySelector(s);
 const todayISO=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Argentina/Buenos_Aires'});
@@ -141,22 +154,27 @@ function lastContactInfo(l){
   let iso='';
   if(h&&h.fecha&&/^\d{4}-\d{2}-\d{2}/.test(h.fecha)) iso=h.fecha.slice(0,10);
   else if(l._lastEdit) iso=new Date(l._lastEdit).toISOString().slice(0,10);
-  if(!iso) return 'sin registro de contacto';
+  if(!iso) return 'sin registro';
   const d=days(todayISO(),iso);
-  if(d<=0) return 'contacto hoy';
+  if(d<=0) return 'hoy';
   if(d===1) return 'hace 1 día';
   if(d<30) return 'hace '+d+' días';
   const m=Math.round(d/30);
   return 'hace '+(m===1?'1 mes':m+' meses');
 }
 function temp(l){ return TEMPS[l.temp]?l.temp:'frio'; }
+function chatSeen(){ return +(localStorage.getItem('chatSeen')||0); }
+function unreadChat(){
+  return Object.values(CHAT||{}).filter(m=>m.de==='asistente'&&(m.ts||0)>chatSeen()).length;
+}
 
 async function load(){
   $('#sub').textContent='Cargando…';
   try{
     const le=await fetch(DB+'/leads.json').then(r=>r.json());
-    LEADS=le||{}; CHAT=(LEADS['zzchat-asistente']&&LEADS['zzchat-asistente'].chat)||{};
-    delete LEADS['zzchat-asistente'];
+    LEADS=le||{};
+    CHAT=(LEADS['zzchat-asistente']&&LEADS['zzchat-asistente'].chat)||{};
+    delete LEADS['zzchat-asistente']; delete LEADS['zzmanual-comercial'];
     render();
   }catch(e){ $('#sub').textContent='Error de conexión — reintentá'; }
 }
@@ -178,18 +196,19 @@ function counts(){
 function chipRow(){
   const c=counts();
   const defs=[['cola','📥 Cola',c.cola],['ex','EX',c.ex],['caliente','Calientes',c.caliente],
-    ['tibio','Tibios',c.tibio],['frio','Fríos',c.frio],['todos','Todos',c.ex+c.caliente+c.tibio+c.frio],
-    ['chat','💬 Chat',null]];
+    ['tibio','Tibios',c.tibio],['frio','Fríos',c.frio],['todos','Todos',c.ex+c.caliente+c.tibio+c.frio]];
   $('#chips').innerHTML=defs.map(([k,lb,n])=>
-    `<div class="chip ${filter===k?'on':''}" data-f="${k}">${lb}${n!==null?`<span class="n">${n}</span>`:''}</div>`).join('');
+    `<div class="chip ${filter===k?'on':''}" data-f="${k}">${lb}<span class="n">${n}</span></div>`).join('');
   document.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>{filter=ch.dataset.f;render();});
+  const u=unreadChat();
+  const b=$('#chatbdg');
+  if(u>0&&filter!=='chat'){b.style.display='flex';b.textContent=u>9?'9+':u;} else b.style.display='none';
 }
 
 function matches(l){
   if(!query) return true;
   return (norm(l.empresa)+' '+norm(l.contacto)).includes(query);
 }
-
 function esc(s){return (s||'').toString().replace(/</g,'&lt;');}
 
 function cardHTML(k,l){
@@ -197,45 +216,52 @@ function cardHTML(k,l){
   const late=/^\d{4}-\d{2}-\d{2}$/.test(pf)?days(t,pf):null;
   let when='';
   if(late!==null){
-    if(late>0) when=`<span class="b late">${late} día${late>1?'s':''} atrasado</span>`;
+    if(late>0) when=`<span class="b late">${late}d atrasado</span>`;
     else if(late===0) when=`<span class="b today">HOY</span>`;
-    else when=`<span class="b" style="color:var(--tx2)">próx ${pf.slice(8,10)}/${pf.slice(5,7)}</span>`;
   } else when='<span class="b late">SIN FECHA</span>';
-  const apr=l.aprobado?`<span class="b approved">✓ APROBADO · lo manda el asistente (${l.aprobado})</span>`:'';
+  const apr=l.aprobado?`<span class="b approved">✓ APROBADO (${l.aprobado}) · lo mando yo</span>`:'';
   const draft=(l.borrador||'').trim();
   const res=(l.resumen||'').trim();
-  const paso=(l.proxPaso||'').trim();
-  const h=lastHistEntry(l);
-  const hist=h?(h.contenido||h.texto||'').toString():'';
   const ph=phone(l.wpp);
   const waTxt=draft?('&text='+encodeURIComponent(draft)):'';
   const mail=(l.mail||'').split('//')[0].trim();
+  const li=(l.linkedin||'').trim();
+  const isOpen=expanded[k];
+  // ver más content
+  const h=lastHistEntry(l);
+  const hist=h?(h.contenido||h.texto||'').toString():'';
+  const paso=(l.proxPaso||'').trim();
+  const moreContent = `
+    ${paso?`<div class="lbl">Próximo paso</div><div class="note small">${esc(paso)}</div>`:''}
+    ${hist?`<div class="lbl">Último historial</div><div class="note small">${esc(hist.slice(0,300))}${hist.length>300?'…':''}</div>`:''}
+    ${pf?`<div class="lbl">Próxima fecha</div><div class="note small">${pf.split('-').reverse().join('/')}</div>`:''}`;
   return `<div class="card t-${tp}" data-k="${k}">
-    <div class="emp">${esc(l.empresa)||'—'}</div><div class="con">${esc(l.contacto)||''}</div>
+    <div class="tophdr"><div><div class="emp">${esc(l.empresa)||'—'}</div><div class="con">${esc(l.contacto)||''}</div></div></div>
     <div class="badges"><span class="b ${tp}">${TEMPS[tp].label}</span>${when}${apr}</div>
-    <div class="resumen"><span class="hace">Último contacto: ${lastContactInfo(l)}</span>${res?'💬 '+esc(res):''}</div>
-    ${draft?`<div class="lbl">Mensaje listo para mandar</div><div class="note">${esc(draft)}</div>`:''}
-    ${!draft&&paso?`<div class="lbl">Próximo paso</div><div class="note small">${esc(paso)}</div>`:''}
-    ${!res&&hist?`<div class="lbl">Último historial</div><div class="note small">${esc(hist.slice(0,200))}${hist.length>200?'…':''}</div>`:''}
+    <div class="resumen"><span class="hace">Último contacto: ${lastContactInfo(l)}</span>${res?esc(res):'<span style="color:var(--tx2)">Sin resumen aún.</span>'}</div>
+    ${draft?`<div class="lbl">Mensaje propuesto</div><div class="note">${esc(draft)}</div>`:''}
     <div class="acts">
       ${draft?`<button class="btn" data-copy="${k}">📋 Copiar</button>`:''}
       ${ph?`<a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${ph}${waTxt}">WhatsApp</a>`:''}
       ${mail?`<a class="btn" href="mailto:${mail}">✉️ Mail</a>`:''}
+      ${li?`<a class="btn li" target="_blank" rel="noopener" href="${esc(li)}">in LinkedIn</a>`:''}
       ${draft&&!l.aprobado?`<button class="btn approve" data-approve="${k}">🤖 Mandalo vos</button>`:''}
       <button class="btn done" data-done="${k}">✓ Ya lo mandé</button>
     </div>
+    <div class="more" data-more="${k}">${isOpen?'▴ Ver menos':'▾ Ver más'}</div>
+    ${isOpen?moreContent:''}
   </div>`;
 }
 
 function chatHTML(){
-  const msgs=Object.values(CHAT||{}).sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(-60);
+  const msgs=Object.values(CHAT||{}).sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(-80);
   const list=msgs.map(m=>{
     const who=m.de==='dami'?'dami':'asistente';
     const d=m.ts?new Date(m.ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:'America/Argentina/Buenos_Aires'}):'';
     return `<div class="msg ${who}">${esc(m.texto)}<span class="t">${who==='dami'?'Vos':'Asistente'} · ${d}</span></div>`;
   }).join('');
   return `<div class="chatbox">
-    <div class="chatinfo">El asistente pasa cada 15 minutos (9 a 21) a leer este chat y los envíos aprobados.<br>Escribí pedidos, cambios, aprobaciones o novedades de reuniones.</div>
+    <div class="chatinfo">Tu línea directa con el asistente. Pasa cada 15 min (LinkedIn cada 30).<br>Pedidos, aprobaciones ("ok 1,3", "mandale a X por wpp"), novedades de reuniones, o "arrancá envíos vistage/cancillería".</div>
     ${list||'<div class="empty">Todavía no hay mensajes.<br>Escribime acá abajo 👇</div>'}
     <div class="chatform">
       <textarea id="chatmsg" placeholder="Escribile al asistente…"></textarea>
@@ -248,8 +274,10 @@ function render(){
   chipRow();
   const t=todayISO();
   if(filter==='chat'){
+    localStorage.setItem('chatSeen',Date.now());
+    $('#chatbdg').style.display='none';
     $('#content').innerHTML=chatHTML();
-    $('#sub').textContent='Chat con tu asistente comercial';
+    $('#sub').textContent='Chat con tu asistente';
     const ta=$('#chatmsg');
     $('#chatsend').onclick=async()=>{
       const txt=(ta.value||'').trim(); if(!txt) return;
@@ -289,6 +317,9 @@ function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('sh
   setTimeout(()=>el.classList.remove('show'),2000);}
 
 function bindCards(){
+  document.querySelectorAll('[data-more]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.more; expanded[k]=!expanded[k]; render();
+  });
   document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{
     const l=LEADS[b.dataset.copy];
     try{await navigator.clipboard.writeText(l.borrador||'');b.classList.add('copied');b.textContent='✓ Copiado';
@@ -297,15 +328,24 @@ function bindCards(){
   });
   document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=async()=>{
     const k=b.dataset.approve, l=LEADS[k];
-    const ph=phone(l.wpp), mail=(l.mail||'').split('//')[0].trim();
-    let canal='';
-    if(ph&&mail) canal=confirm('¿Lo mando por WhatsApp?\n(Cancelar = lo mando por mail)')?'wpp':'mail';
-    else canal=ph?'wpp':(mail?'mail':'');
-    if(!canal) return toast('No hay canal disponible');
-    if(!confirm('El asistente va a mandar este mensaje tal cual por '+(canal==='wpp'?'WhatsApp':'mail')+' a '+(l.empresa||'')+'. ¿Confirmás?')) return;
+    const ph=phone(l.wpp), mail=(l.mail||'').split('//')[0].trim(), li=(l.linkedin||'').trim();
+    const avail=[ph?'wpp':null, mail?'mail':null, li?'linkedin':null].filter(Boolean);
+    if(!avail.length) return toast('No hay canal disponible');
+    let canal=avail[0];
+    if(avail.length>1){
+      for(const c of avail){
+        const nombre=c==='wpp'?'WhatsApp':(c==='mail'?'Mail':'LinkedIn');
+        if(confirm('¿Lo mando por '+nombre+'?'+(avail.indexOf(c)<avail.length-1?'\n(Cancelar = siguiente canal)':''))){canal=c;break;}
+        canal=null;
+      }
+      if(!canal) return;
+    } else {
+      const nombre=canal==='wpp'?'WhatsApp':(canal==='mail'?'Mail':'LinkedIn');
+      if(!confirm('El asistente manda este mensaje tal cual por '+nombre+' a '+(l.empresa||'')+'. ¿Confirmás?')) return;
+    }
     const body={aprobado:canal,aprobadoTs:Date.now(),_lastEdit:Date.now()};
     const r=await fetch(DB+'/leads/'+k+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(r.ok){Object.assign(l,body);toast('Aprobado · sale en la próxima corrida');render();}
+    if(r.ok){Object.assign(l,body);toast('Aprobado · sale en la próxima pasada');render();}
     else toast('Error al guardar');
   });
   document.querySelectorAll('[data-done]').forEach(b=>b.onclick=async()=>{
@@ -323,6 +363,7 @@ function bindCards(){
   });
 }
 
+$('#chatbtn').onclick=()=>{filter='chat';render();};
 $('#q').addEventListener('input',e=>{query=norm(e.target.value);if(filter==='chat')filter='cola';render();});
 $('#reload').onclick=load;
 load();

@@ -121,7 +121,7 @@ function dotClass(l){
 
 async function load(){
   $('#sub').textContent='Cargando…';
-  try{LEADS=await fetch(DB+'/leads.json').then(r=>r.json())||{};delete LEADS['zzchat-asistente'];render();}
+  try{LEADS=await fetch(DB+'/leads.json').then(r=>r.json())||{};delete LEADS['zzchat-asistente'];delete LEADS['zzmanual-comercial'];render();}
   catch(e){$('#sub').textContent='Error de conexión';}
 }
 function counts(){
@@ -189,6 +189,7 @@ function openLead(k){
     <div class="quick">
       ${ph?`<a class="qbtn wa" target="_blank" href="https://wa.me/${ph}">WhatsApp</a>`:''}
       ${mail?`<a class="qbtn" href="mailto:${mail}">✉️ Mail</a>`:''}
+      ${(l.linkedin||'').trim()?`<a class="qbtn" target="_blank" href="${esc(l.linkedin)}">in LinkedIn</a>`:''}
     </div>
     <div class="f"><label>Empresa</label><input id="f_empresa" value="${esc(l.empresa)}"></div>
     <div class="grid2">
@@ -207,6 +208,7 @@ function openLead(k){
       <div class="f"><label>Origen</label>${sel('origen',['enfoco','referenciado','vistage','alimentaria','paracaidas','cliente','otro',''],norm(l.origen))}</div>
       <div class="f"><label>Próxima fecha</label><input id="f_proxFecha" type="date" value="${(l.proxFecha||'').slice(0,10)}"></div>
     </div>
+    <div class="f"><label>LinkedIn (URL perfil o hilo)</label><input id="f_linkedin" value="${esc(l.linkedin)}"></div>
     <div class="f"><label>Resumen (para el panel)</label><input id="f_resumen" value="${esc(l.resumen)}"></div>
     <div class="f"><label>Próximo paso</label><textarea id="f_proxPaso">${esc(l.proxPaso)}</textarea></div>
     <div class="f"><label>Borrador de mensaje</label><textarea id="f_borrador">${esc(l.borrador)}</textarea></div>
@@ -228,7 +230,7 @@ function toast(m){const el=$('#toast');el.textContent=m;el.classList.add('show')
 async function saveLead(){
   const g=id=>$('#f_'+id)?$('#f_'+id).value.trim():'';
   const body={empresa:g('empresa'),contacto:g('contacto'),cargo:g('cargo'),wpp:g('wpp'),mail:g('mail'),
-    temp:g('temp'),estado:g('estado'),origen:g('origen'),proxFecha:g('proxFecha'),
+    linkedin:g('linkedin'),temp:g('temp'),estado:g('estado'),origen:g('origen'),proxFecha:g('proxFecha'),
     resumen:g('resumen'),proxPaso:g('proxPaso'),borrador:g('borrador'),_lastEdit:Date.now()};
   if(!body.empresa) return toast('Falta la empresa');
   let key=curKey;
