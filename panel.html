@@ -99,6 +99,9 @@ header{padding:calc(env(safe-area-inset-top,0px) + 16px) 0 10px;display:flex;jus
 .chatform textarea{flex:1;padding:11px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);
   color:var(--tx);font-size:16px;font-family:inherit;outline:none;resize:none;min-height:48px;max-height:120px}
 .chatform button{width:52px;border-radius:14px;border:none;background:var(--gold);color:#111;font-size:1.1rem;cursor:pointer}
+.chatform #mic{background:var(--card2);border:1px solid var(--line);color:var(--tx)}
+.chatform #mic.rec{background:#e0704f;border-color:#e0704f;color:#fff;animation:micpulse 1.2s infinite}
+@keyframes micpulse{0%,100%{opacity:1}50%{opacity:.55}}
 .chatinfo{color:var(--tx2);font-size:.75rem;text-align:center;margin:10px 0}
 </style>
 </head>
@@ -261,10 +264,11 @@ function chatHTML(){
     return `<div class="msg ${who}">${esc(m.texto)}<span class="t">${who==='dami'?'Vos':'Asistente'} · ${d}</span></div>`;
   }).join('');
   return `<div class="chatbox">
-    <div class="chatinfo">Tu línea directa con el asistente. Pasa cada 15 min (LinkedIn cada 30).<br>Pedidos, aprobaciones ("ok 1,3", "mandale a X por wpp"), novedades de reuniones, o "arrancá envíos vistage/cancillería".</div>
+    <div class="chatinfo">Tu línea directa con el asistente. Pasa cada 15 min (LinkedIn cada 30).<br>Pedidos, aprobaciones ("ok 1,3", "mandale a X por wpp"), novedades, o "arrancá envíos vistage/cancillería".<br>🎤 Apretá el mic, hablá y se escribe solo (también sirve el mic del teclado).</div>
     ${list||'<div class="empty">Todavía no hay mensajes.<br>Escribime acá abajo 👇</div>'}
     <div class="chatform">
-      <textarea id="chatmsg" placeholder="Escribile al asistente…"></textarea>
+      <textarea id="chatmsg" placeholder="Escribile o dictale al asistente…"></textarea>
+      <button id="mic" title="Dictar por voz">🎤</button>
       <button id="chatsend">➤</button>
     </div>
   </div>`;
@@ -288,6 +292,26 @@ function render(){
       if(r.ok){ta.value='';const m=await r.json();CHAT[m.name]={de:'dami',texto:txt,ts:Date.now()};render();window.scrollTo(0,document.body.scrollHeight);}
       else toast('Error al enviar');
     };
+    // Dictado por voz (Web Speech API)
+    (function(){
+      const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+      const mic=$('#mic');
+      if(!SR){mic.style.display='none';return;}
+      let rec=new SR(); rec.lang='es-AR'; rec.continuous=true; rec.interimResults=true;
+      let on=false, base='';
+      rec.onstart=()=>{base=ta.value?ta.value+' ':'';};
+      rec.onresult=e=>{
+        let fin='', inter='';
+        for(let i=0;i<e.results.length;i++){const r0=e.results[i]; if(r0.isFinal) fin+=r0[0].transcript; else inter+=r0[0].transcript;}
+        ta.value=base+fin+inter;
+      };
+      rec.onend=()=>{on=false;mic.classList.remove('rec');};
+      rec.onerror=()=>{on=false;mic.classList.remove('rec');toast('No pude escuchar — usá el mic del teclado');};
+      mic.onclick=()=>{
+        if(on){rec.stop();on=false;mic.classList.remove('rec');}
+        else{try{rec.start();on=true;mic.classList.add('rec');}catch(err){toast('Micrófono no disponible');}}
+      };
+    })();
     window.scrollTo(0,document.body.scrollHeight);
     return;
   }
