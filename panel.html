@@ -62,6 +62,8 @@ header{padding:calc(env(safe-area-inset-top,0px) + 16px) 0 10px;display:flex;jus
 .b.today{background:rgba(87,180,106,.14);color:var(--ok)}
 .b.approved{background:rgba(87,180,106,.2);color:var(--ok)}
 .resumen{margin-top:9px;font-size:.87rem;line-height:1.45;color:var(--tx)}
+.card.closed .resumen{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card.closed{padding:12px 14px}
 .resumen .hace{color:var(--tx2);font-size:.76rem;display:block;margin-bottom:2px}
 .note{margin-top:9px;background:var(--card2);border-radius:10px;padding:10px 12px;font-size:.86rem;
   color:var(--tx);line-height:1.45;white-space:pre-wrap;word-break:break-word}
@@ -238,20 +240,20 @@ function cardHTML(k,l){
     ${paso?`<div class="lbl">Próximo paso</div><div class="note small">${esc(paso)}</div>`:''}
     ${hist?`<div class="lbl">Último historial</div><div class="note small">${esc(hist.slice(0,300))}${hist.length>300?'…':''}</div>`:''}
     ${pf?`<div class="lbl">Próxima fecha</div><div class="note small">${pf.split('-').reverse().join('/')}</div>`:''}`;
-  return `<div class="card t-${tp}" data-k="${k}">
+  return `<div class="card t-${tp} ${isOpen?'':'closed'}" data-k="${k}">
     <div class="tophdr"><div><div class="emp">${esc(l.empresa)||'—'}</div><div class="con">${esc(l.contacto)||''}</div></div></div>
-    <div class="badges"><span class="b ${tp}">${TEMPS[tp].label}</span>${when}${apr}</div>
+    <div class="badges"><span class="b ${tp}">${TEMPS[tp].label}</span>${when}${apr}${draft?'<span class="b" style="background:rgba(212,180,106,.14);color:var(--gold)">✍️ MENSAJE LISTO</span>':''}</div>
     <div class="resumen"><span class="hace">Último contacto: ${lastContactInfo(l)}</span>${res?esc(res):'<span style="color:var(--tx2)">Sin resumen aún.</span>'}</div>
-    ${draft?`<div class="lbl">Mensaje propuesto</div><div class="note">${esc(draft)}</div>`:''}
+    ${isOpen&&draft?`<div class="lbl">Mensaje propuesto</div><div class="note">${esc(draft)}</div>`:''}
     <div class="acts">
       ${draft?`<button class="btn" data-copy="${k}">📋 Copiar</button>`:''}
       ${ph?`<a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${ph}${waTxt}">WhatsApp</a>`:''}
       ${mail?`<a class="btn" href="mailto:${mail}">✉️ Mail</a>`:''}
       ${li?`<a class="btn li" target="_blank" rel="noopener" href="${esc(li)}">in LinkedIn</a>`:''}
       ${draft&&!l.aprobado?`<button class="btn approve" data-approve="${k}">🤖 Mandalo vos</button>`:''}
-      <button class="btn done" data-done="${k}">✓ Ya lo mandé</button>
+      ${isOpen?`<button class="btn done" data-done="${k}">✓ Ya lo mandé</button>`:''}
     </div>
-    <div class="more" data-more="${k}">${isOpen?'▴ Ver menos':'▾ Ver más'}</div>
+    <div class="more" data-more="${k}">${isOpen?'▴ Cerrar':(draft?'▾ Ver mensaje y detalle':'▾ Ver detalle')}</div>
     ${isOpen?moreContent:''}
   </div>`;
 }
