@@ -18,11 +18,12 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{background:var(--bg)}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;padding-bottom:60px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;padding-bottom:70px}
 .wrap{max-width:640px;margin:0 auto;padding:0 14px}
-header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px}
+header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px;display:flex;justify-content:space-between;align-items:flex-end}
 .brand{font-family:'Fraunces',serif;font-style:italic;font-size:1.45rem;color:var(--gold)}
 .sub{color:var(--tx2);font-size:.8rem;margin-top:2px}
+.applink{color:var(--tx2);font-size:.78rem;text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:7px 11px}
 .stats{display:flex;gap:8px;margin:14px 0 4px;overflow-x:auto;scrollbar-width:none}
 .stats::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--tx2);
@@ -42,7 +43,6 @@ header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px}
 .card.t-caliente{border-left-color:var(--cal)}
 .card.t-tibio{border-left-color:var(--tib)}
 .card.t-frio{border-left-color:var(--fri)}
-.top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .emp{font-weight:700;font-size:1rem;line-height:1.25}
 .con{color:var(--tx2);font-size:.85rem;margin-top:2px}
 .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
@@ -53,52 +53,70 @@ header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px}
 .b.frio{background:rgba(95,141,211,.14);color:var(--fri)}
 .b.late{background:rgba(224,112,79,.12);color:#e58f74}
 .b.today{background:rgba(87,180,106,.14);color:var(--ok)}
-.b.resp{background:rgba(87,180,106,.2);color:var(--ok)}
+.b.approved{background:rgba(87,180,106,.2);color:var(--ok)}
+.resumen{margin-top:10px;font-size:.86rem;line-height:1.45;color:var(--tx)}
+.resumen .hace{color:var(--tx2);font-size:.78rem;display:block;margin-bottom:3px}
 .note{margin-top:10px;background:var(--card2);border-radius:10px;padding:10px 12px;font-size:.86rem;
   color:var(--tx);line-height:1.45;white-space:pre-wrap;word-break:break-word}
 .note.small{color:var(--tx2);font-size:.8rem}
 .lbl{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tx2);margin:10px 0 4px}
 .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.btn{flex:1 1 auto;min-width:90px;display:flex;align-items:center;justify-content:center;gap:6px;
+.btn{flex:1 1 auto;min-width:86px;display:flex;align-items:center;justify-content:center;gap:6px;
   padding:11px 10px;border-radius:11px;border:1px solid var(--line);background:var(--card2);
-  color:var(--tx);font-size:.85rem;font-weight:600;cursor:pointer;text-decoration:none;text-align:center}
+  color:var(--tx);font-size:.84rem;font-weight:600;cursor:pointer;text-decoration:none;text-align:center}
 .btn:active{transform:scale(.97)}
 .btn.wa{background:rgba(87,180,106,.12);border-color:rgba(87,180,106,.3);color:#7ed194}
-.btn.done{background:rgba(212,180,106,.1);border-color:rgba(212,180,106,.3);color:var(--gold)}
+.btn.approve{background:rgba(95,141,211,.12);border-color:rgba(95,141,211,.3);color:#8fb2e8}
+.btn.done{background:var(--card2);border-color:var(--line);color:var(--tx2)}
 .btn.copied{background:rgba(87,180,106,.2);color:var(--ok)}
 .empty{color:var(--tx2);text-align:center;padding:40px 10px;font-size:.9rem}
 .foot{color:var(--tx2);text-align:center;font-size:.75rem;margin-top:26px}
 .reload{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);width:48px;height:48px;
   border-radius:50%;background:var(--gold);color:#111;border:none;font-size:1.2rem;cursor:pointer;
-  box-shadow:0 4px 14px rgba(0,0,0,.5)}
+  box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:40}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 74px);
   background:#23252c;border:1px solid var(--line);color:var(--tx);padding:10px 18px;border-radius:12px;
   font-size:.85rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
 .toast.show{opacity:1}
+/* chat */
+.chatbox{margin-top:14px}
+.msg{max-width:85%;margin-bottom:10px;padding:10px 13px;border-radius:14px;font-size:.88rem;line-height:1.5;
+  white-space:pre-wrap;word-break:break-word}
+.msg.dami{margin-left:auto;background:rgba(212,180,106,.13);border:1px solid rgba(212,180,106,.25);border-bottom-right-radius:4px}
+.msg.asistente{margin-right:auto;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg .t{display:block;font-size:.68rem;color:var(--tx2);margin-top:5px}
+.chatform{display:flex;gap:8px;margin-top:12px;position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 12px)}
+.chatform textarea{flex:1;padding:11px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);
+  color:var(--tx);font-size:16px;font-family:inherit;outline:none;resize:none;min-height:48px;max-height:120px}
+.chatform button{width:52px;border-radius:14px;border:none;background:var(--gold);color:#111;font-size:1.1rem;cursor:pointer}
+.chatinfo{color:var(--tx2);font-size:.75rem;text-align:center;margin:10px 0}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="brand">Enfoco Films</div>
-    <div class="sub" id="sub">Panel de seguimientos</div>
+    <div>
+      <div class="brand">Enfoco Films</div>
+      <div class="sub" id="sub">Panel de seguimientos</div>
+    </div>
+    <a class="applink" href="app.html">CRM completo →</a>
   </header>
 
   <div class="stats" id="chips"></div>
   <input class="search" id="q" type="search" placeholder="Buscar empresa o contacto…">
 
   <div id="content"></div>
-  <div class="foot">Panel Enfoco · se actualiza desde el CRM en vivo</div>
+  <div class="foot">Panel Enfoco · en vivo desde el CRM</div>
 </div>
 
 <button class="reload" id="reload" title="Actualizar">⟳</button>
 <div class="toast" id="toast"></div>
 
 <script>
-const DB='https://enfoco-crm-default-rtdb.firebaseio.com/leads';
+const DB='https://enfoco-crm-default-rtdb.firebaseio.com';
 const TEMPS={ex:{label:'EX-CLIENTE',order:0,next:75},caliente:{label:'CALIENTE',order:1,next:10},
   tibio:{label:'TIBIO',order:2,next:21},frio:{label:'FRÍO',order:3,next:30}};
-let LEADS={}, filter='cola', query='';
+let LEADS={}, CHAT={}, filter='cola', query='';
 
 const $=s=>document.querySelector(s);
 const todayISO=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Argentina/Buenos_Aires'});
@@ -112,41 +130,60 @@ function phone(w){
   if(d.startsWith('549')) return d;
   if(d.startsWith('54')) return '549'+d.slice(2);
   if(d.length===10&&(d.startsWith('11')||d.startsWith('2')||d.startsWith('3'))) return '549'+d;
-  return d; // internacional (US, BR, etc.)
+  return d;
 }
-function lastHist(l){
-  if(!Array.isArray(l.historial)||!l.historial.length) return '';
-  const h=l.historial[l.historial.length-1];
-  return (h.contenido||h.texto||'').toString();
+function lastHistEntry(l){
+  if(!Array.isArray(l.historial)||!l.historial.length) return null;
+  return l.historial[l.historial.length-1];
+}
+function lastContactInfo(l){
+  const h=lastHistEntry(l);
+  let iso='';
+  if(h&&h.fecha&&/^\d{4}-\d{2}-\d{2}/.test(h.fecha)) iso=h.fecha.slice(0,10);
+  else if(l._lastEdit) iso=new Date(l._lastEdit).toISOString().slice(0,10);
+  if(!iso) return 'sin registro de contacto';
+  const d=days(todayISO(),iso);
+  if(d<=0) return 'contacto hoy';
+  if(d===1) return 'hace 1 día';
+  if(d<30) return 'hace '+d+' días';
+  const m=Math.round(d/30);
+  return 'hace '+(m===1?'1 mes':m+' meses');
 }
 function temp(l){ return TEMPS[l.temp]?l.temp:'frio'; }
 
 async function load(){
   $('#sub').textContent='Cargando…';
   try{
-    LEADS=await fetch(DB+'.json').then(r=>r.json())||{};
+    const [le,ch]=await Promise.all([
+      fetch(DB+'/leads.json').then(r=>r.json()),
+      fetch(DB+'/asistente/chat.json').then(r=>r.json())
+    ]);
+    LEADS=le||{}; CHAT=ch||{};
     render();
   }catch(e){ $('#sub').textContent='Error de conexión — reintentá'; }
 }
 
-function counts(){
+function colaList(){
   const t=todayISO();
-  const c={cola:0,ex:0,caliente:0,tibio:0,frio:0};
-  for(const l of Object.values(LEADS)){
-    if(!active(l)) continue;
-    c[temp(l)]++;
+  return Object.entries(LEADS).filter(([k,l])=>{
+    if(!active(l)) return false;
     const pf=(l.proxFecha||'').slice(0,10);
-    if(/^\d{4}-\d{2}-\d{2}$/.test(pf)&&pf<=t) c.cola++;
-  }
+    return !/^\d{4}-\d{2}-\d{2}$/.test(pf)||pf<=t;
+  });
+}
+function counts(){
+  const c={cola:colaList().length,ex:0,caliente:0,tibio:0,frio:0};
+  for(const l of Object.values(LEADS)){ if(active(l)) c[temp(l)]++; }
   return c;
 }
 
 function chipRow(){
   const c=counts();
   const defs=[['cola','📥 Cola',c.cola],['ex','EX',c.ex],['caliente','Calientes',c.caliente],
-    ['tibio','Tibios',c.tibio],['frio','Fríos',c.frio],['todos','Todos',c.ex+c.caliente+c.tibio+c.frio]];
+    ['tibio','Tibios',c.tibio],['frio','Fríos',c.frio],['todos','Todos',c.ex+c.caliente+c.tibio+c.frio],
+    ['chat','💬 Chat',null]];
   $('#chips').innerHTML=defs.map(([k,lb,n])=>
-    `<div class="chip ${filter===k?'on':''}" data-f="${k}">${lb}<span class="n">${n}</span></div>`).join('');
+    `<div class="chip ${filter===k?'on':''}" data-f="${k}">${lb}${n!==null?`<span class="n">${n}</span>`:''}</div>`).join('');
   document.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>{filter=ch.dataset.f;render();});
 }
 
@@ -154,6 +191,8 @@ function matches(l){
   if(!query) return true;
   return (norm(l.empresa)+' '+norm(l.contacto)).includes(query);
 }
+
+function esc(s){return (s||'').toString().replace(/</g,'&lt;');}
 
 function cardHTML(k,l){
   const t=todayISO(), tp=temp(l), pf=(l.proxFecha||'').slice(0,10);
@@ -164,23 +203,45 @@ function cardHTML(k,l){
     else if(late===0) when=`<span class="b today">HOY</span>`;
     else when=`<span class="b" style="color:var(--tx2)">próx ${pf.slice(8,10)}/${pf.slice(5,7)}</span>`;
   } else when='<span class="b late">SIN FECHA</span>';
+  const apr=l.aprobado?`<span class="b approved">✓ APROBADO · lo manda el asistente (${l.aprobado})</span>`:'';
   const draft=(l.borrador||'').trim();
+  const res=(l.resumen||'').trim();
   const paso=(l.proxPaso||'').trim();
-  const hist=lastHist(l);
+  const h=lastHistEntry(l);
+  const hist=h?(h.contenido||h.texto||'').toString():'';
   const ph=phone(l.wpp);
   const waTxt=draft?('&text='+encodeURIComponent(draft)):'';
   const mail=(l.mail||'').split('//')[0].trim();
   return `<div class="card t-${tp}" data-k="${k}">
-    <div class="top"><div><div class="emp">${l.empresa||'—'}</div><div class="con">${l.contacto||''}</div></div></div>
-    <div class="badges"><span class="b ${tp}">${TEMPS[tp].label}</span>${when}</div>
-    ${draft?`<div class="lbl">Borrador listo</div><div class="note">${draft}</div>`:''}
-    ${!draft&&paso?`<div class="lbl">Próximo paso</div><div class="note small">${paso}</div>`:''}
-    ${hist?`<div class="lbl">Último contacto</div><div class="note small">${hist.slice(0,220)}${hist.length>220?'…':''}</div>`:''}
+    <div class="emp">${esc(l.empresa)||'—'}</div><div class="con">${esc(l.contacto)||''}</div>
+    <div class="badges"><span class="b ${tp}">${TEMPS[tp].label}</span>${when}${apr}</div>
+    <div class="resumen"><span class="hace">Último contacto: ${lastContactInfo(l)}</span>${res?'💬 '+esc(res):''}</div>
+    ${draft?`<div class="lbl">Mensaje listo para mandar</div><div class="note">${esc(draft)}</div>`:''}
+    ${!draft&&paso?`<div class="lbl">Próximo paso</div><div class="note small">${esc(paso)}</div>`:''}
+    ${!res&&hist?`<div class="lbl">Último historial</div><div class="note small">${esc(hist.slice(0,200))}${hist.length>200?'…':''}</div>`:''}
     <div class="acts">
       ${draft?`<button class="btn" data-copy="${k}">📋 Copiar</button>`:''}
       ${ph?`<a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${ph}${waTxt}">WhatsApp</a>`:''}
       ${mail?`<a class="btn" href="mailto:${mail}">✉️ Mail</a>`:''}
-      <button class="btn done" data-done="${k}">✓ Enviado</button>
+      ${draft&&!l.aprobado?`<button class="btn approve" data-approve="${k}">🤖 Mandalo vos</button>`:''}
+      <button class="btn done" data-done="${k}">✓ Ya lo mandé</button>
+    </div>
+  </div>`;
+}
+
+function chatHTML(){
+  const msgs=Object.values(CHAT||{}).sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(-60);
+  const list=msgs.map(m=>{
+    const who=m.de==='dami'?'dami':'asistente';
+    const d=m.ts?new Date(m.ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:'America/Argentina/Buenos_Aires'}):'';
+    return `<div class="msg ${who}">${esc(m.texto)}<span class="t">${who==='dami'?'Vos':'Asistente'} · ${d}</span></div>`;
+  }).join('');
+  return `<div class="chatbox">
+    <div class="chatinfo">El asistente lee este chat una vez por hora (y en cada corrida diaria).<br>Escribí pedidos, cambios, aprobaciones o novedades de reuniones.</div>
+    ${list||'<div class="empty">Todavía no hay mensajes.<br>Escribime acá abajo 👇</div>'}
+    <div class="chatform">
+      <textarea id="chatmsg" placeholder="Escribile al asistente…"></textarea>
+      <button id="chatsend">➤</button>
     </div>
   </div>`;
 }
@@ -188,15 +249,29 @@ function cardHTML(k,l){
 function render(){
   chipRow();
   const t=todayISO();
+  if(filter==='chat'){
+    $('#content').innerHTML=chatHTML();
+    $('#sub').textContent='Chat con tu asistente comercial';
+    const ta=$('#chatmsg');
+    $('#chatsend').onclick=async()=>{
+      const txt=(ta.value||'').trim(); if(!txt) return;
+      $('#chatsend').disabled=true;
+      const r=await fetch(DB+'/asistente/chat.json',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({de:'dami',texto:txt,ts:Date.now(),leido:false})});
+      $('#chatsend').disabled=false;
+      if(r.ok){ta.value='';const m=await r.json();CHAT[m.name]={de:'dami',texto:txt,ts:Date.now()};render();window.scrollTo(0,document.body.scrollHeight);}
+      else toast('Error al enviar');
+    };
+    window.scrollTo(0,document.body.scrollHeight);
+    return;
+  }
   const list=Object.entries(LEADS).filter(([k,l])=>active(l)&&matches(l));
-  let out='';
   if(filter==='cola'){
-    const cola=list.filter(([k,l])=>{const pf=(l.proxFecha||'').slice(0,10);
-      return !/^\d{4}-\d{2}-\d{2}$/.test(pf)||pf<=t;})
+    const cola=colaList().filter(([k,l])=>matches(l))
       .sort((a,b)=>{const oa=TEMPS[temp(a[1])].order,ob=TEMPS[temp(b[1])].order;
         if(oa!==ob) return oa-ob;
         return ((a[1].proxFecha||'9999')<(b[1].proxFecha||'9999'))?-1:1;});
-    out=cola.length?cola.map(([k,l])=>cardHTML(k,l)).join('')
+    const out=cola.length?cola.map(([k,l])=>cardHTML(k,l)).join('')
       :'<div class="empty">🎉 Nada pendiente en la cola.<br>Todo al día.</div>';
     $('#content').innerHTML=`<div class="sec"><h2>Para enviar <span class="cnt">${cola.length}</span></h2>${out}</div>`;
   } else {
@@ -208,12 +283,12 @@ function render(){
       return `<div class="sec"><h2>${TEMPS[g].label}S <span class="cnt">${gl.length}</span></h2>${gl.map(([k,l])=>cardHTML(k,l)).join('')}</div>`;
     }).join('')||'<div class="empty">Sin resultados.</div>';
   }
-  $('#sub').textContent=t.split('-').reverse().join('/')+' · '+counts().cola+' en cola';
+  $('#sub').textContent=t.split('-').reverse().join('/')+' · '+colaList().length+' en cola';
   bindCards();
 }
 
 function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),1800);}
+  setTimeout(()=>el.classList.remove('show'),2000);}
 
 function bindCards(){
   document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{
@@ -222,22 +297,35 @@ function bindCards(){
       setTimeout(()=>{b.classList.remove('copied');b.textContent='📋 Copiar';},1500);}
     catch(e){toast('No pude copiar');}
   });
+  document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=async()=>{
+    const k=b.dataset.approve, l=LEADS[k];
+    const ph=phone(l.wpp), mail=(l.mail||'').split('//')[0].trim();
+    let canal='';
+    if(ph&&mail) canal=confirm('¿Lo mando por WhatsApp?\n(Cancelar = lo mando por mail)')?'wpp':'mail';
+    else canal=ph?'wpp':(mail?'mail':'');
+    if(!canal) return toast('No hay canal disponible');
+    if(!confirm('El asistente va a mandar este mensaje tal cual por '+(canal==='wpp'?'WhatsApp':'mail')+' a '+(l.empresa||'')+'. ¿Confirmás?')) return;
+    const body={aprobado:canal,aprobadoTs:Date.now(),_lastEdit:Date.now()};
+    const r=await fetch(DB+'/leads/'+k+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.ok){Object.assign(l,body);toast('Aprobado · sale en la próxima corrida');render();}
+    else toast('Error al guardar');
+  });
   document.querySelectorAll('[data-done]').forEach(b=>b.onclick=async()=>{
     const k=b.dataset.done, l=LEADS[k], tp=temp(l);
-    if(!confirm('¿Marcar "'+(l.empresa||'')+'" como enviado?')) return;
+    if(!confirm('¿Marcar "'+(l.empresa||'')+'" como enviado por vos?')) return;
     const t=todayISO();
     const next=new Date(t+'T00:00:00'); next.setDate(next.getDate()+TEMPS[tp].next);
     const nx=next.toISOString().slice(0,10);
     const hist=Array.isArray(l.historial)?l.historial.slice():[];
-    hist.push({fecha:t,contenido:'Enviado desde el panel ('+(l.borrador?'borrador aprobado':'seguimiento')+'). Próxima: '+nx});
-    const body={proxFecha:nx,historial:hist,borrador:'',_lastEdit:Date.now()};
-    const r=await fetch(DB+'/'+k+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    hist.push({fecha:t,contenido:'Enviado por Dami desde el panel'+(l.borrador?' (borrador del asistente)':'')+'. Próxima: '+nx});
+    const body={proxFecha:nx,historial:hist,borrador:'',aprobado:'',_lastEdit:Date.now()};
+    const r=await fetch(DB+'/leads/'+k+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(r.ok){Object.assign(l,body);toast('Listo · próxima '+nx.split('-').reverse().join('/'));render();}
     else toast('Error al guardar');
   });
 }
 
-$('#q').addEventListener('input',e=>{query=norm(e.target.value);render();});
+$('#q').addEventListener('input',e=>{query=norm(e.target.value);if(filter==='chat')filter='cola';render();});
 $('#reload').onclick=load;
 load();
 </script>

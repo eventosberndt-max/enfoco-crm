@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0f12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Enfoco · CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0f12; --card:#17181d; --card2:#1d1f26; --line:#262933;
+  --tx:#e8e6e1; --tx2:#9a9890; --gold:#d4b46a;
+  --ex:#d4b46a; --cal:#e0704f; --tib:#dfa93d; --fri:#5f8dd3;
+  --ok:#57b46a; --bad:#d9634f;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;padding-bottom:40px}
+.wrap{max-width:640px;margin:0 auto;padding:0 14px}
+header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px;display:flex;justify-content:space-between;align-items:flex-end}
+.brand{font-family:'Fraunces',serif;font-style:italic;font-size:1.45rem;color:var(--gold)}
+.sub{color:var(--tx2);font-size:.8rem;margin-top:2px}
+.applink{color:var(--tx2);font-size:.78rem;text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:7px 11px}
+.stats{display:flex;gap:8px;margin:14px 0 4px;overflow-x:auto;scrollbar-width:none}
+.stats::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--tx2);
+  border-radius:20px;padding:8px 14px;font-size:.82rem;font-weight:600;cursor:pointer;user-select:none}
+.chip .n{color:var(--tx);margin-left:5px}
+.chip.on{border-color:var(--gold);color:var(--gold);background:rgba(212,180,106,.08)}
+.search{width:100%;margin:10px 0 8px;padding:11px 14px;border-radius:12px;border:1px solid var(--line);
+  background:var(--card);color:var(--tx);font-size:16px;outline:none}
+.row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+  border-radius:13px;padding:12px 13px;margin-bottom:8px;cursor:pointer}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.dot.ex{background:var(--ex)}.dot.caliente{background:var(--cal)}.dot.tibio{background:var(--tib)}.dot.frio{background:var(--fri)}
+.dot.cliente{background:#7ed194}.dot.perdido{background:#555}
+.rmain{flex:1;min-width:0}
+.remp{font-weight:600;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcon{color:var(--tx2);font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rpf{font-size:.72rem;color:var(--tx2);flex:0 0 auto;text-align:right}
+.rpf.late{color:#e58f74;font-weight:700}
+.empty{color:var(--tx2);text-align:center;padding:40px 10px;font-size:.9rem}
+.fab{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);width:52px;height:52px;
+  border-radius:50%;background:var(--gold);color:#111;border:none;font-size:1.5rem;cursor:pointer;
+  box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:30}
+/* ficha */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:60;display:none;overflow-y:auto}
+.modal.open{display:block}
+.sheet{max-width:640px;margin:30px auto 0;background:var(--bg);border:1px solid var(--line);
+  border-radius:18px 18px 0 0;min-height:calc(100vh - 30px);padding:18px 16px calc(env(safe-area-inset-bottom,0px) + 30px)}
+.sheethdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.sheethdr .x{background:var(--card2);border:1px solid var(--line);color:var(--tx);border-radius:10px;
+  padding:8px 14px;cursor:pointer;font-size:.85rem}
+.f{margin-bottom:12px}
+.f label{display:block;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2);margin-bottom:5px}
+.f input,.f select,.f textarea{width:100%;padding:11px 12px;border-radius:11px;border:1px solid var(--line);
+  background:var(--card);color:var(--tx);font-size:16px;font-family:inherit;outline:none}
+.f textarea{min-height:70px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.savebtn{width:100%;padding:14px;border-radius:13px;border:none;background:var(--gold);color:#111;
+  font-weight:700;font-size:1rem;cursor:pointer;margin-top:6px}
+.quick{display:flex;gap:8px;margin:10px 0 16px;flex-wrap:wrap}
+.qbtn{flex:1;min-width:100px;text-align:center;padding:11px;border-radius:11px;border:1px solid var(--line);
+  background:var(--card2);color:var(--tx);font-size:.85rem;font-weight:600;text-decoration:none;cursor:pointer}
+.qbtn.wa{background:rgba(87,180,106,.12);border-color:rgba(87,180,106,.3);color:#7ed194}
+.hist{margin-top:18px}
+.hist h3{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tx2);margin-bottom:8px}
+.hitem{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:8px;
+  font-size:.84rem;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.hitem .hf{color:var(--gold);font-size:.7rem;display:block;margin-bottom:3px}
+.addnote{display:flex;gap:8px;margin-top:10px}
+.addnote textarea{flex:1;min-height:48px}
+.addnote button{width:52px;border-radius:11px;border:none;background:var(--card2);border:1px solid var(--line);
+  color:var(--gold);font-size:1.1rem;cursor:pointer}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 80px);
+  background:#23252c;border:1px solid var(--line);color:var(--tx);padding:10px 18px;border-radius:12px;
+  font-size:.85rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:80}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="brand">Enfoco Films</div>
+      <div class="sub" id="sub">CRM completo</div>
+    </div>
+    <a class="applink" href="panel.html">← Panel</a>
+  </header>
+  <div class="stats" id="chips"></div>
+  <input class="search" id="q" type="search" placeholder="Buscar empresa, contacto, mail…">
+  <div id="list"></div>
+</div>
+
+<button class="fab" id="new">+</button>
+
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DB='https://enfoco-crm-default-rtdb.firebaseio.com';
+let LEADS={}, filter='activos', query='', curKey=null;
+const $=s=>document.querySelector(s);
+const todayISO=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Argentina/Buenos_Aires'});
+const norm=s=>(s||'').toString().trim().toLowerCase();
+const isActive=l=>norm(l.origen)!=='cliente'&&!['perdido','no-potencial'].includes(norm(l.estado));
+const days=(a,b)=>Math.round((new Date(a+'T00:00:00')-new Date(b+'T00:00:00'))/864e5);
+const TEMPL={ex:'EX-CLIENTE',caliente:'CALIENTE',tibio:'TIBIO',frio:'FRÍO'};
+function phone(w){let d=(w||'').replace(/\D/g,'');if(!d||d.length<8)return '';
+  if(d.startsWith('549'))return d;if(d.startsWith('54'))return '549'+d.slice(2);
+  if(d.length===10&&(d.startsWith('11')||d.startsWith('2')||d.startsWith('3')))return '549'+d;return d;}
+function esc(s){return (s||'').toString().replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function dotClass(l){
+  if(norm(l.origen)==='cliente') return 'cliente';
+  if(['perdido','no-potencial'].includes(norm(l.estado))) return 'perdido';
+  return TEMPL[l.temp]?l.temp:'frio';
+}
+
+async function load(){
+  $('#sub').textContent='Cargando…';
+  try{LEADS=await fetch(DB+'/leads.json').then(r=>r.json())||{};render();}
+  catch(e){$('#sub').textContent='Error de conexión';}
+}
+function counts(){
+  const c={activos:0,ex:0,caliente:0,tibio:0,frio:0,clientes:0,perdidos:0,todos:0};
+  for(const l of Object.values(LEADS)){
+    c.todos++;
+    if(norm(l.origen)==='cliente'){c.clientes++;continue;}
+    if(['perdido','no-potencial'].includes(norm(l.estado))){c.perdidos++;continue;}
+    c.activos++; c[TEMPL[l.temp]?l.temp:'frio']++;
+  }
+  return c;
+}
+function inFilter(l){
+  const o=norm(l.origen), e=norm(l.estado);
+  switch(filter){
+    case 'activos': return isActive(l);
+    case 'ex': case 'caliente': case 'tibio': case 'frio':
+      return isActive(l)&&(TEMPL[l.temp]?l.temp:'frio')===filter;
+    case 'clientes': return o==='cliente';
+    case 'perdidos': return o!=='cliente'&&['perdido','no-potencial'].includes(e);
+    default: return true;
+  }
+}
+function matches(l){if(!query)return true;
+  return (norm(l.empresa)+' '+norm(l.contacto)+' '+norm(l.mail)+' '+norm(l.wpp)).includes(query);}
+
+function render(){
+  const c=counts();
+  const defs=[['activos','Activos',c.activos],['ex','EX',c.ex],['caliente','🔥',c.caliente],
+    ['tibio','Tibios',c.tibio],['frio','Fríos',c.frio],['clientes','Clientes',c.clientes],
+    ['perdidos','Perdidos',c.perdidos],['todos','Todos',c.todos]];
+  $('#chips').innerHTML=defs.map(([k,lb,n])=>
+    `<div class="chip ${filter===k?'on':''}" data-f="${k}">${lb}<span class="n">${n}</span></div>`).join('');
+  document.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>{filter=ch.dataset.f;render();});
+  const t=todayISO();
+  const rows=Object.entries(LEADS).filter(([k,l])=>inFilter(l)&&matches(l))
+    .sort((a,b)=>((a[1].proxFecha||'9999')<(b[1].proxFecha||'9999'))?-1:1);
+  $('#list').innerHTML=rows.map(([k,l])=>{
+    const pf=(l.proxFecha||'').slice(0,10);
+    let pfTxt='—', late=false;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(pf)){const d=days(t,pf);
+      pfTxt=pf.slice(8,10)+'/'+pf.slice(5,7); if(d>0){late=true;pfTxt=d+'d ⚠';} else if(d===0){pfTxt='HOY';}}
+    return `<div class="row" data-k="${k}">
+      <div class="dot ${dotClass(l)}"></div>
+      <div class="rmain"><div class="remp">${esc(l.empresa)||'—'}</div>
+      <div class="rcon">${esc(l.contacto)||''}</div></div>
+      <div class="rpf ${late?'late':''}">${pfTxt}</div></div>`;
+  }).join('')||'<div class="empty">Sin resultados.</div>';
+  $('#sub').textContent=rows.length+' leads · '+t.split('-').reverse().join('/');
+  document.querySelectorAll('.row').forEach(r=>r.onclick=()=>openLead(r.dataset.k));
+}
+
+function openLead(k){
+  curKey=k;
+  const l=k?LEADS[k]:{empresa:'',contacto:'',cargo:'',wpp:'',mail:'',origen:'enfoco',estado:'contactado',
+    temp:'ex',proxFecha:todayISO(),proxPaso:'',borrador:'',resumen:'',historial:[]};
+  const ph=phone(l.wpp), mail=(l.mail||'').split('//')[0].trim();
+  const sel=(name,opts,val)=>`<select id="f_${name}">${opts.map(o=>
+    `<option value="${o}" ${o===(val||'')?'selected':''}>${o||'—'}</option>`).join('')}</select>`;
+  const hist=(Array.isArray(l.historial)?l.historial.slice().reverse():[]).slice(0,25).map(h=>
+    `<div class="hitem"><span class="hf">${esc(h.fecha||'')}</span>${esc((h.contenido||h.texto||'').toString())}</div>`).join('');
+  $('#sheet').innerHTML=`
+    <div class="sheethdr"><div class="brand" style="font-size:1.1rem">${k?esc(l.empresa):'Nuevo lead'}</div>
+      <button class="x" id="close">Cerrar</button></div>
+    <div class="quick">
+      ${ph?`<a class="qbtn wa" target="_blank" href="https://wa.me/${ph}">WhatsApp</a>`:''}
+      ${mail?`<a class="qbtn" href="mailto:${mail}">✉️ Mail</a>`:''}
+    </div>
+    <div class="f"><label>Empresa</label><input id="f_empresa" value="${esc(l.empresa)}"></div>
+    <div class="grid2">
+      <div class="f"><label>Contacto</label><input id="f_contacto" value="${esc(l.contacto)}"></div>
+      <div class="f"><label>Cargo</label><input id="f_cargo" value="${esc(l.cargo)}"></div>
+    </div>
+    <div class="grid2">
+      <div class="f"><label>WhatsApp</label><input id="f_wpp" value="${esc(l.wpp)}"></div>
+      <div class="f"><label>Mail</label><input id="f_mail" value="${esc(l.mail)}"></div>
+    </div>
+    <div class="grid2">
+      <div class="f"><label>Temperatura</label>${sel('temp',['ex','caliente','tibio','frio'],TEMPL[l.temp]?l.temp:'frio')}</div>
+      <div class="f"><label>Estado</label>${sel('estado',['contactado','enviar-propuesta','presupuesto','perdido','no-potencial'],norm(l.estado)||'contactado')}</div>
+    </div>
+    <div class="grid2">
+      <div class="f"><label>Origen</label>${sel('origen',['enfoco','referenciado','vistage','alimentaria','paracaidas','cliente','otro',''],norm(l.origen))}</div>
+      <div class="f"><label>Próxima fecha</label><input id="f_proxFecha" type="date" value="${(l.proxFecha||'').slice(0,10)}"></div>
+    </div>
+    <div class="f"><label>Resumen (para el panel)</label><input id="f_resumen" value="${esc(l.resumen)}"></div>
+    <div class="f"><label>Próximo paso</label><textarea id="f_proxPaso">${esc(l.proxPaso)}</textarea></div>
+    <div class="f"><label>Borrador de mensaje</label><textarea id="f_borrador">${esc(l.borrador)}</textarea></div>
+    <button class="savebtn" id="save">${k?'Guardar cambios':'Crear lead'}</button>
+    <div class="hist"><h3>Historial</h3>
+      <div class="addnote"><textarea id="newnote" placeholder="Agregar nota al historial…"></textarea>
+      <button id="addnote">＋</button></div>
+      ${hist||'<div class="empty" style="padding:14px">Sin historial.</div>'}
+    </div>`;
+  $('#modal').classList.add('open');
+  $('#close').onclick=()=>{$('#modal').classList.remove('open');};
+  $('#save').onclick=saveLead;
+  $('#addnote').onclick=addNote;
+}
+
+function toast(m){const el=$('#toast');el.textContent=m;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2000);}
+
+async function saveLead(){
+  const g=id=>$('#f_'+id)?$('#f_'+id).value.trim():'';
+  const body={empresa:g('empresa'),contacto:g('contacto'),cargo:g('cargo'),wpp:g('wpp'),mail:g('mail'),
+    temp:g('temp'),estado:g('estado'),origen:g('origen'),proxFecha:g('proxFecha'),
+    resumen:g('resumen'),proxPaso:g('proxPaso'),borrador:g('borrador'),_lastEdit:Date.now()};
+  if(!body.empresa) return toast('Falta la empresa');
+  let key=curKey;
+  if(!key){
+    key='l'+Date.now()+Math.random().toString(36).slice(2,6);
+    body.id=key; body.creadoEn=Date.now(); body.historial=[];
+    const r=await fetch(DB+'/leads/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok) return toast('Error al crear');
+    LEADS[key]=body;
+  } else {
+    const r=await fetch(DB+'/leads/'+key+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok) return toast('Error al guardar');
+    Object.assign(LEADS[key],body);
+  }
+  toast('Guardado ✓'); $('#modal').classList.remove('open'); render();
+}
+
+async function addNote(){
+  if(!curKey) return toast('Primero creá el lead');
+  const txt=$('#newnote').value.trim(); if(!txt) return;
+  const l=LEADS[curKey];
+  const hist=Array.isArray(l.historial)?l.historial.slice():[];
+  hist.push({fecha:todayISO(),contenido:txt});
+  const r=await fetch(DB+'/leads/'+curKey+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({historial:hist,_lastEdit:Date.now()})});
+  if(r.ok){l.historial=hist;toast('Nota agregada ✓');openLead(curKey);}
+  else toast('Error');
+}
+
+$('#q').addEventListener('input',e=>{query=norm(e.target.value);render();});
+$('#new').onclick=()=>openLead(null);
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')$('#modal').classList.remove('open');});
+load();
+</script>
+</body>
+</html>
