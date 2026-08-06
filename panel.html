@@ -154,11 +154,9 @@ function temp(l){ return TEMPS[l.temp]?l.temp:'frio'; }
 async function load(){
   $('#sub').textContent='Cargando…';
   try{
-    const [le,ch]=await Promise.all([
-      fetch(DB+'/leads.json').then(r=>r.json()),
-      fetch(DB+'/asistente/chat.json').then(r=>r.json())
-    ]);
-    LEADS=le||{}; CHAT=ch||{};
+    const le=await fetch(DB+'/leads.json').then(r=>r.json());
+    LEADS=le||{}; CHAT=(LEADS['zzchat-asistente']&&LEADS['zzchat-asistente'].chat)||{};
+    delete LEADS['zzchat-asistente'];
     render();
   }catch(e){ $('#sub').textContent='Error de conexión — reintentá'; }
 }
@@ -256,7 +254,7 @@ function render(){
     $('#chatsend').onclick=async()=>{
       const txt=(ta.value||'').trim(); if(!txt) return;
       $('#chatsend').disabled=true;
-      const r=await fetch(DB+'/asistente/chat.json',{method:'POST',headers:{'Content-Type':'application/json'},
+      const r=await fetch(DB+'/leads/zzchat-asistente/chat.json',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({de:'dami',texto:txt,ts:Date.now(),leido:false})});
       $('#chatsend').disabled=false;
       if(r.ok){ta.value='';const m=await r.json();CHAT[m.name]={de:'dami',texto:txt,ts:Date.now()};render();window.scrollTo(0,document.body.scrollHeight);}

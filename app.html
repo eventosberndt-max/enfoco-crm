@@ -121,7 +121,7 @@ function dotClass(l){
 
 async function load(){
   $('#sub').textContent='Cargando…';
-  try{LEADS=await fetch(DB+'/leads.json').then(r=>r.json())||{};render();}
+  try{LEADS=await fetch(DB+'/leads.json').then(r=>r.json())||{};delete LEADS['zzchat-asistente'];render();}
   catch(e){$('#sub').textContent='Error de conexión';}
 }
 function counts(){
