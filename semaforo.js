@@ -238,8 +238,13 @@
     if(typeof window.goPanel !== 'function' || window.goPanel.__semaforo) return;
     var _gp = window.goPanel;
     var wrapped = function(name, el){
-      var r = _gp.apply(this, arguments);
-      if(name === 'analytics') setTimeout(drawAnalyticsV2, 120);
+      var r;
+      try{ r = _gp.apply(this, arguments); }
+      catch(e){ /* el render viejo de analytics puede fallar una vez reemplazado; no importa */ }
+      if(name === 'analytics'){
+        setTimeout(drawAnalyticsV2, 400);
+        setTimeout(drawAnalyticsV2, 1600); /* segunda pasada por si el render viejo async pisa la primera */
+      }
       return r;
     };
     wrapped.__semaforo = true;
