@@ -96,6 +96,7 @@ header{padding:calc(env(safe-area-inset-top,0px) + 18px) 0 10px;display:flex;jus
 </div>
 
 <button class="fab" id="new">+</button>
+<button class="fab" id="reload" style="bottom:calc(env(safe-area-inset-bottom,0px) + 80px);font-size:1.1rem;background:var(--card2);color:var(--gold);border:1px solid var(--line)">⟳</button>
 
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast"></div>
@@ -262,6 +263,7 @@ async function addNote(){
 
 $('#q').addEventListener('input',e=>{query=norm(e.target.value);render();});
 $('#new').onclick=()=>openLead(null);
+$('#reload').onclick=()=>{location.replace(location.pathname+'?r='+Date.now());};
 $('#modal').addEventListener('click',e=>{if(e.target.id==='modal')$('#modal').classList.remove('open');});
 load();
 </script>

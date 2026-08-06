@@ -391,7 +391,7 @@ function bindCards(){
 
 $('#chatbtn').onclick=()=>{filter='chat';render();};
 $('#q').addEventListener('input',e=>{query=norm(e.target.value);if(filter==='chat')filter='cola';render();});
-$('#reload').onclick=load;
+$('#reload').onclick=()=>{location.replace(location.pathname+'?r='+Date.now());};
 load();
 </script>
 </body>
