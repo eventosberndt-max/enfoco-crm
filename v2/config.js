@@ -17,7 +17,8 @@ window.ENFOCO_CONFIG = {
   // Retiro mensual objetivo por socio, en dólares. Define el punto de equilibrio.
   objetivoSocioUsd: 2000,
   sheets: {
-    crm: '1r-MQSWwuRFXcCxbLHfbrxFGppaclnP2m',       // CRM_Enfoco Films.xlsx
+    crm: '1aC--AG6TExqAI1HrhRj7fU9qU8F7etGw4xtiltwOaSA', // CRM_Enfoco_Films (Google Sheet, la que se usa desde el 26/10)
+    crmNativo: true,
     finanzas: '1mxdAF9SWaKfSF29B2pFIQ2ObUg90qqGN'   // Ganancias y perdidas 2026 CEOS.xlsx
   }
 };
