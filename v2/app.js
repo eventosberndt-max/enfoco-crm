@@ -169,7 +169,7 @@
 
   // ---------- pantallas ----------
   function shell(body, on) {
-    var links = [['tablero', 'Tablero'], ['campanas', 'Campañas'], ['contactos', 'Contactos'], ['presupuestos', 'Presupuestos'], ['finanzas', 'Finanzas']];
+    var links = [['tablero', 'Tablero'], ['campanas', 'Campañas'], ['contactos', 'Contactos'], ['presupuestos', 'Presupuestos'], ['finanzas', 'Finanzas'], ['aprobar', 'Aprobar' + (nAprobar() ? ' (' + nAprobar() + ')' : '')], ['sistema', 'Sistema']];
     var drive = S.errors.indexOf('drive') >= 0 ? '<div class="notice" style="margin:0 40px">Las planillas no se pudieron leer porque la conexión con Google Drive venció. <button class="btn sm" data-act="reconectar">Reconectar Drive</button></div>' : '';
     var otros = S.errors.filter(function (e) { return e !== 'drive'; }).map(function (e) { return '<div class="notice" style="margin:12px 40px 0">' + esc(e) + '</div>'; }).join('');
     return '<header class="top"><div class="brand"><span class="dot"></span><b>ENFOCO</b><span class="cond mut small">CRM</span></div>' +
@@ -197,6 +197,8 @@
     else if (v === 'contacto') body = vFicha(decodeURIComponent(h[1] || ''));
     else if (v === 'presupuestos') body = vPresupuestos();
     else if (v === 'finanzas') body = vFinanzas();
+    else if (v === 'aprobar') body = vAprobar();
+    else if (v === 'sistema') body = vSistema();
     else { v = 'tablero'; body = vTablero(); }
     app.innerHTML = shell(body, v === 'contacto' ? 'contactos' : v);
   }
@@ -267,7 +269,8 @@
     var hora = new Date().getHours();
     var saludo = hora < 13 ? 'Buen día' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
 
-    return '<section style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px"><div><p class="eyebrow">' + M.hoy.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }) + '</p><h1>' + saludo + ', Dami.</h1></div>' +
+    var nA = nAprobar();
+    return (nA ? '<a class="card" href="#/aprobar" style="padding:18px 20px;display:flex;justify-content:space-between;gap:12px;align-items:center"><span style="font-size:18px">' + nA + ' mensaje' + (nA > 1 ? 's esperan' : ' espera') + ' tu aprobación</span><span class="cond" style="color:#F2A93B">Revisar →</span></a>' : '') + '<section style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px"><div><p class="eyebrow">' + M.hoy.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }) + '</p><h1>' + saludo + ', Dami.</h1></div>' +
       '<p class="soft" style="margin:0;max-width:460px;line-height:1.5">' + env.length + ' presupuestos enviados en juego' + (venc.length ? ', <span style="color:#E8604C">' + venc.length + ' con la próxima acción vencida</span>' : '') + ', ' + coord.length + ' contactos para coordinar y ' + paraHoy.length + ' cosas para hoy.</p></section>' +
 
       '<section class="hero" aria-label="Presupuestos en juego"><div class="gauge">' +
@@ -519,6 +522,86 @@
       '<li><b>Retiros de socios</b> como movimiento propio: hoy se calculan como el resultado del mes dividido dos.</li></ul></section>';
   }
 
+  // ---------- aprobar ----------
+  // Cola de mensajes que arman las tareas en /leads/estadoAsistente/aprobar. Dami decide acá; el CARTERO despacha lo aprobado.
+  function colaAprobar() {
+    var ea = S.raw.leads && S.raw.leads.estadoAsistente;
+    var q = (ea && ea.aprobar) || {};
+    return Object.keys(q).map(function (id) { var x = q[id] || {}; x.id = id; return x; });
+  }
+  function nAprobar() { return colaAprobar().filter(function (x) { return !x.estado || x.estado === 'pendiente'; }).length; }
+  var ORIGEN = { cerebro: 'Pipeline', linkedin: 'LinkedIn Vistage', campanas: 'Congresos y Eventos', cartero: 'Respuesta entrante', exclientes: 'Ex clientes' };
+
+  function decidir(accion, id) {
+    var card = document.querySelector('[data-item="' + id + '"]');
+    var upd = { decididoTs: Date.now(), decididoPor: 'Dami' };
+    if (card) {
+      var ta = card.querySelector('textarea'), sel = card.querySelector('select');
+      if (ta) upd.texto = ta.value;
+      if (sel) upd.canal = sel.value;
+    }
+    if (accion === 'aprobar') upd.estado = 'aprobado';
+    else if (accion === 'guardar') upd.estado = 'pendiente';
+    else if (accion === 'pausar') { upd.estado = 'pausado'; upd.retomarTs = Date.now() + 7 * 86400000; }
+    else if (accion === 'descartar') upd.estado = 'descartado';
+    else if (accion === 'volver') { upd.estado = 'pendiente'; }
+    db.ref('leads/estadoAsistente/aprobar/' + id).update(upd).then(function () {
+      var x = S.raw.leads.estadoAsistente.aprobar[id]; Object.keys(upd).forEach(function (k) { x[k] = upd[k]; });
+      toast({ aprobar: 'Aprobado: lo manda el cartero en su próxima pasada', guardar: 'Cambios guardados', pausar: 'Pausado 7 días', descartar: 'Descartado', volver: 'Vuelve a pendientes' }[accion]);
+      render();
+    }).catch(function (e) { toast('No se pudo guardar: ' + e.message); });
+  }
+
+  function cardAprobar(x) {
+    var canales = [['wpp', 'WhatsApp'], ['mail', 'Mail'], ['linkedin', 'LinkedIn']];
+    var ts = x.ts ? new Date(x.ts) : null;
+    return '<li class="card" style="border-left-color:#F2A93B;padding:20px" data-item="' + esc(x.id) + '">' +
+      '<div class="cond small mut" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px"><span style="color:#F2A93B">' + esc(ORIGEN[x.creadoPor] || x.creadoPor || 'Tarea') + (x.campana ? ' · ' + esc(x.campana) : '') + '</span><span>' + (ts ? fdate(ts) + ' ' + ('0' + ts.getHours()).slice(-2) + ':' + ('0' + ts.getMinutes()).slice(-2) : '') + '</span></div>' +
+      '<div style="margin-top:8px;font-size:18px">' + esc(x.nombre || x.empresa || '') + (x.nombre && x.empresa ? ' <span class="mut" style="font-size:15px">· ' + esc(x.empresa) + '</span>' : '') + '</div>' +
+      (x.motivo ? '<p class="soft small" style="margin:6px 0 0;line-height:1.5">' + esc(x.motivo) + '</p>' : '') +
+      '<label class="small mut" style="display:block;margin-top:12px">Mensaje<textarea class="in" rows="5" style="display:block;width:100%;margin-top:4px;padding:10px 12px;resize:vertical;line-height:1.5">' + esc(x.texto || '') + '</textarea></label>' +
+      '<div class="filters" style="margin-top:10px;align-items:center"><label class="small mut">Canal <select class="in" style="margin-left:6px">' + canales.map(function (c) { return '<option value="' + c[0] + '"' + (x.canal === c[0] ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select></label>' +
+      '<button class="btn pri" data-apr="aprobar" data-id="' + esc(x.id) + '">Aprobar</button><button class="btn" data-apr="guardar" data-id="' + esc(x.id) + '">Guardar cambios</button>' +
+      '<button class="btn" data-apr="pausar" data-id="' + esc(x.id) + '">Pausar 7 días</button><button class="btn" data-apr="descartar" data-id="' + esc(x.id) + '">Descartar</button></div></li>';
+  }
+
+  function vAprobar() {
+    var q = colaAprobar().sort(function (a, b) { return (a.ts || 0) - (b.ts || 0); });
+    var pend = q.filter(function (x) { return !x.estado || x.estado === 'pendiente'; });
+    var aprob = q.filter(function (x) { return x.estado === 'aprobado'; });
+    var hoy = D.startOfDay(new Date()).getTime();
+    var env = q.filter(function (x) { return x.estado === 'enviado' && (x.enviadoTs || 0) >= hoy - 6 * 86400000; }).sort(function (a, b) { return (b.enviadoTs || 0) - (a.enviadoTs || 0); });
+    var paus = q.filter(function (x) { return x.estado === 'pausado'; });
+    var fila = function (x, extra) { return '<li class="card" style="border-left-color:#343A50;padding:14px 18px"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px"><span>' + esc(x.nombre || x.empresa || '') + ' <span class="mut small">· ' + esc(x.empresa || '') + ' · ' + esc(x.canal || '') + '</span></span>' + (extra || '') + '</div><div class="small soft" style="margin-top:6px;line-height:1.45;white-space:pre-line">' + esc(String(x.texto || '').slice(0, 220)) + '</div>' + (x.error ? '<div class="small" style="color:#E8604C;margin-top:6px">' + esc(x.error) + '</div>' : '') + '</li>'; };
+    return '<section><p class="eyebrow">Nada sale sin tu OK</p><h1>Para aprobar</h1><p class="soft" style="max-width:720px;line-height:1.55">Las tareas dejan acá los mensajes que necesitan tu visto bueno. Editá el texto si hace falta y aprobá: el cartero lo manda tal cual en su próxima pasada (9, 12, 15 y 18 hs).</p></section>' +
+      '<section>' + (pend.length ? '<ul class="list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px">' + pend.map(cardAprobar).join('') + '</ul>' : '<p class="mut">No hay nada esperando tu aprobación.</p>') + '</section>' +
+      (aprob.length ? '<section><h2 style="margin-bottom:12px">Aprobados, esperando al cartero (' + aprob.length + ')</h2><ul class="list">' + aprob.map(function (x) { return fila(x, '<button class="btn sm" data-apr="volver" data-id="' + esc(x.id) + '">Frenar</button>'); }).join('') + '</ul></section>' : '') +
+      (env.length ? '<section><h2 style="margin-bottom:12px">Enviados en los últimos 7 días (' + env.length + ')</h2><ul class="list">' + env.map(function (x) { return fila(x, '<span class="cond small mut">' + fdate(new Date(x.enviadoTs)) + '</span>'); }).join('') + '</ul></section>' : '') +
+      (paus.length ? '<section><h2 style="margin-bottom:12px">Pausados (' + paus.length + ')</h2><ul class="list">' + paus.map(function (x) { return fila(x, '<button class="btn sm" data-apr="volver" data-id="' + esc(x.id) + '">Volver a pendientes</button>'); }).join('') + '</ul></section>' : '');
+  }
+
+  // ---------- sistema ----------
+  var ROLES = [['cerebro', 'Cerebro', 'Arma la cola del día y los borradores. No envía.'], ['cartero', 'Cartero', 'El único que envía. Despacha lo aprobado y mira WhatsApp y Gmail.'],
+    ['linkedin', 'LinkedIn', 'Invitaciones Vistage, respuestas y seguimientos.'], ['campanas', 'Campañas', 'Tanda diaria de Congresos y Eventos.']];
+  function vSistema() {
+    var ea = (S.raw.leads && S.raw.leads.estadoAsistente) || {};
+    var roles = ea.roles || {};
+    var lista = function (s) { return String(s || '').split(/\s*,\s*(?=[A-ZÁÉÍÓÚ])|\n/).filter(Boolean); };
+    return '<section><p class="eyebrow">Automatizaciones</p><h1>Sistema</h1><p class="soft">Lo que reportó cada tarea en su última corrida.</p></section>' +
+      '<section style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px">' + ROLES.map(function (r) {
+        var x = roles[r[0]] || {};
+        var ts = x.ts ? new Date(typeof x.ts === 'number' ? x.ts : Date.parse(x.ts)) : null;
+        var horas = ts ? (Date.now() - ts) / 3600000 : null;
+        var col = !ts ? '#7D8299' : horas < 6 ? '#4FB8A8' : horas < 30 ? '#F2A93B' : '#E8604C';
+        var al = lista(x.alertas), pe = lista(x.pendientes);
+        return '<article class="card" style="border-left-color:' + col + ';padding:20px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><h2 style="font-size:20px">' + r[1] + '</h2><span class="cond small" style="color:' + col + '">' + (ts ? 'última corrida ' + fdate(ts) + ' ' + ('0' + ts.getHours()).slice(-2) + ':' + ('0' + ts.getMinutes()).slice(-2) : 'sin reportes') + '</span></div>' +
+          '<p class="cond small mut" style="margin:4px 0 0">' + r[2] + '</p>' +
+          (x.resumen ? '<p style="margin:14px 0 0;line-height:1.5">' + esc(x.resumen) + '</p>' : '') +
+          (al.length ? '<p class="cond small" style="margin:14px 0 4px;color:#E8604C">ALERTAS</p><ul class="soft small" style="margin:0;padding-left:18px;line-height:1.55">' + al.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>' : '') +
+          (pe.length ? '<p class="cond small" style="margin:14px 0 4px;color:#F2A93B">PENDIENTES</p><ul class="soft small" style="margin:0;padding-left:18px;line-height:1.55">' + pe.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>' : '') + '</article>';
+      }).join('') + '</section>';
+  }
+
   function exportar() {
     var rows = filtrarContactos();
     var data = rows.map(function (c) { return { Nombre: c.nombre, Empresa: c.empresa, Cargo: c.cargo, Mail: c.mail, WhatsApp: c.wpp, LinkedIn: c.linkedin, Rubro: c.rubro, Campaña: c.campana, Etapa: c.etapa, 'Último movimiento': c.ultimo ? c.ultimo.toISOString().slice(0, 10) : '' }; });
@@ -528,9 +611,10 @@
 
   // ---------- eventos ----------
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-act],[data-seg],[data-camp],[data-ptab]');
+    var t = e.target.closest('[data-act],[data-seg],[data-camp],[data-ptab],[data-apr]');
     if (!t) return;
     if (t.dataset.seg) { sumarSeguimiento(t.dataset.seg); return; }
+    if (t.dataset.apr) { decidir(t.dataset.apr, t.dataset.id); return; }
     if (t.dataset.ptab) { S.presTab = t.dataset.ptab; render(); return; }
     if (t.dataset.camp) { S.filtro = { q: '', etapa: '', camp: t.dataset.camp }; return; }
     var a = t.dataset.act;
