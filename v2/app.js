@@ -103,7 +103,7 @@
     S.loading = true; S.errors = []; render();
     var hoy = new Date();
     var pFire = Promise.all([leer('leads'), leer('outreach'), leer('crm/seguimientos').catch(function () { return {}; })])
-      .then(function (r) { S.raw.leads = r[0]; S.raw.outreach = r[1]; S.raw.seg = r[2]; })
+      .then(function (r) { S.raw.leads = r[0]; S.raw.outreach = r[1]; S.raw.seg = r[2]; try { espejarHistorial(); } catch (e) {} })
       .catch(function (e) { S.errors.push('Firebase: ' + e.message); });
     var pBlue = cargarBlue();
     var pCrm = !S.token ? Promise.resolve(S.errors.push('drive')) : driveXlsx(CFG.sheets.crm, CFG.sheets.crmNativo).then(function (wb) {
@@ -581,24 +581,103 @@
   }
 
   // ---------- sistema ----------
-  var ROLES = [['cerebro', 'Cerebro', 'Arma la cola del día y los borradores. No envía.'], ['cartero', 'Cartero', 'El único que envía. Despacha lo aprobado y mira WhatsApp y Gmail.'],
-    ['linkedin', 'LinkedIn', 'Invitaciones Vistage, respuestas y seguimientos.'], ['campanas', 'Campañas', 'Tanda diaria de Congresos y Eventos.']];
+  // Semaforo: cada rol tiene su horario (hora Argentina, lun a vie). Se cruza con las corridas
+  // registradas en /leads/estadoAsistente/historial/<rol>/<ts> (las escriben las tareas y, como
+  // respaldo, esta pagina copia ahi cada reporte de roles/<rol> que ve).
+  var ROLES = [
+    { k: 'cerebro', n: 'Cerebro', d: 'Arma los borradores del día en Aprobar y te avisa. No envía.', h: [[8, 52]], gracia: 90 },
+    { k: 'cartero', n: 'Cartero', d: 'El único que envía por WhatsApp y mail. Despacha lo aprobado y mira respuestas.', h: [[9, 0], [12, 0], [15, 0], [18, 0]], gracia: 60 },
+    { k: 'linkedin', n: 'LinkedIn', d: 'Invitaciones Vistage (40 a 60 por día), respuestas y seguimientos.', h: [[9, 7], [11, 7], [13, 7], [16, 7], [18, 7]], gracia: 75 },
+    { k: 'campanas', n: 'Campañas', d: 'Congresos y Eventos: 50 envíos de un tirón a la mañana.', h: [[9, 13]], gracia: 150 }];
+  var SEM = { v: ['#4FB8A8', 'Funcionando'], a: ['#F2A93B', 'Con avisos'], r: ['#E8604C', 'No está corriendo'], g: ['#7D8299', 'Sin datos todavía'] };
+  function tsNum(t) { return typeof t === 'number' ? t : Date.parse(t) || 0; }
+  function hhmm(d) { return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function ea() { return (S.raw.leads && S.raw.leads.estadoAsistente) || {}; }
+  function corridas(rol) {
+    var h = (ea().historial || {})[rol] || {}, out = {};
+    Object.keys(h).forEach(function (k) { var x = h[k] || {}; var t = tsNum(x.ts) || +k; if (t) out[t] = x; });
+    var r = (ea().roles || {})[rol]; if (r && tsNum(r.ts)) { var t = tsNum(r.ts); if (!out[t]) out[t] = { ts: t, resumen: r.resumen, alertas: r.alertas, ok: true }; }
+    return Object.keys(out).map(Number).sort(function (a, b) { return a - b; }).map(function (t) { var x = out[t]; return { ts: t, ok: x.ok !== false, resumen: x.resumen || '', alertas: x.alertas ? (Array.isArray(x.alertas) ? x.alertas.join(', ') : String(x.alertas)) : '', enviados: x.enviados }; });
+  }
+  // horarios esperados (hora Argentina) entre desde y hasta
+  function esperados(r, desde, hasta) {
+    var out = [], d = new Date(desde); d.setHours(0, 0, 0, 0);
+    for (; d <= hasta; d = new Date(d.getTime() + 864e5)) {
+      var dow = d.getDay(); if (dow === 0 || dow === 6) continue;
+      r.h.forEach(function (hm) { var t = new Date(d); t.setHours(hm[0], hm[1], 0, 0); if (t >= desde && t <= hasta) out.push(t.getTime()); });
+    }
+    return out;
+  }
+  function proxima(r) {
+    var l = esperados(r, new Date(), new Date(Date.now() + 5 * 864e5)); return l.length ? new Date(l[0]) : null;
+  }
+  function estadoRol(r) {
+    var cs = corridas(r.k);
+    if (!cs.length) return { sem: 'g', cs: cs, linea: [] };
+    var ahora = Date.now(), desde = Math.max(cs[0].ts - 15 * 6e4, ahora - 3 * 864e5);
+    var slots = esperados(r, new Date(desde), new Date(ahora - r.gracia * 6e4));
+    // linea de tiempo: cada horario esperado con la corrida que le corresponde (o "no corrió")
+    var usadas = {}, linea = [];
+    slots.forEach(function (t, i) {
+      var fin = i + 1 < slots.length ? slots[i + 1] - 15 * 6e4 : ahora;
+      var c = cs.filter(function (x) { return x.ts >= t - 15 * 6e4 && x.ts < fin && !usadas[x.ts]; })[0];
+      if (c) usadas[c.ts] = 1;
+      linea.push({ slot: t, c: c || null });
+    });
+    cs.forEach(function (x) { if (!usadas[x.ts] && x.ts >= desde) linea.push({ slot: x.ts, c: x, extra: true }); });
+    linea.sort(function (a, b) { return a.slot - b.slot; });
+    var ult = linea.filter(function (x) { return !x.extra; }), n = ult.length;
+    var faltan = 0; for (var i = n - 1; i >= 0 && !ult[i].c; i--) faltan++;
+    var malas = 0; for (var j = n - 1; j >= 0 && ult[j].c && (!ult[j].c.ok); j--) malas++;
+    var last = cs[cs.length - 1];
+    var sem = faltan >= 2 || malas >= 2 ? 'r' : (faltan === 1 || malas === 1 || (last && last.alertas)) ? 'a' : 'v';
+    return { sem: sem, cs: cs, linea: linea, faltan: faltan, malas: malas, last: last };
+  }
+  // respaldo: copiar al historial el ultimo reporte de cada rol si no estaba
+  function espejarHistorial() {
+    var e = ea(), roles = e.roles || {}, hist = e.historial || {};
+    ROLES.forEach(function (r) {
+      var x = roles[r.k]; if (!x || !tsNum(x.ts)) return;
+      var t = tsNum(x.ts), h = hist[r.k] || {};
+      var ya = Object.keys(h).some(function (k) { return (tsNum((h[k] || {}).ts) || +k) === t; });
+      if (ya) return;
+      var al = x.alertas ? (Array.isArray(x.alertas) ? x.alertas.join(', ') : String(x.alertas)) : '';
+      var reg = { ts: t, ok: true, resumen: String(x.resumen || '').slice(0, 300), alertas: al.slice(0, 300), copiadoPor: 'plataforma' };
+      db.ref('leads/estadoAsistente/historial/' + r.k + '/' + t).set(reg).then(function () {
+        e.historial = e.historial || {}; e.historial[r.k] = e.historial[r.k] || {}; e.historial[r.k][t] = reg;
+      }).catch(function () {});
+    });
+  }
+  function dot(c, sz) { return '<span style="display:inline-block;width:' + (sz || 10) + 'px;height:' + (sz || 10) + 'px;border-radius:50%;background:' + c + ';flex:none"></span>'; }
   function vSistema() {
-    var ea = (S.raw.leads && S.raw.leads.estadoAsistente) || {};
-    var roles = ea.roles || {};
-    var lista = function (s) { return String(s || '').split(/\s*,\s*(?=[A-ZÁÉÍÓÚ])|\n/).filter(Boolean); };
-    return '<section><p class="eyebrow">Automatizaciones</p><h1>Sistema</h1><p class="soft">Lo que reportó cada tarea en su última corrida.</p></section>' +
-      '<section style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px">' + ROLES.map(function (r) {
-        var x = roles[r[0]] || {};
-        var ts = x.ts ? new Date(typeof x.ts === 'number' ? x.ts : Date.parse(x.ts)) : null;
-        var horas = ts ? (Date.now() - ts) / 3600000 : null;
-        var col = !ts ? '#7D8299' : horas < 6 ? '#4FB8A8' : horas < 30 ? '#F2A93B' : '#E8604C';
+    var roles = ea().roles || {};
+    var lista = function (s) { return (Array.isArray(s) ? s : String(s || '').split(/\s*,\s*(?=[A-ZÁÉÍÓÚ])|\n/)).filter(Boolean); };
+    var est = ROLES.map(function (r) { return estadoRol(r); });
+    var tira = '<section style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">' + ROLES.map(function (r, i) {
+      var s = SEM[est[i].sem];
+      return '<a href="#sem-' + r.k + '" class="card" style="border-left-color:' + s[0] + ';display:flex;align-items:center;gap:14px;padding:16px 18px">' + dot(s[0], 22) +
+        '<span><span style="font-size:18px">' + r.n + '</span><br><span class="cond small" style="color:' + s[0] + '">' + s[1] + '</span></span></a>';
+    }).join('') + '</section>';
+    var leyenda = '<p class="cond small mut" style="margin:10px 0 0;display:flex;flex-wrap:wrap;gap:6px 18px">' + ['v', 'a', 'r', 'g'].map(function (k) { return '<span style="display:inline-flex;align-items:center;gap:6px">' + dot(SEM[k][0], 8) + SEM[k][1] + '</span>'; }).join('') +
+      '<span>· Rojo = faltaron 2 corridas seguidas o fallaron 2 seguidas. Amarillo = faltó o falló la última, o dejó alertas.</span></p>';
+    return '<section><p class="eyebrow">Automatizaciones</p><h1>Sistema</h1><p class="soft" style="max-width:720px;line-height:1.55">El semáforo cruza el horario de cada tarea con las corridas que dejaron reporte. Si una tarea no aparece, casi siempre es la Mac apagada o bloqueada, o Chrome sin la extensión conectada.</p></section>' +
+      '<section>' + tira + leyenda + '</section>' +
+      '<section style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px">' + ROLES.map(function (r, i) {
+        var e = est[i], s = SEM[e.sem], x = roles[r.k] || {}, px = proxima(r);
         var al = lista(x.alertas), pe = lista(x.pendientes);
-        return '<article class="card" style="border-left-color:' + col + ';padding:20px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><h2 style="font-size:20px">' + r[1] + '</h2><span class="cond small" style="color:' + col + '">' + (ts ? 'última corrida ' + fdate(ts) + ' ' + ('0' + ts.getHours()).slice(-2) + ':' + ('0' + ts.getMinutes()).slice(-2) : 'sin reportes') + '</span></div>' +
-          '<p class="cond small mut" style="margin:4px 0 0">' + r[2] + '</p>' +
+        var lin = e.linea.slice(-10).reverse();
+        var pasadas = lin.length ? '<p class="cond small mut" style="margin:16px 0 6px">ÚLTIMAS PASADAS</p><ul style="list-style:none;margin:0;padding:0;display:grid;gap:5px">' + lin.map(function (l) {
+          var d = new Date(l.c ? l.c.ts : l.slot), c = !l.c ? '#E8604C' : !l.c.ok ? '#E8604C' : l.c.alertas ? '#F2A93B' : '#4FB8A8';
+          var txt = !l.c ? 'No corrió (tocaba ' + hhmm(new Date(l.slot)) + ')' : (l.c.ok ? '' : 'Falló · ') + (l.c.enviados != null ? l.c.enviados + ' enviados · ' : '') + (l.c.resumen || 'Corrió');
+          return '<li class="small" style="display:flex;gap:10px;align-items:baseline">' + dot(c, 8) + '<span class="cond mut" style="flex:none;width:86px">' + fdate(d) + ' ' + hhmm(d) + '</span><span class="soft" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(txt + (l.c && l.c.alertas ? ' — ' + l.c.alertas : '')) + '">' + esc(txt) + '</span></li>';
+        }).join('') + '</ul>' : '';
+        return '<article id="sem-' + r.k + '" class="card" style="border-left-color:' + s[0] + ';padding:20px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2 style="font-size:20px;display:flex;align-items:center;gap:10px">' + dot(s[0], 12) + r.n + '</h2><span class="cond small" style="color:' + s[0] + '">' + s[1] + '</span></div>' +
+          '<p class="cond small mut" style="margin:4px 0 0">' + r.d + '</p>' +
+          '<p class="cond small mut" style="margin:6px 0 0">Horario: ' + r.h.map(function (hm) { return hm[0] + ':' + ('0' + hm[1]).slice(-2); }).join(' · ') + ' (lun a vie)' + (px ? ' · próxima ' + (px.toDateString() === new Date().toDateString() ? 'hoy' : fdate(px)) + ' ' + hhmm(px) : '') + '</p>' +
           (x.resumen ? '<p style="margin:14px 0 0;line-height:1.5">' + esc(x.resumen) + '</p>' : '') +
           (al.length ? '<p class="cond small" style="margin:14px 0 4px;color:#E8604C">ALERTAS</p><ul class="soft small" style="margin:0;padding-left:18px;line-height:1.55">' + al.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>' : '') +
-          (pe.length ? '<p class="cond small" style="margin:14px 0 4px;color:#F2A93B">PENDIENTES</p><ul class="soft small" style="margin:0;padding-left:18px;line-height:1.55">' + pe.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>' : '') + '</article>';
+          (pe.length ? '<p class="cond small" style="margin:14px 0 4px;color:#F2A93B">PENDIENTES</p><ul class="soft small" style="margin:0;padding-left:18px;line-height:1.55">' + pe.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>' : '') +
+          pasadas + '</article>';
       }).join('') + '</section>';
   }
 
