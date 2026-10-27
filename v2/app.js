@@ -73,8 +73,10 @@
       return r;
     });
   }
-  function driveXlsx(id) {
-    return drive('https://www.googleapis.com/drive/v3/files/' + id + '?alt=media')
+  function driveXlsx(id, nativo) {
+    var url = nativo ? 'https://www.googleapis.com/drive/v3/files/' + id + '/export?mimeType=' + encodeURIComponent('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      : 'https://www.googleapis.com/drive/v3/files/' + id + '?alt=media';
+    return drive(url)
       .then(function (r) { return r.arrayBuffer(); })
       .then(function (buf) { return XLSX.read(buf, { type: 'array', cellDates: true }); });
   }
@@ -104,7 +106,7 @@
       .then(function (r) { S.raw.leads = r[0]; S.raw.outreach = r[1]; S.raw.seg = r[2]; })
       .catch(function (e) { S.errors.push('Firebase: ' + e.message); });
     var pBlue = cargarBlue();
-    var pCrm = !S.token ? Promise.resolve(S.errors.push('drive')) : driveXlsx(CFG.sheets.crm).then(function (wb) {
+    var pCrm = !S.token ? Promise.resolve(S.errors.push('drive')) : driveXlsx(CFG.sheets.crm, CFG.sheets.crmNativo).then(function (wb) {
       S.raw.presupuestos = D.parsePresupuestos(wb, hoy, 'Presupuesto 2026', 0);
       S.raw.pres25 = D.parsePresupuestos(wb, hoy, 'Presupuestos 2025', 2025);
       S.raw.posibles = D.parsePosibles(wb);
