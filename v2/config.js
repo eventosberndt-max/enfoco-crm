@@ -12,6 +12,10 @@ window.ENFOCO_CONFIG = {
   // Única cuenta que puede entrar.
   allowedEmails: ['enfoco@enfocofilms.com'],
   // Planillas que se leen en vivo desde Drive con la sesión de Google.
+  // Carpeta de Drive con los .docx de presupuestos del año.
+  carpetas: { presupuestos2026: '1ZH8Lth_IYxyWyomvVXCjwDfk6FshpPB5' },
+  // Retiro mensual objetivo por socio, en dólares. Define el punto de equilibrio.
+  objetivoSocioUsd: 2000,
   sheets: {
     crm: '1r-MQSWwuRFXcCxbLHfbrxFGppaclnP2m',       // CRM_Enfoco Films.xlsx
     finanzas: '1mxdAF9SWaKfSF29B2pFIQ2ObUg90qqGN'   // Ganancias y perdidas 2026 CEOS.xlsx
