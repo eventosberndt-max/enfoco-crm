@@ -393,7 +393,8 @@
 
     list.forEach(function (c) {
       c.presupuestos = presDe(c.empresa);
-      c.historial.sort(function (a, b) { return (b.fecha || 0) - (a.fecha || 0); });
+      c.historial.forEach(function (h, i) { h.i = i; });
+      c.historial.sort(function (a, b) { return (b.fecha || 0) - (a.fecha || 0) || b.i - a.i; });
       c.ultimo = c.historial[0] && c.historial[0].fecha || c.creado;
       c.ultimoTexto = c.historial[0] ? c.historial[0].texto : '';
       c.etapa = etapaDe(c);
