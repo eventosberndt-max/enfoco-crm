@@ -188,16 +188,21 @@
     if (!rows) return [];
     var h = findHeader(rows, ['empresa', 'estado']);
     var H = rows[h];
-    var c = { empresa: col(H, 'empresa'), propuesta: col(H, 'nombre del contacto'), resp: col(H, 'monto'),
+    var pick = function (a, b) { var x = col(H, a); return x >= 0 ? x : col(H, b); };
+    var c = { empresa: col(H, 'empresa'), propuesta: pick('propuesta', 'nombre del contacto'), medio: pick('medio', 'monto'),
       estado: col(H, 'estado'), envio: col(H, 'fecha de env'), paso: col(H, 'proximo paso'), obs: col(H, 'observaciones') };
-    var out = [];
+    var out = [], grupo = '';
+    var val = function (r, k) { return k >= 0 && r[k] != null && String(r[k]).trim() !== '' ? String(r[k]).trim() : ''; };
     for (var i = h + 1; i < rows.length; i++) {
       var r = rows[i];
       if (!r || !r[c.empresa]) continue;
-      var est = r[c.estado] ? String(r[c.estado]).trim() : '';
-      out.push({ empresa: String(r[c.empresa]).trim(), propuesta: r[c.propuesta] ? String(r[c.propuesta]) : '',
-        responsable: r[c.resp] ? String(r[c.resp]) : '', estadoNum: parseInt(est, 10) || 0, estado: est,
-        envio: parseDate(r[c.envio]), prox: parseDate(r[c.envio + 1]), canal: r[c.paso] ? String(r[c.paso]) : '', obs: r[c.obs] ? String(r[c.obs]) : '' });
+      var resto = r.filter(function (x, j) { return j !== c.empresa && x != null && String(x).trim() !== ''; }).length;
+      if (!resto && /·|^[A-ZÁÉÍÓÚÑ0-9 ()\/-]{8,}$/.test(String(r[c.empresa]).trim())) { grupo = String(r[c.empresa]).trim(); continue; }
+      var est = val(r, c.estado);
+      var prop = val(r, c.propuesta);
+      out.push({ empresa: String(r[c.empresa]).trim(), grupo: grupo, propuesta: prop === '?' ? '' : prop,
+        responsable: val(r, c.medio), medio: val(r, c.medio), estadoNum: parseInt(est, 10) || 0, estado: est || 'Sin contactar',
+        envio: parseDate(r[c.envio]), prox: parseDate(r[c.envio + 1]), paso: val(r, c.paso), canal: val(r, c.medio), obs: val(r, c.obs) });
     }
     return out;
   }
