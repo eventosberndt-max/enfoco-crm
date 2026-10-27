@@ -345,8 +345,12 @@
     var est = Object.keys(k.porEstado).sort();
     return '<section><div class="sechead"><h2>Estado de la lista</h2><span class="src">en vivo · planilla POSIBLES PROYECTOS</span></div><div class="rings">' +
       est.map(function (e) { return '<div class="ring">' + ring(k.porEstado[e], k.total, '#8C90CF') + '<p>' + esc(e.replace(/^\d+\s*-\s*/, '')) + '</p></div>'; }).join('') + '</div></section>' +
-      '<section><h2 style="margin-bottom:16px">Lista</h2><div class="scroll"><table class="t" style="min-width:760px"><thead><tr><th>Empresa</th><th>Qué se le propone</th><th>Estado</th><th>Envío</th><th>Canal</th><th>Quién</th></tr></thead><tbody>' +
-      k.filas.map(function (p) { return '<tr><td>· ' + esc(p.empresa) + '</td><td class="soft small">' + esc(p.propuesta.slice(0, 120)) + '</td><td>' + esc(p.estado.replace(/^\d+\s*-\s*/, '')) + '</td><td>' + fdate(p.envio) + '</td><td>' + esc(p.canal) + '</td><td>' + esc(p.responsable) + '</td></tr>'; }).join('') +
+      '<section><h2 style="margin-bottom:16px">Lista</h2><div class="scroll"><table class="t" style="min-width:900px"><thead><tr><th>Empresa</th><th>Qué se le propone</th><th>Estado</th><th>Envío</th><th>Próxima</th><th>Próximo paso</th></tr></thead><tbody>' +
+      k.filas.map(function (p, i) {
+        var cab = p.grupo && (i === 0 || k.filas[i - 1].grupo !== p.grupo) ? '<tr><td colspan="6" class="cond small" style="color:#8C90CF;letter-spacing:.08em;padding-top:22px">' + esc(p.grupo) + '</td></tr>' : '';
+        var venc = p.prox && D.startOfDay(p.prox) < D.startOfDay(S.M.hoy) && p.estadoNum >= 1 && p.estadoNum !== 4 && p.estadoNum !== 5;
+        return cab + '<tr><td>· ' + esc(p.empresa) + (p.medio ? '<div class="mut small" style="padding-left:10px;margin-top:3px">' + esc(p.medio) + '</div>' : '') + '</td><td class="soft small">' + esc(p.propuesta.slice(0, 140)) + '</td><td class="small">' + esc(p.estado.replace(/^\d+\s*-\s*/, '')) + '</td><td>' + fdate(p.envio) + '</td><td style="color:' + (venc ? '#E8604C' : '#E6E8EF') + '">' + fdate(p.prox) + '</td><td class="soft small" title="' + esc(p.obs) + '">' + esc(p.paso.slice(0, 120)) + '</td></tr>';
+      }).join('') +
       '</tbody></table></div></section>';
   }
 
