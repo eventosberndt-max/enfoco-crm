@@ -585,10 +585,10 @@
   // registradas en /leads/estadoAsistente/historial/<rol>/<ts> (las escriben las tareas y, como
   // respaldo, esta pagina copia ahi cada reporte de roles/<rol> que ve).
   var ROLES = [
-    { k: 'cerebro', n: 'Cerebro', d: 'Arma los borradores del día en Aprobar y te avisa. No envía.', h: [[8, 52]], gracia: 90 },
-    { k: 'cartero', n: 'Cartero', d: 'El único que envía por WhatsApp y mail. Despacha lo aprobado y mira respuestas.', h: [[9, 0], [12, 0], [15, 0], [18, 0]], gracia: 60 },
-    { k: 'linkedin', n: 'LinkedIn', d: 'Invitaciones Vistage (40 a 60 por día), respuestas y seguimientos.', h: [[9, 7], [11, 7], [13, 7], [16, 7], [18, 7]], gracia: 75 },
-    { k: 'campanas', n: 'Campañas', d: 'Congresos y Eventos: 50 envíos de un tirón a la mañana.', h: [[9, 13]], gracia: 150 }];
+    { k: 'cerebro', t: 'trig_017FpCLNTx15JRENVgnH7aqo', n: 'Cerebro', d: 'Arma los borradores del día en Aprobar y te avisa. No envía.', h: [[8, 52]], gracia: 90 },
+    { k: 'cartero', t: 'trig_01M8mouAtxU3B1z7TR5c32Ly', n: 'Cartero', d: 'El único que envía por WhatsApp y mail. Despacha lo aprobado y mira respuestas.', h: [[9, 0], [12, 0], [15, 0], [18, 0]], gracia: 60 },
+    { k: 'linkedin', t: 'trig_01LBEMtcgdHRCnRkcibRyBxz', n: 'LinkedIn', d: 'Invitaciones Vistage (40 a 60 por día), respuestas y seguimientos.', h: [[9, 7], [11, 7], [13, 7], [16, 7], [18, 7]], gracia: 75 },
+    { k: 'campanas', t: 'trig_01GfBycZNVxSe92Qar1tXcqP', n: 'Campañas', d: 'Congresos y Eventos: 50 envíos de un tirón a la mañana.', h: [[9, 13]], gracia: 150 }];
   var SEM = { v: ['#4FB8A8', 'Funcionando'], a: ['#F2A93B', 'Con avisos'], r: ['#E8604C', 'No está corriendo'], g: ['#7D8299', 'Sin datos todavía'] };
   function tsNum(t) { return typeof t === 'number' ? t : Date.parse(t) || 0; }
   function hhmm(d) { return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
@@ -673,6 +673,7 @@
         }).join('') + '</ul>' : '';
         return '<article id="sem-' + r.k + '" class="card" style="border-left-color:' + s[0] + ';padding:20px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2 style="font-size:20px;display:flex;align-items:center;gap:10px">' + dot(s[0], 12) + r.n + '</h2><span class="cond small" style="color:' + s[0] + '">' + s[1] + '</span></div>' +
           '<p class="cond small mut" style="margin:4px 0 0">' + r.d + '</p>' +
+          '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0 2px"><a class="btn' + (r.k === 'cartero' ? ' pri' : '') + '" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" rel="noopener" href="https://claude.ai/scheduled-task/' + r.t + '">Correr ahora ↗</a><span class="cond small mut">Abre la tarea en Claude: tocá «Ejecutar ahora».</span></div>' +
           '<p class="cond small mut" style="margin:6px 0 0">Horario: ' + r.h.map(function (hm) { return hm[0] + ':' + ('0' + hm[1]).slice(-2); }).join(' · ') + ' (lun a vie)' + (px ? ' · próxima ' + (px.toDateString() === new Date().toDateString() ? 'hoy' : fdate(px)) + ' ' + hhmm(px) : '') + '</p>' +
           (x.resumen ? '<p style="margin:14px 0 0;line-height:1.5">' + esc(x.resumen) + '</p>' : '') +
           (al.length ? '<p class="cond small" style="margin:14px 0 4px;color:#E8604C">ALERTAS</p><ul class="soft small" style="margin:0;padding-left:18px;line-height:1.55">' + al.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>' : '') +
