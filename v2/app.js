@@ -534,9 +534,17 @@
 
   function decidir(accion, id) {
     var card = document.querySelector('[data-item="' + id + '"]');
+    if (accion === 'claudio-abrir') { var bx = card && card.querySelector('[data-pedbox]'); if (bx) { bx.hidden = !bx.hidden; if (!bx.hidden) bx.querySelector('textarea').focus(); } return; }
+    if (accion === 'pedido-nuevo') { pedidoNuevo(); return; }
     var upd = { decididoTs: Date.now(), decididoPor: 'Dami' };
+    if (accion === 'claudio') {
+      var pt = card && card.querySelector('textarea[data-ped]');
+      var txt = pt ? pt.value.trim() : '';
+      if (!txt) { toast('Escribí qué le pedís a Claudio'); return; }
+      upd.estado = 'claudio'; upd.pedido = { texto: txt, ts: Date.now(), por: 'Dami', estado: 'abierto' };
+    }
     if (card) {
-      var ta = card.querySelector('textarea'), sel = card.querySelector('select');
+      var ta = card.querySelector('textarea[data-msg]'), sel = card.querySelector('select');
       if (ta) upd.texto = ta.value;
       if (sel) upd.canal = sel.value;
     }
@@ -545,11 +553,32 @@
     else if (accion === 'pausar') { upd.estado = 'pausado'; upd.retomarTs = Date.now() + 7 * 86400000; }
     else if (accion === 'descartar') upd.estado = 'descartado';
     else if (accion === 'volver') { upd.estado = 'pendiente'; }
+    else if (accion === 'resuelto') { upd.estado = 'resuelto'; upd['pedido/estado'] = 'resuelto'; upd['pedido/resueltoTs'] = Date.now(); }
     db.ref('leads/estadoAsistente/aprobar/' + id).update(upd).then(function () {
-      var x = S.raw.leads.estadoAsistente.aprobar[id]; Object.keys(upd).forEach(function (k) { x[k] = upd[k]; });
-      toast({ aprobar: 'Aprobado: lo manda el cartero en su próxima pasada', guardar: 'Cambios guardados', pausar: 'Pausado 7 días', descartar: 'Descartado', volver: 'Vuelve a pendientes' }[accion]);
+      var x = S.raw.leads.estadoAsistente.aprobar[id];
+      Object.keys(upd).forEach(function (k) { if (k.indexOf('pedido/') === 0) { x.pedido = x.pedido || {}; x.pedido[k.slice(7)] = upd[k]; } else x[k] = upd[k]; });
+      toast({ aprobar: 'Aprobado: lo manda el cartero en su próxima pasada', guardar: 'Cambios guardados', pausar: 'Pausado 7 días', descartar: 'Descartado', volver: 'Vuelve a pendientes', claudio: 'Pedido mandado a Claudio: lo toma en la próxima pasada del cartero', resuelto: 'Marcado como resuelto' }[accion]);
       render();
     }).catch(function (e) { toast('No se pudo guardar: ' + e.message); });
+  }
+
+  function pedidoNuevo() {
+    var ta = document.getElementById('pedidoNuevo'), txt = ta ? ta.value.trim() : '';
+    if (!txt) { toast('Escribí qué le pedís a Claudio'); return; }
+    var now = Date.now(), id = 'ped_' + now;
+    var item = { ts: now, tipo: 'pedido', creadoPor: 'dami', nombre: 'Pedido a Claudio', estado: 'claudio', texto: '', pedido: { texto: txt, ts: now, por: 'Dami', estado: 'abierto' } };
+    db.ref('leads/estadoAsistente/aprobar/' + id).set(item).then(function () {
+      var ea = S.raw.leads.estadoAsistente = S.raw.leads.estadoAsistente || {}; ea.aprobar = ea.aprobar || {}; ea.aprobar[id] = item;
+      toast('Pedido mandado a Claudio'); render();
+    }).catch(function (e) { toast('No se pudo guardar: ' + e.message); });
+  }
+  function bloquePedido(x) {
+    var p = x.pedido; if (!p || !p.texto) return '';
+    var pt = p.ts ? new Date(p.ts) : null;
+    return '<div style="margin-top:12px;padding:10px 12px;background:var(--line2);border-left:2px solid var(--lav)">' +
+      '<div class="cond small" style="color:var(--lav)">Le pediste a Claudio' + (pt ? ' · ' + fdate(pt) + ' ' + ('0' + pt.getHours()).slice(-2) + ':' + ('0' + pt.getMinutes()).slice(-2) : '') + '</div>' +
+      '<div class="small soft" style="margin-top:4px;line-height:1.5;white-space:pre-line">' + esc(p.texto) + '</div>' +
+      (p.respuesta ? '<div class="cond small" style="color:var(--teal);margin-top:8px">Claudio respondió</div><div class="small" style="margin-top:4px;line-height:1.5;white-space:pre-line">' + esc(p.respuesta) + '</div>' : '') + '</div>';
   }
 
   function cardAprobar(x) {
@@ -559,10 +588,13 @@
       '<div class="cond small mut" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px"><span style="color:#F2A93B">' + esc(ORIGEN[x.creadoPor] || x.creadoPor || 'Tarea') + (x.campana ? ' · ' + esc(x.campana) : '') + '</span><span>' + (ts ? fdate(ts) + ' ' + ('0' + ts.getHours()).slice(-2) + ':' + ('0' + ts.getMinutes()).slice(-2) : '') + '</span></div>' +
       '<div style="margin-top:8px;font-size:18px">' + esc(x.nombre || x.empresa || '') + (x.nombre && x.empresa ? ' <span class="mut" style="font-size:15px">· ' + esc(x.empresa) + '</span>' : '') + '</div>' +
       (x.motivo ? '<p class="soft small" style="margin:6px 0 0;line-height:1.5">' + esc(x.motivo) + '</p>' : '') +
-      '<label class="small mut" style="display:block;margin-top:12px">Mensaje<textarea class="in" rows="5" style="display:block;width:100%;margin-top:4px;padding:10px 12px;resize:vertical;line-height:1.5">' + esc(x.texto || '') + '</textarea></label>' +
+      '<label class="small mut" style="display:block;margin-top:12px">Mensaje<textarea data-msg class="in" rows="5" style="display:block;width:100%;margin-top:4px;padding:10px 12px;resize:vertical;line-height:1.5">' + esc(x.texto || '') + '</textarea></label>' + bloquePedido(x) +
       '<div class="filters" style="margin-top:10px;align-items:center"><label class="small mut">Canal <select class="in" style="margin-left:6px">' + canales.map(function (c) { return '<option value="' + c[0] + '"' + (x.canal === c[0] ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select></label>' +
       '<button class="btn pri" data-apr="aprobar" data-id="' + esc(x.id) + '">Aprobar</button><button class="btn" data-apr="guardar" data-id="' + esc(x.id) + '">Guardar cambios</button>' +
-      '<button class="btn" data-apr="pausar" data-id="' + esc(x.id) + '">Pausar 7 días</button><button class="btn" data-apr="descartar" data-id="' + esc(x.id) + '">Descartar</button></div></li>';
+      '<button class="btn" data-apr="pausar" data-id="' + esc(x.id) + '">Pausar 7 días</button><button class="btn" data-apr="descartar" data-id="' + esc(x.id) + '">Descartar</button>' +
+      '<button class="btn" style="border-color:var(--lav);color:var(--lav)" data-apr="claudio-abrir" data-id="' + esc(x.id) + '">Pedirle a Claudio</button></div>' +
+      '<div data-pedbox hidden style="margin-top:12px"><label class="small mut" style="display:block">Qué le pedís a Claudio (no le llega al contacto)<textarea data-ped class="in" rows="3" placeholder="Ej: antes de mandar esto, coordiná con Tito la fecha de la reunión del jueves" style="display:block;width:100%;margin-top:4px;padding:10px 12px;resize:vertical;line-height:1.5"></textarea></label>' +
+      '<div class="filters" style="margin-top:8px"><button class="btn pri" data-apr="claudio" data-id="' + esc(x.id) + '">Mandar a Claudio</button><span class="cond small mut" style="align-self:center">Lo toma el cartero en su próxima pasada, o tocá «Correr ahora» en Sistema.</span></div></div></li>';
   }
 
   function vAprobar() {
@@ -572,9 +604,21 @@
     var hoy = D.startOfDay(new Date()).getTime();
     var env = q.filter(function (x) { return x.estado === 'enviado' && (x.enviadoTs || 0) >= hoy - 6 * 86400000; }).sort(function (a, b) { return (b.enviadoTs || 0) - (a.enviadoTs || 0); });
     var paus = q.filter(function (x) { return x.estado === 'pausado'; });
+    var conC = q.filter(function (x) { return x.estado === 'claudio' || x.estado === 'respondido'; });
+    var resC = q.filter(function (x) { return x.estado === 'resuelto' && x.pedido && (x.pedido.resueltoTs || 0) >= hoy - 6 * 86400000; });
+    var cardC = function (x) {
+      var esp = x.estado === 'claudio';
+      return '<li class="card" style="border-left-color:var(--lav);padding:16px 18px" data-item="' + esc(x.id) + '"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline"><span>' + esc(x.tipo === 'pedido' ? 'Pedido general' : (x.nombre || x.empresa || '')) + (x.tipo !== 'pedido' && x.empresa && x.nombre ? ' <span class="mut small">· ' + esc(x.empresa) + '</span>' : '') + '</span><span class="cond small" style="color:' + (esp ? 'var(--amber)' : 'var(--teal)') + '">' + (esp ? 'Esperando a Claudio' : 'Claudio respondió') + '</span></div>' +
+        bloquePedido(x) +
+        '<div class="filters" style="margin-top:10px"><button class="btn sm pri" data-apr="resuelto" data-id="' + esc(x.id) + '">Ya se resolvió</button>' + (x.tipo !== 'pedido' ? '<button class="btn sm" data-apr="volver" data-id="' + esc(x.id) + '">Volver a pendientes</button>' : '') + '</div></li>';
+    };
     var fila = function (x, extra) { return '<li class="card" style="border-left-color:#343A50;padding:14px 18px"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px"><span>' + esc(x.nombre || x.empresa || '') + ' <span class="mut small">· ' + esc(x.empresa || '') + ' · ' + esc(x.canal || '') + '</span></span>' + (extra || '') + '</div><div class="small soft" style="margin-top:6px;line-height:1.45;white-space:pre-line">' + esc(String(x.texto || '').slice(0, 220)) + '</div>' + (x.error ? '<div class="small" style="color:#E8604C;margin-top:6px">' + esc(x.error) + '</div>' : '') + '</li>'; };
     return '<section><p class="eyebrow">Nada sale sin tu OK</p><h1>Para aprobar</h1><p class="soft" style="max-width:720px;line-height:1.55">Las tareas dejan acá los mensajes que necesitan tu visto bueno. Editá el texto si hace falta y aprobá: el cartero lo manda tal cual en su próxima pasada (9, 12, 15 y 18 hs).</p></section>' +
       '<section>' + (pend.length ? '<ul class="list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px">' + pend.map(cardAprobar).join('') + '</ul>' : '<p class="mut">No hay nada esperando tu aprobación.</p>') + '</section>' +
+      '<section><h2 style="margin-bottom:6px">Pedidos a Claudio' + (conC.length ? ' (' + conC.length + ')' : '') + '</h2><p class="soft small" style="margin:0 0 12px;max-width:720px;line-height:1.5">Mensajes para Claudio, no para el contacto. Él los toma en la próxima pasada del cartero (o al tocar «Correr ahora» en Sistema), hace lo que puede sin enviar nada y te deja la respuesta acá. Si hay que mandarle algo a alguien, te lo deja para aprobar.</p>' +
+      '<div style="max-width:720px"><textarea id="pedidoNuevo" class="in" rows="2" placeholder="Pedido general a Claudio, no atado a un mensaje. Ej: agendame seguimiento con Riquea para el lunes" style="display:block;width:100%;padding:10px 12px;resize:vertical;line-height:1.5"></textarea><div class="filters" style="margin-top:8px"><button class="btn" style="border-color:var(--lav);color:var(--lav)" data-apr="pedido-nuevo" data-id="">Mandar a Claudio</button></div></div>' +
+      (conC.length ? '<ul class="list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px;margin-top:14px">' + conC.map(cardC).join('') + '</ul>' : '') +
+      (resC.length ? '<p class="cond small mut" style="margin:14px 0 6px">RESUELTOS ESTA SEMANA</p><ul class="list">' + resC.map(function (x) { return '<li class="small soft" style="padding:4px 0">' + fdate(new Date(x.pedido.resueltoTs)) + ' · ' + esc(x.tipo === 'pedido' ? 'Pedido general' : (x.nombre || x.empresa || '')) + ' · ' + esc(String(x.pedido.texto).slice(0, 120)) + '</li>'; }).join('') + '</ul>' : '') + '</section>' +
       (aprob.length ? '<section><h2 style="margin-bottom:12px">Aprobados, esperando al cartero (' + aprob.length + ')</h2><ul class="list">' + aprob.map(function (x) { return fila(x, '<button class="btn sm" data-apr="volver" data-id="' + esc(x.id) + '">Frenar</button>'); }).join('') + '</ul></section>' : '') +
       (env.length ? '<section><h2 style="margin-bottom:12px">Enviados en los últimos 7 días (' + env.length + ')</h2><ul class="list">' + env.map(function (x) { return fila(x, '<span class="cond small mut">' + fdate(new Date(x.enviadoTs)) + '</span>'); }).join('') + '</ul></section>' : '') +
       (paus.length ? '<section><h2 style="margin-bottom:12px">Pausados (' + paus.length + ')</h2><ul class="list">' + paus.map(function (x) { return fila(x, '<button class="btn sm" data-apr="volver" data-id="' + esc(x.id) + '">Volver a pendientes</button>'); }).join('') + '</ul></section>' : '');
