@@ -666,7 +666,7 @@
         var e = est[i], s = SEM[e.sem], x = roles[r.k] || {}, px = proxima(r);
         var al = lista(x.alertas), pe = lista(x.pendientes);
         var lin = e.linea.slice(-10).reverse();
-        var pasadas = lin.length ? '<p class="cond small mut" style="margin:16px 0 6px">ÚLTIMAS PASADAS</p><ul style="list-style:none;margin:0;padding:0;display:grid;gap:5px">' + lin.map(function (l) {
+        var pasadas = lin.length ? '<p class="cond small mut" style="margin:16px 0 6px">ÚLTIMAS PASADAS</p><ul style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:5px">' + lin.map(function (l) {
           var d = new Date(l.c ? l.c.ts : l.slot), c = !l.c ? '#E8604C' : !l.c.ok ? '#E8604C' : l.c.alertas ? '#F2A93B' : '#4FB8A8';
           var txt = !l.c ? 'No corrió (tocaba ' + hhmm(new Date(l.slot)) + ')' : (l.c.ok ? '' : 'Falló · ') + (l.c.enviados != null ? l.c.enviados + ' enviados · ' : '') + (l.c.resumen || 'Corrió');
           return '<li class="small" style="display:flex;gap:10px;align-items:baseline">' + dot(c, 8) + '<span class="cond mut" style="flex:none;width:86px">' + fdate(d) + ' ' + hhmm(d) + '</span><span class="soft" style="min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(txt + (l.c && l.c.alertas ? ' — ' + l.c.alertas : '')) + '">' + esc(txt) + '</span></li>';
